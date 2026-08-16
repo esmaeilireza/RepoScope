@@ -145,7 +145,7 @@ export default function Home() {
         </p>
       </header>
 
-      <RepoInput onAnalyze={analyze} isLoading={loading} />
+      <RepoInput onAnalyze={analyze} loading={loading} />
 
       {loading && (
         <div className="text-center mt-10">

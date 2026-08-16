@@ -102,7 +102,7 @@ gh run list --status failure --limit 5`;
           rel="noopener noreferrer"
           className="text-xs text-mint hover:text-tealx transition"
         >
-          View all ->
+          View all &rarr;
         </a>
       </div>
 

@@ -1,4 +1,3 @@
-
 // ═══════════════════════════════════════════════════════════════
 // FINAL STABLE VERSION - Heuristic-based classification
 // No domain whitelists. Works for ANY GitHub repository.
