@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Image from 'next/image';
 import RepoInput from '@/components/RepoInput';
 import ScoreBoard from '@/components/ScoreBoard';
 import AuditTabs from '@/components/AuditTabs';
@@ -32,7 +33,7 @@ export default function Home() {
       const tree = td.tree || [];
       const branches = await get('/repos/' + p.owner + '/' + p.repo + '/branches?per_page=100');
 
-      // --- Fetch pull requests (better fix) ---
+      // --- Fetch pull requests ---
       let pulls: any[] = [];
       try {
         pulls = await get('/repos/' + p.owner + '/' + p.repo + '/pulls?state=all&per_page=100');
@@ -59,9 +60,8 @@ export default function Home() {
       }
 
       // --- Branch diffs placeholder (to be implemented) ---
-      const diffs: any[] = []; // will be filled once we have the shape
+      const diffs: any[] = [];
 
-      // --- FIX: order of arguments: meta, tree, claims, diffs, pulls, def ---
       const findings = generateFindings(meta, tree, claims, diffs, pulls, def);
       const expl = scoreAndExplain(findings);
       setResult({ meta, tree, branches, claims, findings, expl });
@@ -71,6 +71,8 @@ export default function Home() {
       setLoading(false);
     }
   }
+
+  const avatarUrl = result?.meta?.owner?.avatar_url || '';
 
   return (
     <main className="max-w-6xl mx-auto px-4 pb-24">
@@ -99,7 +101,13 @@ export default function Home() {
       {result && !loading && (
         <div className="mt-12 space-y-6 anim">
           <div className="card-static rounded-2xl p-6 flex gap-5 items-center">
-            <img src={result.meta.owner.avatar_url} alt="avatar" className="w-12 h-12 rounded-full border border-edge" />
+            <Image
+              src={avatarUrl}
+              alt="Repository owner avatar"
+              width={48}
+              height={48}
+              className="rounded-full border border-edge"
+            />
             <div className="min-w-0">
               <h2 className="font-black text-lg text-white font-mono truncate">{result.meta.full_name}</h2>
               <p className="text-slate-400 text-xs mt-1">{result.meta.description || 'No description'}</p>

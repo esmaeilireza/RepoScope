@@ -1,4 +1,3 @@
-cat > components/Card.tsx <<'CARD_EOF'
 import type { ReactNode } from 'react';
 
 export default function Card({
@@ -16,6 +15,3 @@ export default function Card({
     </div>
   );
 }
-CARD_EOF
-
-pnpm build
