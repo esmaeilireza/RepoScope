@@ -1,7 +1,10 @@
 'use client';
 import { useState } from 'react';
-import { DiagnosticResult } from '@/lib/github-diagnostics';
-import { generateRunSpecificCommands } from '@/lib/github-diagnostics';
+import {
+  DiagnosticResult,
+  generateRunSpecificCommands,
+  // ErrorPattern removed – we use inline type instead
+} from '@/lib/github-diagnostics';
 import { generateFixProposals, generateFixCommands, FixProposal } from '@/lib/github-auto-fix';
 
 interface SmartDiagnosisProps {
@@ -36,10 +39,14 @@ export default function SmartDiagnosis({
     info: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-200', icon: 'ℹ️' },
   };
 
-  const highestSeverity = diagnostic.patterns.reduce((max, p) => {
-    const order = { critical: 4, error: 3, warning: 2, info: 1 };
-    return order[p.severity] > order[max] ? p.severity : max;
-  }, 'info' as const);
+  // ✅ Use inline union type – no need to import ErrorPattern
+  const highestSeverity = diagnostic.patterns.reduce<'critical' | 'error' | 'warning' | 'info'>(
+    (max, p) => {
+      const order = { critical: 4, error: 3, warning: 2, info: 1 };
+      return order[p.severity] > order[max] ? p.severity : max;
+    },
+    'info'
+  );
 
   const config = severityConfig[highestSeverity];
 

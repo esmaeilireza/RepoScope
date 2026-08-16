@@ -130,6 +130,8 @@ export default function ActionsDashboard({
               run={run}
               expanded={expandedId === run.id}
               onToggle={() => setExpandedId(expandedId === run.id ? null : run.id)}
+              owner={owner}
+              repo={repo}
             />
           ))}
         </div>

@@ -165,7 +165,7 @@ export function generateRunSpecificCommands(
   if (patterns.length === 0) return baseCommands;
   
   const allSolutionCommands = patterns.flatMap(p => p.solution.commands);
-  const uniqueCommands = Array.from(new Set(allSolutionCommands));
+  const uniqueCommands = [...new Set(allSolutionCommands)];
   
   return [
     ...baseCommands,
