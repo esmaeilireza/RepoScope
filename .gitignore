@@ -16,3 +16,4 @@ diagnose.sh
 .env
 .env.local
 .env.production
+check-repo-status.sh

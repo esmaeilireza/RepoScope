@@ -135,7 +135,7 @@ export default function Home() {
 
       <header className="pt-12 pb-4 anim text-center max-w-3xl mx-auto">
         <h1 className="text-3xl sm:text-5xl font-black leading-[1.15] text-white tracking-tight">
-          Audit any GitHub repository, <span className="text-mint">end to end.</span>
+          Audit any GitHub Repository, <span className="text-mint">End to End.</span>
         </h1>
         <p className="mt-5 text-slate-400 leading-8 text-sm sm:text-base">
           Paste a Repository URL. RepoScope checks Code, README References, License, CI and more.
