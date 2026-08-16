@@ -23,34 +23,56 @@ SHA-by-SHA, cross-checks every README reference against reality, and explains ex
 
 ```
 my-reposcope-app/
-├── app/
-│   ├── globals.css            # Global styles + Tailwind directives (dark theme, cards, pills, animations)
-│   ├── layout.tsx             # Root layout: Inter + JetBrains Mono fonts, metadata
-│   ├── page.tsx               # Main page: orchestrates fetching, audit pipeline and rendering
-│   └── api/
-│       └── github/
-│           └── route.ts       # Next.js API route — secure proxy to api.github.com (token handling + caching)
-├── components/
-│   ├── RepoInput.tsx          # Repository URL input + optional GitHub token (Advanced settings)
-│   ├── Board.tsx              # Section-by-section status board (mirrors the GitHub nav)
-│   ├── ScoreBoard.tsx         # Health-score ring + "Why this score?" itemised breakdown
-│   ├── AuditTabs.tsx          # Tabs: Findings / Branches / Project Tree / README audit
-│   └── ui/
-│       └── Card.tsx           # Small reusable card wrapper
-├── lib/
-│   ├── config.ts              # Shared constants (MAX_BRANCH_COMPARE, BIG_TREE_THRESHOLD) + regexes
-│   ├── utils.ts               # Helpers: parseRepo(), decodeBase64Utf8()
-│   └── audit.ts               # Audit engine: evaluateTarget, diffBranches, generateFindings,
-│                              #   buildSections, scoreAndExplain
-├── public/                    # Static assets
-├── tailwind.config.ts         # Tailwind theme: custom colors (night/panel/edge/mint/…), fonts, shadows
-├── postcss.config.js          # PostCSS config for Tailwind
-├── tsconfig.json              # TypeScript configuration (path alias @/*)
-├── package.json               # Dependencies & scripts
-└── README.md                  # This file
+├── .github/                         # GitHub automation & CI/CD
+│   ├── dependabot.yml               # Automated dependency updates
+│   └── workflows/
+│       └── ci.yml                   # GitHub Actions CI pipeline
+│
+├── app/                             # Next.js App Router
+│   ├── api/
+│   │   └── github/
+│   │       └── route.ts             # API route: secure proxy to api.github.com
+│   ├── globals.css                  # Global styles + Tailwind directives
+│   ├── layout.tsx                   # Root layout: fonts, metadata
+│   └── page.tsx                     # Main page: audit pipeline & rendering
+│
+├── components/                      # React components
+│   ├── ui/
+│   │   └── Card.tsx                 # Reusable card wrapper
+│   ├── AuditTabs.tsx                # Tabs: Findings / Branches / Tree / README
+│   ├── RepoInput.tsx                # Repository URL input + token settings
+│   └── ScoreBoard.tsx               # Health-score ring + breakdown
+│
+├── lib/                             # Core logic & utilities
+│   ├── audit.ts                     # Audit engine: scoring, findings, sections
+│   ├── config.ts                    # Constants, thresholds, regexes
+│   └── utils.ts                     # Helpers: parseRepo(), decodeBase64Utf8()
+│
+├── public/                          # Static assets (newly added)
+│   ├── favicon.svg                  # Favicon placeholder
+│   └── robots.txt                   # SEO crawler rules
+│
+├── scripts/                         # Build & utility scripts
+│   └── check-structure.mjs         # Project structure validation
+│
+├── .env.example                     # Environment variables template
+├── .eslintrc.json                   # ESLint configuration
+├── .gitignore                       # Git ignore rules
+├── CONTRIBUTING.md                  # Contribution guidelines
+├── LICENSE                          # Project license
+├── README.md                        # Project documentation
+├── SECURITY.md                      # Security policy
+│
+├── next-env.d.ts                    # Next.js TypeScript declarations
+├── next.config.js                   # Next.js configuration
+├── package.json                     # Dependencies & scripts
+├── pnpm-lock.yaml                   # pnpm lock file
+├── pnpm-workspace.yaml             # pnpm workspace config
+├── postcss.config.js                # PostCSS for Tailwind
+├── setup.sh                         # Setup script for developers
+├── tailwind.config.ts               # Tailwind theme config
+└── tsconfig.json                    # TypeScript config
 ```
-
----
 
 ## 🚀 Getting Started
 
