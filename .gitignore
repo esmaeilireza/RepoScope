@@ -5,3 +5,14 @@ out/
 !.env.example
 .DS_Store
 *.tsbuildinfo
+
+# Local logs and scripts (don't commit)
+build-log.txt
+dev-server.log
+diagnose.sh
+*.log
+
+# Environment files
+.env
+.env.local
+.env.production

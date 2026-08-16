@@ -38,3 +38,98 @@ body {
 .tab-btn:hover { color: #e2e8f0; }
 .tab-btn.active { background: #0d1730; border-color: #34d399; color: #34d399; box-shadow: 0 0 14px rgba(52, 211, 153, .15); }
 .nav-blur { backdrop-filter: blur(12px); background: rgba(11, 18, 32, .78); }
+
+/* Shadow Effects */
+.shadow-glow {
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
+  animation: glow 3s ease-in-out infinite;
+}
+
+.shadow-glow-sm {
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.2);
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(52, 211, 153, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(52, 211, 153, 0.6); }
+}
+
+/* Navigation */
+.nav-blur { 
+  backdrop-filter: blur(12px); 
+  background: rgba(11, 18, 32, .78); 
+  border-bottom: 1px solid #22314e;
+}
+
+/* Tabs */
+.tab-btn { 
+  padding: 9px 20px; 
+  border-radius: 12px; 
+  font-size: 12.5px; 
+  font-weight: 800; 
+  color: #94a3b8; 
+  border: 1px solid transparent; 
+  transition: all .2s; 
+  cursor: pointer; 
+  background: transparent;
+}
+
+.tab-btn:hover { 
+  color: #e2e8f0; 
+  background: rgba(52, 211, 153, .05);
+}
+
+.tab-btn.active { 
+  background: #0d1730; 
+  border-color: #34d399; 
+  color: #34d399; 
+  box-shadow: 0 0 14px rgba(52, 211, 153, .15); 
+}
+
+/* Findings */
+.find-row { 
+  display: flex; 
+  gap: 12px; 
+  align-items: flex-start; 
+  padding: 12px 14px; 
+  border-radius: 12px; 
+  border: 1px solid #22314e; 
+  background: rgba(13, 23, 48, .5); 
+  transition: all .2s;
+}
+
+.find-row:hover {
+  border-color: rgba(52, 211, 153, .3);
+  background: rgba(13, 23, 48, .7);
+}
+
+/* Severity Icons */
+.sev-ico { 
+  width: 22px; 
+  height: 22px; 
+  border-radius: 7px; 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-size: 11px; 
+  font-weight: 900; 
+  flex: none; 
+}
+
+.sev-error { 
+  color: #fb7185; 
+  background: rgba(251, 113, 133, .12); 
+  border: 1px solid rgba(251, 113, 133, .35); 
+}
+
+.sev-warning { 
+  color: #fbbf24; 
+  background: rgba(251, 191, 36, .12); 
+  border: 1px solid rgba(251, 191, 36, .35); 
+}
+
+.sev-info { 
+  color: #2dd4bf; 
+  background: rgba(45, 212, 191, .12); 
+  border: 1px solid rgba(45, 212, 191, .35); 
+}

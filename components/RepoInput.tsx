@@ -1,51 +1,110 @@
-'use client';
+// components/RepoInput.tsx
 import { useState } from 'react';
 
-export default function RepoInput({ onAnalyze, isLoading }: { onAnalyze: (repo: string, token: string) => void; isLoading: boolean }) {
-  const [repo, setRepo] = useState('');
+interface RepoInputProps {
+  onAnalyze: (url: string, token: string) => void;
+  loading?: boolean;
+}
+
+export default function RepoInput({ onAnalyze, loading }: RepoInputProps) {
+  const [url, setUrl] = useState('');
   const [token, setToken] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (repo.trim()) onAnalyze(repo.trim(), token.trim());
+    setError('');
+
+    if (!url.trim()) {
+      setError('Please enter a GitHub repository URL');
+      return;
+    }
+
+    // Basic URL validation
+    const githubPattern = /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?$/;
+    if (!githubPattern.test(url.trim())) {
+      setError('Invalid GitHub URL. Format: https://github.com/owner/repo');
+      return;
+    }
+
+    onAnalyze(url.trim(), token.trim());
   };
 
   return (
-    <form onSubmit={handleSubmit} className="card-static rounded-2xl p-6 sm:p-7 max-w-3xl mx-auto anim">
-      <label className="block text-xs font-extrabold text-slate-300 mb-2 uppercase tracking-wider">
-        GitHub repository
-      </label>
-      <div className="flex flex-col sm:flex-row gap-3">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Main URL input */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">
+          GitHub repository
+        </label>
         <input
-          value={repo}
-          onChange={(e) => setRepo(e.target.value)}
-          className="inp font-mono flex-1"
-          placeholder="owner/repo or full URL"
-          disabled={isLoading}
+          type="text"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://github.com/owner/repo"
+          disabled={loading}
+          className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-blue-500 transition disabled:opacity-50"
         />
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="shrink-0 px-6 py-3 rounded-xl bg-mint text-night font-black text-sm hover:bg-tealx transition-colors shadow-glow disabled:opacity-50"
-        >
-          {isLoading ? 'Analyzing...' : 'Analyze repository'}
-        </button>
       </div>
-      <details className="mt-4">
-        <summary className="text-[11px] text-slate-500 font-bold hover:text-mint cursor-pointer">
-          Advanced settings (GitHub Token)
-        </summary>
-        <div className="mt-3">
+
+      {/* Advanced settings toggle */}
+      <button
+        type="button"
+        onClick={() => setShowAdvanced(!showAdvanced)}
+        className="text-sm text-gray-400 hover:text-gray-200 mb-3 flex items-center gap-1"
+      >
+        {showAdvanced ? '▼' : '▶'} Advanced settings (GitHub Token – OPTIONAL for public repos)
+      </button>
+
+      {/* Token input (only when advanced is open) */}
+      {showAdvanced && (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-300">
+            GitHub token (only needed for PRIVATE repos)
+          </label>
           <input
             type="password"
             value={token}
             onChange={(e) => setToken(e.target.value)}
-            className="inp font-mono text-xs"
-            placeholder="ghp_xxx (optional)"
-            disabled={isLoading}
+            placeholder="ghp_xxxxxxxxxxxx or leave empty for public repos"
+            disabled={loading}
+            className="w-full px-4 py-3 bg-gray-950 border border-gray-700 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-blue-500 transition disabled:opacity-50"
           />
+          <p className="text-xs text-gray-500">
+            💡 For public repositories, leave this empty. Tokens are only needed for private repos or to bypass rate limits
+            (60/hr anonymous vs 5000/hr with token).{' '}
+            <a
+              href="https://github.com/settings/tokens"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:underline"
+            >
+              Generate token →
+            </a>
+          </p>
         </div>
-      </details>
+      )}
+
+      {/* Error message */}
+      {error && (
+        <div className="bg-red-900/20 border border-red-700 text-red-300 px-4 py-2 rounded-lg text-sm">
+          ⚠️ {error}
+        </div>
+      )}
+
+      {/* Submit button */}
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white font-medium py-3 px-4 rounded-lg transition"
+      >
+        {loading ? '⏳ Analyzing...' : '🔍 Analyze repository'}
+      </button>
+
+      <p className="text-xs text-gray-500 text-center">
+        💡 No token needed for public repositories!
+      </p>
     </form>
   );
 }
