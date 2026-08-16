@@ -4,6 +4,7 @@ import Image from 'next/image';
 import RepoInput from '@/components/RepoInput';
 import ScoreBoard from '@/components/ScoreBoard';
 import AuditTabs from '@/components/AuditTabs';
+import ActionsPanel from '@/components/ActionsPanel';
 import { parseRepo, decodeBase64Utf8 } from '@/lib/utils';
 import { evaluateTarget, generateFindings, scoreAndExplain } from '@/lib/audit';
 
@@ -33,7 +34,6 @@ export default function Home() {
       const tree = td.tree || [];
       const branches = await get('/repos/' + p.owner + '/' + p.repo + '/branches?per_page=100');
 
-      // --- Fetch pull requests ---
       let pulls: any[] = [];
       try {
         pulls = await get('/repos/' + p.owner + '/' + p.repo + '/pulls?state=all&per_page=100');
@@ -59,9 +59,7 @@ export default function Home() {
         });
       }
 
-      // --- Branch diffs placeholder (to be implemented) ---
       const diffs: any[] = [];
-
       const findings = generateFindings(meta, tree, claims, diffs, pulls, def);
       const expl = scoreAndExplain(findings);
       setResult({ meta, tree, branches, claims, findings, expl });
@@ -115,6 +113,7 @@ export default function Home() {
           </div>
           <ScoreBoard score={result.expl.score} explanation={result.expl} />
           <AuditTabs data={result} />
+          <ActionsPanel owner={result.meta.owner.login} repo={result.meta.name} />
         </div>
       )}
       <footer className="mt-16 pt-8 border-t border-edge text-center text-[10.5px] text-slate-500">
