@@ -387,6 +387,5 @@ For security issues, please read [SECURITY.md](SECURITY.md) for responsible disc
 ---
 
 **Built with ❤️ by [Reza Esmaeili](https://github.com/esmaeilireza) and [Abbas Lotfi](https://github.com/abbas-pt)**
-
 *RepoScope — Audit any GitHub Repository, End to End.*
 ```
