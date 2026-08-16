@@ -1,4 +1,3 @@
-import { CONFIG } from './config';
 
 // ═══════════════════════════════════════════════════════════════
 // FINAL STABLE VERSION - Heuristic-based classification
