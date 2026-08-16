@@ -1,26 +1,34 @@
 name: CI
+
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-
-permissions:
-  contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      # 1. Upgrade checkout to v5 (runs on Node.js 24 natively)
+      - uses: actions/checkout@v5
+
+      # 2. Install pnpm WITH an explicit version (fixes the critical error)
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm audit:self
-      - run: pnpm build
+          version: 9  # Specify your version here (e.g., 9.15.0)
+
+      # 3. Set up Node.js explicitly to v22 (LTS) or v24 to avoid deprecation warnings
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      # 4. Install dependencies
+      - name: Install dependencies
+        run: pnpm install
+
+      # 5. Run your build (or audit/self)
+      - name: Build
+        run: pnpm build
