@@ -1,90 +1,88 @@
+// app/api/github/route.ts - Complete corrected version
+
 import { NextRequest, NextResponse } from 'next/server';
 
-const BASE = 'https://api.github.com';
-const TOKEN = process.env.GITHUB_TOKEN || '';
+const CACHE = new Map<string, { data: unknown; timestamp: number }>();
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutes for actions data
 
-// Simple in-memory cache
-const cache = new Map<string, { data: unknown; timestamp: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  let endpoint = searchParams.get('endpoint');
-  const owner = searchParams.get('owner');
-  const repo = searchParams.get('repo');
-
-  // If no endpoint, fallback to repo info if owner/repo provided
-  if (!endpoint) {
-    if (owner && repo) {
-      endpoint = `repos/${owner}/${repo}`;
-    } else {
-      return NextResponse.json(
-        { error: 'Missing endpoint or owner/repo' },
-        { status: 400 }
-      );
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const rawEndpoint = searchParams.get('endpoint');
+  const token = request.headers.get('x-github-token');
+  
+  if (!rawEndpoint) {
+    return NextResponse.json({ error: 'Missing endpoint' }, { status: 400 });
+  }
+  
+  if (!token) {
+    return NextResponse.json({ error: 'Missing token' }, { status: 401 });
+  }
+  
+  // Decode the endpoint
+  const endpoint = decodeURIComponent(rawEndpoint);
+  
+  // Rate limiting check
+  const rateLimitKey = `rate_${token.slice(0, 10)}`;
+  const rateData = CACHE.get(rateLimitKey);
+  if (rateData) {
+    const { remaining } = rateData.data as { remaining: number };
+    if (remaining < 100) {
+      return NextResponse.json({
+        error: 'Rate limit approaching',
+        remaining,
+      }, { status: 429 });
     }
   }
-
-  // Replace placeholder if owner/repo are present
-  let apiPath = endpoint;
-  if (owner && repo) {
-    apiPath = apiPath.replace(/\{owner\}/g, owner).replace(/\{repo\}/g, repo);
-  }
-
-  // Ensure no leading slash (GitHub API expects path without leading slash)
-  if (apiPath.startsWith('/')) {
-    apiPath = apiPath.slice(1);
-  }
-
-  // Build cache key from the full path (including query params? For simplicity, we only cache by path)
-  // But we should also consider the token? Different tokens might return different results (private repos).
-  // We'll ignore token in cache key for simplicity; could be enhanced.
-  const cacheKey = apiPath;
-
+  
   // Check cache
-  const cached = cache.get(cacheKey);
+  const cacheKey = `${token.slice(0, 10)}_${endpoint}`;
+  const cached = CACHE.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return NextResponse.json(cached.data);
   }
-
-  // Headers
-  const headers: HeadersInit = {
-    Accept: 'application/vnd.github.v3+json',
-    'User-Agent': 'RepoScope-Next',
-  };
-
-  // Use client token if provided, otherwise env token
-  const clientToken = req.headers.get('authorization');
-  if (clientToken) {
-    headers['Authorization'] = clientToken;
-  } else if (TOKEN) {
-    headers['Authorization'] = `Bearer ${TOKEN}`;
-  }
-
+  
   try {
-    const res = await fetch(`${BASE}/${apiPath}`, {
-      headers,
-      next: { revalidate: 60 }, // Next.js built‑in cache
+    const response = await fetch(`https://api.github.com${endpoint}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'RepoScope-Smart-IDE',
+      },
     });
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      return NextResponse.json(
-        { error: errorData.message || 'GitHub API error' },
-        { status: res.status }
-      );
+    
+    // Update rate limit cache
+    const remaining = response.headers.get('x-ratelimit-remaining');
+    if (remaining) {
+      CACHE.set(rateLimitKey, {
+        data: { remaining: parseInt(remaining) },
+        timestamp: Date.now(),
+      });
     }
-
-    const data = await res.json();
-
-    // Store in cache
-    cache.set(cacheKey, { data, timestamp: Date.now() });
-
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = `GitHub API error: ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorMessage;
+      } catch {}
+      return NextResponse.json({ error: errorMessage }, { status: response.status });
+    }
+    
+    // Handle empty responses
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : {};
+    
+    // Cache successful responses
+    CACHE.set(cacheKey, { data, timestamp: Date.now() });
+    
     return NextResponse.json(data);
-  } catch (err: any) {
+  } catch (err) {
+    console.error('API error:', err);
     return NextResponse.json(
-      { error: 'Proxy error', details: err.message },
-      { status: 502 }
+      { error: 'Network error' },
+      { status: 500 }
     );
   }
 }

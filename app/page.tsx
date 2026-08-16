@@ -4,7 +4,9 @@ import Image from 'next/image';
 import RepoInput from '@/components/RepoInput';
 import ScoreBoard from '@/components/ScoreBoard';
 import AuditTabs from '@/components/AuditTabs';
-import ActionsPanel from '@/components/ActionsPanel';
+import ActionsPanel from '@/components/ActionsPanel';        // existing simplified panel
+import TokenInput from '@/components/TokenInput';            // new: token input for dashboard
+import ActionsDashboard from '@/components/ActionsDashboard'; // new: full dashboard
 import { parseRepo, decodeBase64Utf8 } from '@/lib/utils';
 import { evaluateTarget, generateFindings, scoreAndExplain } from '@/lib/audit';
 
@@ -12,10 +14,15 @@ const MD_LINK = /(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 const REL_PATH = /(?:\.\.?\/)(?:[a-zA-Z0-9_\-.]+\/?)+(?:\.[a-zA-Z0-9]+)?/g;
 
 export default function Home() {
+  // Audit state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<any>(null);
 
+  // Actions Dashboard state
+  const [githubToken, setGithubToken] = useState<string | null>(null);
+
+  // --- Audit function (unchanged) ---
   async function analyze(input: string, token: string) {
     const p = parseRepo(input);
     if (!p) { setError('Invalid format. Use owner/repo'); return; }
@@ -74,12 +81,15 @@ export default function Home() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 pb-24">
+      {/* === Navigation === */}
       <nav className="nav-blur sticky top-0 z-50 border-b border-edge">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-2.5">
           <span className="w-2.5 h-2.5 rounded-full bg-mint shadow-glow blink-dot"></span>
           <span className="font-extrabold text-sm sm:text-base tracking-tight">RepoScope <span className="text-mint">Next.js</span></span>
         </div>
       </nav>
+
+      {/* === Hero === */}
       <header className="pt-12 pb-4 anim text-center max-w-3xl mx-auto">
         <h1 className="text-3xl sm:text-5xl font-black leading-[1.15] text-white tracking-tight">
           Audit any GitHub repository, <span className="text-mint">end to end.</span>
@@ -88,7 +98,11 @@ export default function Home() {
           Paste a repository URL. RepoScope checks Code, README references, license, CI and more.
         </p>
       </header>
+
+      {/* === Audit Input === */}
       <RepoInput onAnalyze={analyze} isLoading={loading} />
+
+      {/* === Audit Loading / Error === */}
       {loading && <div className="text-center mt-10"><div className="spinner mx-auto"></div></div>}
       {error && (
         <div className="card-static rounded-2xl p-6 mt-10 border border-rosex/40 text-center">
@@ -96,6 +110,8 @@ export default function Home() {
           <p className="text-slate-400 text-xs mt-2">{error}</p>
         </div>
       )}
+
+      {/* === Audit Results === */}
       {result && !loading && (
         <div className="mt-12 space-y-6 anim">
           <div className="card-static rounded-2xl p-6 flex gap-5 items-center">
@@ -113,9 +129,34 @@ export default function Home() {
           </div>
           <ScoreBoard score={result.expl.score} explanation={result.expl} />
           <AuditTabs data={result} />
+          {/* Optional: keep the simpler ActionsPanel if you still want it */}
           <ActionsPanel owner={result.meta.owner.login} repo={result.meta.name} />
         </div>
       )}
+
+      <hr className="my-16 border-edge" />
+
+      {/* === GitHub Actions Console (New) === */}
+      <section className="max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-white">
+          🚀 GitHub Actions Console
+        </h2>
+
+        {!githubToken ? (
+          <div className="max-w-md mx-auto">
+            <TokenInput onSubmit={setGithubToken} />
+          </div>
+        ) : (
+          <ActionsDashboard
+            owner="esmaeilireza"          // you can make this dynamic from result if needed
+            repo="RepoScope"
+            token={githubToken}
+            onDisconnect={() => setGithubToken(null)}
+          />
+        )}
+      </section>
+
+      {/* === Footer === */}
       <footer className="mt-16 pt-8 border-t border-edge text-center text-[10.5px] text-slate-500">
         RepoScope Next.js - requests proxied via /api/github
       </footer>
