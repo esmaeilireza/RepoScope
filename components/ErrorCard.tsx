@@ -31,7 +31,7 @@ export default function ErrorCard({ run, expanded, onToggle, owner, repo }: Erro
             <span className="text-xs text-gray-500 font-mono">#{run.id}</span>
             {run.diagnostic && (
               <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full text-xs">
-                Ì¥ñ Smart Diagnosis
+                Smart Diagnosis
               </span>
             )}
           </div>
@@ -42,14 +42,14 @@ export default function ErrorCard({ run, expanded, onToggle, owner, repo }: Erro
 
           <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
             <span className="flex items-center gap-1">
-              Ìºø <span className="font-mono">{run.branch}</span>
+              <span className="font-mono">{run.branch}</span>
             </span>
-            <span className="flex items-center gap-1">Ìµê {run.age}</span>
+            <span className="flex items-center gap-1">{run.age}</span>
           </div>
         </div>
 
         <div className="text-gray-400 text-xl">
-          {expanded ? '‚àí' : '+'}
+          {expanded ? '-' : '+'}
         </div>
       </button>
 
@@ -65,7 +65,7 @@ export default function ErrorCard({ run, expanded, onToggle, owner, repo }: Erro
           ) : run.status === 'failure' ? (
             <div className="p-4 bg-gray-900/50 rounded-lg text-gray-400 text-sm">
               <p className="mb-3">
-                ‚ÑπÔ∏è No automatic diagnosis available. Use these commands to inspect:
+                No automatic diagnosis available. Use these commands to inspect:
               </p>
               <pre className="bg-black/40 p-3 rounded text-xs font-mono text-green-400 overflow-x-auto">
 {`gh run view ${run.id} --log-failed
@@ -75,7 +75,7 @@ gh run delete ${run.id}`}
             </div>
           ) : (
             <div className="p-4 bg-green-500/10 rounded-lg text-green-300 text-sm flex items-center gap-2">
-              ‚úÖ <span>This run completed successfully!</span>
+              <span>This run completed successfully!</span>
             </div>
           )}
 
@@ -86,7 +86,7 @@ gh run delete ${run.id}`}
               rel="noopener noreferrer"
               className="flex-1 text-center px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm transition"
             >
-              Ì¥ó View on GitHub
+              View on GitHub
             </a>
           </div>
         </div>
