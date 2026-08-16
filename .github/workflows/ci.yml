@@ -11,24 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Upgrade checkout to v5 (runs on Node.js 24 natively)
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      # 2. Install pnpm WITH an explicit version (fixes the critical error)
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9  # Specify your version here (e.g., 9.15.0)
 
-      # 3. Set up Node.js explicitly to v22 (LTS) or v24 to avoid deprecation warnings
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: 'pnpm'
 
-      # 4. Install dependencies
       - name: Install dependencies
         run: pnpm install
 
-      # 5. Run your build (or audit/self)
       - name: Build
         run: pnpm build
