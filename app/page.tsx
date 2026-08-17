@@ -8,6 +8,7 @@ import AuditTabs from '@/components/AuditTabs';
 import ActionsPanel from '@/components/ActionsPanel';
 import TokenInput from '@/components/TokenInput';
 import ActionsDashboard from '@/components/ActionsDashboard';
+import ExportButtons from '@/components/ExportButtons';
 import { parseRepo, decodeBase64Utf8 } from '@/lib/utils';
 import { evaluateTarget, generateFindings, scoreAndExplain } from '@/lib/audit';
 
@@ -190,6 +191,7 @@ export default function Home() {
           </div>
 
           <ScoreBoard score={result.expl.score} explanation={result.expl} />
+          <ExportButtons result={result} />
           <AuditTabs data={result} />
           <ActionsPanel owner={result.meta.owner.login} repo={result.meta.name} />
         </div>
