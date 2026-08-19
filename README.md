@@ -189,6 +189,7 @@ RepoScope/
 │   ├── Board.tsx                         # Section-by-section status board
 │   ├── CommandBlock.tsx                  # Code block with copy-to-clipboard
 │   ├── ErrorCard.tsx                     # Individual CI failure card
+│   ├── ExportButtons.tsx                 # JSON and Markdown audit downloads
 │   ├── RepoInput.tsx                     # Repository URL input + token settings
 │   ├── ScoreBoard.tsx                    # Health-score ring + detailed breakdown
 │   ├── SmartDiagnosis.tsx                # AI-powered diagnosis with fix commands
@@ -208,6 +209,7 @@ RepoScope/
 │   ├── github-error-patterns.ts          # Known error patterns & solutions
 │   ├── github-health-monitor.ts          # Repository health metrics
 │   ├── github-log-parser.ts              # Parse GitHub Actions logs
+│   ├── export.ts                         # JSON and Markdown audit serializers
 │   └── utils.ts                          # Helpers: parseRepo(), decodeBase64Utf8()
 │
 ├── public/                               # Static assets
