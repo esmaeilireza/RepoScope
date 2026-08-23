@@ -1,4 +1,4 @@
-# RepoScope 🛡️
+# RepoScope 
 
 **DataOps & Industrial Code Quality Gatekeeper**
 
