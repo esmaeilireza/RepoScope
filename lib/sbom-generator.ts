@@ -1,20 +1,23 @@
 // lib/sbom-generator.ts
-import {
-  Bom, Component, ExternalReference, Hash,
-  LicenseChoice, Tool, Metadata
-} from '@cyclonedx/cyclonedx-library';
 
 export interface SBOMResult {
-  bom: any;
+  bom: Record<string, unknown>;
   ecosystem: 'npm' | 'python' | 'cargo' | 'maven' | 'unknown';
   componentCount: number;
 }
 
+interface CycloneDXComponent {
+  type: string;
+  name: string;
+  version?: string;
+  purl?: string;
+  scope?: string;
+}
+
 /**
  * Detects which package manager/ecosystem the repo uses
- * based on dependency files present in the tree.
  */
-function detectEcosystem(treePaths: string[]): string {
+function detectEcosystem(treePaths: string[]): 'npm' | 'python' | 'cargo' | 'maven' | 'unknown' {
   const paths = treePaths.map(p => p.toLowerCase());
   
   if (paths.some(p => p === 'package.json' || p.endsWith('/package.json'))) return 'npm';
@@ -33,21 +36,11 @@ function cleanVersion(version: string): string {
 
 /**
  * Generate CycloneDX SBOM from parsed dependency file contents.
- * 
- * @param dependencyContents - Record of file path → file content string
- *                             e.g. { 'package.json': '{...}', 'requirements.txt': '...' }
  */
 export function generateSBOM(dependencyContents: Record<string, string>): SBOMResult {
-  const bom = new Bom();
-  
-  // Metadata
-  bom.metadata = new Metadata();
-  bom.metadata.timestamp = new Date();
-  bom.metadata.tools = [new Tool('RepoScope', 'RepoScope SBOM Generator', '1.0.0')];
-  
+  const components: CycloneDXComponent[] = [];
   const allPaths = Object.keys(dependencyContents);
   const ecosystem = detectEcosystem(allPaths);
-  let componentCount = 0;
 
   // ─── NPM (package.json) ───
   const packageJsonPath = allPaths.find(p => p.toLowerCase().endsWith('package.json'));
@@ -61,23 +54,16 @@ export function generateSBOM(dependencyContents: Record<string, string>): SBOMRe
       };
 
       for (const [name, version] of Object.entries(deps)) {
-        const component = new Component(Component.Type.LIBRARY, name);
-        component.version = cleanVersion(version as string);
-        component.purl = `pkg:npm/${encodeURIComponent(name)}@${component.version}`;
-        component.scope = pkg.devDependencies?.[name] 
-          ? Component.Scope.DEV 
-          : Component.Scope.REQUIRED;
+        const cleanedVersion = cleanVersion(version as string);
+        const isDev = !!pkg.devDependencies?.[name];
         
-        // Add npm registry as external reference
-        component.externalReferences = [
-          new ExternalReference(
-            ExternalReference.Type.DISTRIBUTION,
-            `https://registry.npmjs.org/${name}`
-          )
-        ];
-        
-        bom.addComponent(component);
-        componentCount++;
+        components.push({
+          type: 'library',
+          name,
+          version: cleanedVersion,
+          purl: `pkg:npm/${encodeURIComponent(name)}@${cleanedVersion}`,
+          scope: isDev ? 'optional' : 'required',
+        });
       }
     } catch (e) {
       console.warn('Failed to parse package.json:', e);
@@ -92,23 +78,23 @@ export function generateSBOM(dependencyContents: Record<string, string>): SBOMRe
       const clean = line.trim();
       if (!clean || clean.startsWith('#') || clean.startsWith('-')) continue;
       
-      // Parse "package==1.2.3" or "package>=1.2.3"
       const match = clean.match(/^([a-zA-Z0-9_-]+)\s*([=<>!]+)\s*([0-9.]+)/);
       if (match) {
         const [, name, , version] = match;
-        const component = new Component(Component.Type.LIBRARY, name);
-        component.version = version;
-        component.purl = `pkg:pypi/${name}@${version}`;
-        bom.addComponent(component);
-        componentCount++;
+        components.push({
+          type: 'library',
+          name,
+          version,
+          purl: `pkg:pypi/${name}@${version}`,
+        });
       } else {
-        // Package without version pinning
         const nameMatch = clean.match(/^([a-zA-Z0-9_-]+)/);
         if (nameMatch) {
-          const component = new Component(Component.Type.LIBRARY, nameMatch[1]);
-          component.purl = `pkg:pypi/${nameMatch[1]}`;
-          bom.addComponent(component);
-          componentCount++;
+          components.push({
+            type: 'library',
+            name: nameMatch[1],
+            purl: `pkg:pypi/${nameMatch[1]}`,
+          });
         }
       }
     }
@@ -118,27 +104,44 @@ export function generateSBOM(dependencyContents: Record<string, string>): SBOMRe
   const pyprojectPath = allPaths.find(p => p.toLowerCase().endsWith('pyproject.toml'));
   if (pyprojectPath && !reqPath) {
     const content = dependencyContents[pyprojectPath];
-    // Very basic TOML extraction for [project.dependencies]
-    const depMatches = content.matchAll(/"([^"]+)"/g);
     const inDepsSection = content.includes('[project.dependencies]') || 
                           content.includes('[tool.poetry.dependencies]');
     
     if (inDepsSection) {
-      for (const match of depMatches) {
+      const depRegex = /"([^"]+)"/g;
+      let match: RegExpExecArray | null;
+      while ((match = depRegex.exec(content)) !== null) {
         const value = match[1];
         if (/^[a-zA-Z0-9_-]+$/.test(value) && value.length < 50) {
-          const component = new Component(Component.Type.LIBRARY, value);
-          component.purl = `pkg:pypi/${value}`;
-          bom.addComponent(component);
-          componentCount++;
+          components.push({
+            type: 'library',
+            name: value,
+            purl: `pkg:pypi/${value}`,
+          });
         }
       }
     }
   }
 
+  // ─── Build CycloneDX BOM ───
+  const bom = {
+    bomFormat: 'CycloneDX',
+    specVersion: '1.4',
+    version: 1,
+    metadata: {
+      timestamp: new Date().toISOString(),
+      tools: [{
+        vendor: 'RepoScope',
+        name: 'RepoScope SBOM Generator',
+        version: '1.0.0',
+      }],
+    },
+    components,
+  };
+
   return {
-    bom: bom.toJSON(),
+    bom,
     ecosystem,
-    componentCount,
+    componentCount: components.length,
   };
 }

@@ -1,7 +1,6 @@
 // lib/audit.ts
 
 // ═══════════════════════════════════════════════════════════════
-// FINAL STABLE VERSION - Context-aware heuristic classification
 // Structural pattern-based detection for ANY repository.
 // No hardcoded whitelists of specific words/domains.
 // ═══════════════════════════════════════════════════════════════
@@ -102,7 +101,6 @@ function isTechnicalAcronym(target: string): boolean {
   // Lowercase but very short (2-4 chars) and looks like protocol
   // e.g., 'tcp', 'ip', 'udp', 'mqtt'
   if (/^[a-z]{2,4}$/.test(clean) && clean.length <= 4) {
-    // Check if it's surrounded by other short tokens (list of protocols)
     return true;
   }
   
@@ -202,7 +200,8 @@ function isGitHubReference(target: string, context: string = ''): { isGitHub: bo
 // ═══════════════════════════════════════════════════════════════
 // [STRUCTURAL] API Endpoint Detection
 // ═══════════════════════════════════════════════════════════════
-function isAPIEndpoint(target: string, context: string = ''): { isAPI: boolean; confidence: number; score: number } {
+// FIX: Added reasons to return type and return statement
+function isAPIEndpoint(target: string, context: string = ''): { isAPI: boolean; confidence: number; score: number; reasons: string[] } {
   const clean = target.replace(/^\/+/, '').toLowerCase();
   let score = 0;
   const reasons: string[] = [];
@@ -244,7 +243,8 @@ function isAPIEndpoint(target: string, context: string = ''): { isAPI: boolean; 
   }
 
   const confidence = Math.min(score, 0.95);
-  return { isAPI: score >= 0.6, confidence, score };
+  // FIX: Added reasons to return object
+  return { isAPI: score >= 0.6, confidence, score, reasons };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -352,7 +352,6 @@ function isValidPathContext(target: string, context: string): boolean {
   // ─── Rule 1: Single segment without extension → scrutinize ───
   if (!clean.includes('/') && !clean.includes('.')) {
     // List context: "SVG, HTML5, JavaScript, PHP"
-    // If there are multiple commas in context, it's likely a list
     const commaCount = (context.match(/,/g) || []).length;
     if (commaCount >= 2) return false;
     
@@ -368,30 +367,27 @@ function isValidPathContext(target: string, context: string): boolean {
     
     // Parentheses: "(TCP)" or "acknowledgement/elimination"
     if (/\([^)]*\)/.test(context)) {
-      // Check if our target is inside parentheses
       const parenContent = context.match(/\(([^)]+)\)/);
       if (parenContent && parenContent[1].toLowerCase().includes(clean)) {
         return false;
       }
     }
     
-    // Compound term: "acknowledgement/elimination" - check for slash neighbors
+    // Compound term: "acknowledgement/elimination"
     if (target.startsWith('/')) {
-      // If preceded by a word without space, it's part of a compound
       const beforeTarget = context.slice(0, Math.max(0, context.indexOf(target)));
       if (/[a-zA-Z0-9]$/.test(beforeTarget.trim())) {
-        return false; // e.g., "acknowledgement/elimination"
+        return false;
       }
     }
   }
   
   // ─── Rule 2: Markdown link context [text](url) ───
   if (context.includes('[') && context.includes(']') && context.includes('(')) {
-    // Simple check: if target appears between ]( and )
     const escaped = escapeRegex(target);
     const linkPattern = new RegExp(`\\]\\(${escaped}[^)]*\\)`, 'i');
     if (linkPattern.test(context)) {
-      return true; // Definitively a markdown link
+      return true;
     }
   }
   
@@ -413,7 +409,6 @@ function isValidPathContext(target: string, context: string): boolean {
   
   // ─── Rule 6: Single /word → check for link verbs ───
   if (target.startsWith('/') && segments.length === 1) {
-    // Look for link-indicating verbs in surrounding context
     const beforeTarget = context.slice(0, Math.max(0, context.indexOf(target)));
     const linkVerbs = /\b(see|visit|check|open|read|navigate|goto|run|execute)\s*$/i;
     
@@ -421,7 +416,6 @@ function isValidPathContext(target: string, context: string): boolean {
       return true;
     }
     
-    // If no link context, probably just a word
     return false;
   }
   
@@ -514,7 +508,7 @@ function classifyTarget(target: string, context: string = ''): {
       category: 'suspicious', 
       subCategory: 'api',
       confidence: api.confidence, 
-      reason: `API endpoint (${api.reasons?.join(', ')})` 
+      reason: `API endpoint (${api.reasons.join(', ')})` 
     };
   }
   
@@ -523,8 +517,7 @@ function classifyTarget(target: string, context: string = ''): {
     return { category: 'suspicious', confidence: 0.9, reason: 'IP/localhost/protocol' };
   }
   
-  // Step 13: [NEW] Context validation - structural check
-  // This eliminates false positives where a word is mistaken for a path
+  // Step 13: Context validation - structural check
   if (!isValidPathContext(target, context)) {
     return { 
       category: 'not-link', 
