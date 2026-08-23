@@ -189,7 +189,6 @@ RepoScope/
 │   ├── Board.tsx                         # Section-by-section status board
 │   ├── CommandBlock.tsx                  # Code block with copy-to-clipboard
 │   ├── ErrorCard.tsx                     # Individual CI failure card
-│   ├── ExportButtons.tsx                 # JSON and Markdown audit downloads
 │   ├── RepoInput.tsx                     # Repository URL input + token settings
 │   ├── ScoreBoard.tsx                    # Health-score ring + detailed breakdown
 │   ├── SmartDiagnosis.tsx                # AI-powered diagnosis with fix commands
@@ -209,7 +208,6 @@ RepoScope/
 │   ├── github-error-patterns.ts          # Known error patterns & solutions
 │   ├── github-health-monitor.ts          # Repository health metrics
 │   ├── github-log-parser.ts              # Parse GitHub Actions logs
-│   ├── export.ts                         # JSON and Markdown audit serializers
 │   └── utils.ts                          # Helpers: parseRepo(), decodeBase64Utf8()
 │
 ├── public/                               # Static assets
@@ -326,7 +324,6 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 
 ## 👥 Contributors
 
-Thanks to these wonderful people who made RepoScope possible:
 
 <table>
   <tr>
@@ -389,5 +386,6 @@ For security issues, please read [SECURITY.md](SECURITY.md) for responsible disc
 ---
 
 **Built with ❤️ by [Reza Esmaeili](https://github.com/esmaeilireza) and [Abbas Lotfi](https://github.com/abbas-pt)**
+
 *RepoScope — Audit any GitHub Repository, End to End.*
 ```
