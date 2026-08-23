@@ -11,6 +11,10 @@ import ActionsDashboard from '@/components/ActionsDashboard';
 import ExportButtons from '@/components/ExportButtons';
 import { parseRepo, decodeBase64Utf8 } from '@/lib/utils';
 import { evaluateTarget, generateFindings, scoreAndExplain } from '@/lib/audit';
+import { auditDataOpsRepository } from '@/lib/dataops-audit';
+import { auditIIoTRepository } from '@/lib/iiot-audit';
+import { detectAnomalies } from '@/lib/anomaly-detector'; // ─── NEW IMPORT ───
+import type { AuditProfile } from '@/lib/types';
 
 const MD_LINK = /(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 const REL_PATH = /(?:\.{0,2}\/)(?:[a-zA-Z0-9_\-\.]+\/?)+(?:\.[a-zA-Z0-9]+)?/g;
@@ -20,8 +24,9 @@ export default function Home() {
   const [error, setError] = useState('');
   const [result, setResult] = useState<any>(null);
   const [githubToken, setGithubToken] = useState<string | null>(null);
+  const [currentProfile, setCurrentProfile] = useState<AuditProfile>('web');
 
-  async function analyze(input: string, token: string) {
+  async function analyze(input: string, token: string, profile: AuditProfile = 'web', branch?: string) {
     const p = parseRepo(input);
     if (!p) {
       setError('Invalid format. Use owner/repo');
@@ -31,6 +36,7 @@ export default function Home() {
     setLoading(true);
     setError('');
     setResult(null);
+    setCurrentProfile(profile);
 
     const headers: HeadersInit = {};
     if (token) headers['Authorization'] = 'token ' + token;
@@ -47,12 +53,16 @@ export default function Home() {
     try {
       // Request 1: Get basic repo info
       const meta = await get('/repos/' + p.owner + '/' + p.repo);
-      const def = meta.default_branch || 'main';
+      
+      // ─── Use selected branch, fallback to repo's default, then 'main' ───
+      const targetBranch = branch || meta.default_branch || 'main';
 
       // Request 2: Get file tree
       let tree: any[] = [];
       try {
-        const td = await get('/repos/' + p.owner + '/' + p.repo + '/git/trees/' + encodeURIComponent(def) + '?recursive=1');
+        const td = await get(
+          `/repos/${p.owner}/${p.repo}/git/trees/${encodeURIComponent(targetBranch)}?recursive=1`
+        );
         tree = td.tree || [];
       } catch (e: any) {
         console.warn('Could not fetch tree:', e.message);
@@ -100,14 +110,47 @@ export default function Home() {
       }
 
       const diffs: any[] = [];
-      const findings = generateFindings(meta, tree, claims, diffs, pulls, def);
+      // Pass targetBranch instead of the old 'def' variable
+      const findings = generateFindings(meta, tree, claims, diffs, pulls, targetBranch);
       const expl = scoreAndExplain(findings);
 
-      setResult({ meta, tree, branches, claims, findings, expl });
+      // ──────────────────────────────────────────────
+      // PROFILE-BASED SPECIALIZED AUDITS
+      // Only run when relevant profile is selected
+      // ──────────────────────────────────────────────
+      let dataOpsReport = null;
+      let iiotReport = null;
+
+      if (profile === 'dataops' && tree.length > 0) {
+        console.log('🔬 Running DataOps audit...');
+        dataOpsReport = auditDataOpsRepository(tree);
+      }
+
+      if (profile === 'iiot' && tree.length > 0) {
+        console.log('⚙️ Running IIoT audit...');
+        iiotReport = auditIIoTRepository(tree);
+      }
+
+      // ─── NEW: Anomaly Detection ───
+      const anomalyReport = detectAnomalies(tree);
+      // ───────────────────────────────
+
+      setResult({
+        meta,
+        tree,
+        branches,
+        claims,
+        findings,
+        expl,
+        dataOpsReport,
+        iiotReport,
+        anomalyReport, // <-- ADDED
+        profile,
+        targetBranch, // Store the analyzed branch for potential UI display
+      });
     } catch (e: any) {
       const msg = e.message || 'Unexpected error';
-      
-      // Special handling for rate limit
+
       if (msg.includes('429') || msg.includes('rate limit')) {
         setError(
           'GitHub API rate limit reached. Please wait 1 hour and try again. ' +
@@ -151,10 +194,18 @@ export default function Home() {
       {loading && (
         <div className="text-center mt-10">
           <div className="spinner mx-auto"></div>
-          <p className="text-slate-400 text-sm mt-4">Analyzing repository...</p>
+          <p className="text-slate-400 text-sm mt-4">
+            Analyzing repository with{' '}
+            <span className="text-mint font-semibold">
+              {currentProfile === 'dataops' && 'DataOps & Analytics'}
+              {currentProfile === 'iiot' && 'Industrial / PLC'}
+              {currentProfile === 'web' && 'General Web App'}
+            </span>{' '}
+            profile...
+          </p>
         </div>
       )}
-      
+
       {error && (
         <div className="card-static rounded-2xl p-6 mt-10 border border-rosex/40 text-center">
           <div className="text-rosex font-black text-lg mb-2">Audit failed</div>
@@ -162,7 +213,7 @@ export default function Home() {
           {error.includes('rate limit') && (
             <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
               <p className="text-blue-300 text-sm">
-                <strong>Tip:</strong> GitHub allows 60 requests/hour without a token. 
+                <strong>Tip:</strong> GitHub allows 60 requests/hour without a token.
                 Try again in 1 hour, or add a token in Advanced Settings for 5000 requests/hour.
               </p>
             </div>
@@ -172,6 +223,24 @@ export default function Home() {
 
       {result && !loading && (
         <div className="mt-12 space-y-6 anim">
+          {/* Profile Badge */}
+          <div className="flex items-center gap-2 justify-center">
+            <span className="text-xs text-slate-500 uppercase tracking-wider">Audit Profile:</span>
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-bold ${
+                result.profile === 'dataops'
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                  : result.profile === 'iiot'
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                  : 'bg-blue-500/20 text-blue-400 border border-blue-500/40'
+              }`}
+            >
+              {result.profile === 'dataops' && '🗄️ DataOps & Analytics'}
+              {result.profile === 'iiot' && '⚙️ Industrial / PLC'}
+              {result.profile === 'web' && '🌐 General Web App'}
+            </span>
+          </div>
+
           <div className="card-static rounded-2xl p-6 flex gap-5 items-center">
             <Image
               src={avatarUrl}

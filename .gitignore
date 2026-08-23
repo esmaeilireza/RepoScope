@@ -1,19 +1,130 @@
+# ============================================================
+# Dependencies
+# ============================================================
 node_modules/
+.pnp
+.pnp.js
+
+# ============================================================
+# Next.js Build Output
+# ============================================================
 .next/
 out/
-.env*
-!.env.example
-.DS_Store
+build/
+dist/
+
+# ============================================================
+# TypeScript
+# ============================================================
 *.tsbuildinfo
+tsconfig.tsbuildinfo
+*.tsbuildinfo.*
 
-# Local logs and scripts (don't commit)
-build-log.txt
-dev-server.log
-diagnose.sh
-*.log
-
-# Environment files
+# ============================================================
+# Environment Variables (NEVER commit sensitive data)
+# ============================================================
 .env
 .env.local
-.env.production
+.env.development.local
+.env.test.local
+.env.production.local
+.env*
+!.env.example
+
+# ============================================================
+# Logs
+# ============================================================
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+build-error.log
+build-log.txt
+dev-server.log
+
+# ============================================================
+# IDE & Editor Files
+# ============================================================
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+
+# ============================================================
+# OS Generated Files
+# ============================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ============================================================
+# Testing & Coverage
+# ============================================================
+coverage/
+.nyc_output/
+*.lcov
+.jest-cache/
+
+# ============================================================
+# Caching
+# ============================================================
+.eslintcache
+.parcel-cache/
+.cache/
+.turbo/
+
+# ============================================================
+# Temporary & Backup Files
+# ============================================================
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+*.temp
+*~
+show-structure.js
+diagnose.sh
 check-repo-status.sh
+
+# ============================================================
+# Vercel & Deployment
+# ============================================================
+.vercel
+
+# ============================================================
+# Python (if you have Python scripts in the project)
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ============================================================
+# Misc
+# ============================================================
+public/pwa-icons/
+.vercel

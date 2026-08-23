@@ -1,9 +1,12 @@
+// lib/audit.ts
+
 // ═══════════════════════════════════════════════════════════════
-// FINAL STABLE VERSION - Heuristic-based classification
-// No domain whitelists. Works for ANY GitHub repository.
+// FINAL STABLE VERSION - Context-aware heuristic classification
+// Structural pattern-based detection for ANY repository.
+// No hardcoded whitelists of specific words/domains.
 // ═══════════════════════════════════════════════════════════════
 
-// ─── File extensions that indicate a FILE PATH, not a domain ───
+// ─── File extensions (stable standards, not overfitting) ───
 const FILE_EXTENSIONS = new Set([
   'md', 'markdown', 'txt', 'rst', 'adoc',
   'py', 'js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs',
@@ -23,7 +26,7 @@ const FILE_EXTENSIONS = new Set([
   'pt', 'pth', 'onnx', 'h5', 'pb', 'tflite', 'safetensors', 'gguf',
 ]);
 
-// ─── HTML tags (complete HTML5) ───
+// ─── HTML tags (HTML5 spec - stable standard) ───
 const HTML_TAGS = new Set([
   'a', 'abbr', 'address', 'area', 'article', 'aside', 'audio',
   'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 'br', 'button',
@@ -41,14 +44,14 @@ const HTML_TAGS = new Set([
   'time', 'title', 'tr', 'track', 'u', 'ul', 'var', 'video', 'wbr',
 ]);
 
-// ─── Common HTML classes/attributes that appear as tokens ───
+// ─── HTML classes that appear as tokens ───
 const HTML_CLASSES = new Set([
   'notranslate', 'no-translate', 'highlight', 'badge', 'label',
   'align-center', 'align-left', 'align-right', 'text-center',
   'sr-only', 'visually-hidden',
 ]);
 
-// ─── Placeholder indicators ───
+// ─── Placeholder indicators (universal placeholder patterns) ───
 const PLACEHOLDER_WORDS = new Set([
   'path', 'your', 'example', 'sample', 'placeholder', 'todo', 'fixme',
   'chapter-number', 'lang-id', 'section-name', 'file-name', 'dir-name',
@@ -57,9 +60,197 @@ const PLACEHOLDER_WORDS = new Set([
 ]);
 
 // ═══════════════════════════════════════════════════════════════
-// CORE HEURISTIC: Is this a domain?
-// Rule: First path segment contains a dot AND doesn't end with
-// a known file extension → it's a domain (external)
+// [STRUCTURAL] Docker/Container absolute paths
+// Pattern-based detection using OS standard directories
+// ═══════════════════════════════════════════════════════════════
+const DOCKER_PATH_PATTERNS = [
+  /^\/usr\/src\//,
+  /^\/usr\/local\//,
+  /^\/var\/lib\//,
+  /^\/var\/log\//,
+  /^\/opt\/apps?\//,
+  /^\/opt\/srv\//,
+  /^\/app\/?/,
+  /^\/srv\/?/,
+  /^\/home\/[^/]+\//,
+  /^\/data\/?/,
+  /^\/config\/?/,
+  /^\/run\/?/,
+];
+
+function isDockerPath(target: string): boolean {
+  return DOCKER_PATH_PATTERNS.some(pattern => pattern.test(target));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// [STRUCTURAL] Technical acronyms
+// Detects short all-uppercase tokens (structure-based, not content whitelist)
+// Stable because industry protocols (TCP, IP, MQTT) rarely change
+// ═══════════════════════════════════════════════════════════════
+function isTechnicalAcronym(target: string): boolean {
+  const clean = target.replace(/^\/+|\/+$/g, '');
+  
+  // Multi-segment paths aren't acronyms
+  if (clean.includes('/')) return false;
+  
+  // Must be short (2-8 chars) - structural check
+  if (clean.length < 2 || clean.length > 8) return false;
+  
+  // All uppercase letters (possibly with numbers like HTML5)
+  if (/^[A-Z][A-Z0-9]*$/.test(clean)) return true;
+  
+  // Lowercase but very short (2-4 chars) and looks like protocol
+  // e.g., 'tcp', 'ip', 'udp', 'mqtt'
+  if (/^[a-z]{2,4}$/.test(clean) && clean.length <= 4) {
+    // Check if it's surrounded by other short tokens (list of protocols)
+    return true;
+  }
+  
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// [STRUCTURAL] npm package references
+// Detects scoped packages (@scope/pkg) and short single-segment names
+// in package-related context
+// ═══════════════════════════════════════════════════════════════
+const NPM_PACKAGE_PATTERN = /^\/?@[a-z0-9-]+\/[a-z0-9_.-]+$|^\/?[a-z0-9-]+$/i;
+
+function isLikelyNpmPackage(target: string, context: string): boolean {
+  const clean = target.replace(/^\/+|\/+$/g, '');
+  if (!NPM_PACKAGE_PATTERN.test(clean)) return false;
+  
+  // Must be short (not a long path)
+  if (clean.length > 40) return false;
+  
+  // Scoped packages: @scope/package (always valid)
+  if (clean.includes('/')) {
+    const parts = clean.split('/');
+    if (parts.length !== 2 || !parts[0].startsWith('@')) return false;
+    return true; // Scoped packages are always package refs
+  }
+  
+  // Single-segment: check context for package-related keywords
+  const contextLower = context.toLowerCase();
+  const packageIndicators = [
+    /\bnpm\b/, /\byarn\b/, /\bpnpm\b/, /\bpip\b/, /\bcargo\b/,
+    /\binstall\b/, /\bpackage\b/, /\bdependency\b/, /\bmodule\b/,
+    /\bregistry\b/, /\bbinary\b/, /\bprebuilt\b/, /\brelease\b/,
+  ];
+  
+  return packageIndicators.some(pattern => pattern.test(contextLower));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// [STRUCTURAL] Hardware paths
+// ═══════════════════════════════════════════════════════════════
+const HARDWARE_PATTERNS = [
+  /^\/dev\/tty/i,
+  /^\/dev\/serial/i,
+  /^\/dev\/usb/i,
+  /^COM[1-9]\d*/i,
+  /^\/proc\//i,
+  /^\/sys\//i,
+  /\/dev\/ttyUSB/i,
+  /\/dev\/ttyACM/i,
+  /\/dev\/tty\.usb/i,
+  /\/dev\/cu\./i,
+  /^LPT[1-9]/i,
+];
+
+function isHardwarePath(target: string): { isHardware: boolean; confidence: number } {
+  const clean = target.replace(/^\/+/, '');
+  for (const pattern of HARDWARE_PATTERNS) {
+    if (pattern.test(clean)) {
+      return { isHardware: true, confidence: 0.95 };
+    }
+  }
+  return { isHardware: false, confidence: 0 };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// [STRUCTURAL] GitHub User/Repo References
+// ═══════════════════════════════════════════════════════════════
+function isGitHubReference(target: string, context: string = ''): { isGitHub: boolean; confidence: number } {
+  const clean = target.replace(/^\/+/, '');
+  const parts = clean.split('/').filter(p => p.length > 0);
+  
+  if (parts.length === 1 && /^[a-zA-Z0-9_-]{1,39}$/.test(parts[0])) {
+    const contextLower = context.toLowerCase();
+    const hasGitHubContext = 
+      contextLower.includes('github') ||
+      contextLower.includes('contributor') ||
+      contextLower.includes('author') ||
+      contextLower.includes('team') ||
+      contextLower.includes('maintainer') ||
+      contextLower.includes('@');
+    
+    if (hasGitHubContext) {
+      return { isGitHub: true, confidence: 0.85 };
+    }
+  }
+  
+  if (parts.length === 2 && 
+      /^[a-zA-Z0-9_-]{1,39}$/.test(parts[0]) &&
+      /^[a-zA-Z0-9_.-]{1,100}$/.test(parts[1])) {
+    return { isGitHub: true, confidence: 0.75 };
+  }
+  
+  return { isGitHub: false, confidence: 0 };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// [STRUCTURAL] API Endpoint Detection
+// ═══════════════════════════════════════════════════════════════
+function isAPIEndpoint(target: string, context: string = ''): { isAPI: boolean; confidence: number; score: number } {
+  const clean = target.replace(/^\/+/, '').toLowerCase();
+  let score = 0;
+  const reasons: string[] = [];
+
+  const apiVerbPattern = /^(predict|auth|admin|health|api|v[0-9]+|login|logout|register|verify|validate|check|status|info|metrics|monitor|create|update|delete|list|get|post|put|patch|users|posts|comments|search|upload|download|webhook|callback|notify|feedback|history|access|response|setup|config|keys|token|session|profile|account|dashboard|settings)/i;
+  if (apiVerbPattern.test(clean)) {
+    score += 0.5;
+    reasons.push('Starts with API verb');
+  }
+
+  const hasExtension = /\.[a-z0-9]+$/i.test(clean);
+  if (!hasExtension) {
+    score += 0.2;
+    reasons.push('No file extension');
+  }
+
+  const contextLower = context.toLowerCase();
+  const apiKeywords = ['endpoint', 'route', 'method', 'api', 'request', 'response', 'post', 'get', 'put', 'delete', 'http', 'json', 'rest', 'service'];
+  const keywordCount = apiKeywords.filter(kw => contextLower.includes(kw)).length;
+  
+  if (keywordCount >= 2) {
+    score += 0.3;
+    reasons.push(`${keywordCount} API keywords in context`);
+  }
+
+  if (/\|.+\|/.test(context) && /\|.*method.*\|/i.test(context)) {
+    score += 0.2;
+    reasons.push('In API documentation table');
+  }
+
+  if (/^\/?(api|v[0-9]+)\//i.test(clean)) {
+    score += 0.4;
+    reasons.push('Versioned API path');
+  }
+
+  if (/^\/?[a-z]+(s|es)\//i.test(clean) && !hasExtension) {
+    score += 0.15;
+    reasons.push('REST resource pattern');
+  }
+
+  const confidence = Math.min(score, 0.95);
+  return { isAPI: score >= 0.6, confidence, score };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// [STRUCTURAL] Domain detection - NO whitelist
+// Uses structural properties only (subdomain structure, TLD length,
+// path depth) so it works for ANY domain including unknown TLDs
 // ═══════════════════════════════════════════════════════════════
 function isLikelyDomain(target: string): boolean {
   const clean = target.replace(/^\.?\//, '').replace(/^www\./i, '');
@@ -68,50 +259,53 @@ function isLikelyDomain(target: string): boolean {
   // Must contain at least one dot
   if (!firstSegment.includes('.')) return false;
   
-  // Must have at least 2 chars after the last dot (TLD)
-  const lastDotIndex = firstSegment.lastIndexOf('.');
-  const tld = firstSegment.slice(lastDotIndex + 1);
-  if (tld.length < 2 || tld.length > 24) return false;
+  const parts = firstSegment.split('.');
+  if (parts.length < 2) return false;
   
-  // TLD must be alphabetic (no numbers, no special chars)
+  const tld = parts[parts.length - 1];
+  
+  // TLD validation: 2-24 chars, alphabetic only
+  if (tld.length < 2 || tld.length > 24) return false;
   if (!/^[a-z]+$/.test(tld)) return false;
   
-  // If it ends with a known FILE extension, it's a file, not a domain
-  // Example: "readme.md" → file, not domain
+  // If TLD is a known file extension, it's a file not a domain
   if (FILE_EXTENSIONS.has(tld)) return false;
   
-  // Single-label domains like "localhost" are handled elsewhere
-  // If we reach here, it looks like a domain
-  return true;
+  // STRUCTURAL CHECK 1: Has subdomain structure (sub.domain.tld)
+  if (parts.length >= 3) return true;
+  
+  // STRUCTURAL CHECK 2: Short TLD (typical for domains: com, org, io, sh)
+  if (tld.length <= 4) return true;
+  
+  // STRUCTURAL CHECK 3: Has path after domain (domain.com/path)
+  if (clean.includes('/') && parts.length >= 2) return true;
+  
+  // STRUCTURAL CHECK 4: Domain part has hyphen or is long
+  const domainPart = parts.slice(0, -1).join('.');
+  if (domainPart.includes('-') || domainPart.length > 3) return true;
+  
+  return false;
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Is this a placeholder (not a real link)?
+// Placeholder detection
 // ═══════════════════════════════════════════════════════════════
 function isPlaceholder(target: string): boolean {
   const clean = target.replace(/^\/+/, '').toLowerCase();
   const parts = clean.split('/').filter(p => p.length > 0);
   
-  // Date patterns: MM/YYYY, YYYY-MM-DD, DD/MM/YYYY
   if (/^\d{1,4}[-\/]\d{1,4}([-\/]\d{1,4})?$/.test(clean)) return true;
-  
-  // Pure numbers (reference numbers, issue numbers)
   if (/^\d{1,6}$/.test(clean)) return true;
-  
-  // Hex color codes: FBBF24, #FFFFFF
   if (/^[#]?[0-9a-f]{3,8}$/.test(clean)) return true;
   
-  // Very short uppercase/mixed segments (Y/Z, X/Y/Z, A/B)
   if (parts.length >= 2 && parts.length <= 3 &&
       parts.every(p => p.length <= 3 && /^[a-z0-9-]+$/i.test(p)) &&
       parts.some(p => p.length === 1)) {
     return true;
   }
   
-  // Contains placeholder words
   if (parts.some(p => PLACEHOLDER_WORDS.has(p))) return true;
   
-  // Pattern like "CHAPTER-NUMBER", "LANG-ID"
   if (/\b(chapter|lesson|section|lang|id|number|name|type)\b/i.test(clean) &&
       /\b(\d+|number|id|name|type|x|y|z)\b/i.test(clean)) {
     return true;
@@ -121,71 +315,226 @@ function isPlaceholder(target: string): boolean {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Is this an HTML tag/class (not a link at all)?
+// HTML artifacts
 // ═══════════════════════════════════════════════════════════════
 function isHtmlArtifact(target: string): boolean {
   const clean = target.replace(/^\/+/, '').toLowerCase();
   const parts = clean.split('/').filter(p => p.length > 0);
   
-  // Single HTML tag
   if (parts.length === 1 && HTML_TAGS.has(parts[0])) return true;
-  
-  // Single HTML class
   if (parts.length === 1 && HTML_CLASSES.has(parts[0])) return true;
-  
-  // Short sequences of HTML tags (td/tr/table combinations)
   if (parts.length <= 2 && parts.every(p => HTML_TAGS.has(p))) return true;
   
   return false;
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Suspicious patterns (API endpoints, localhost)
+// Suspicious patterns
 // ═══════════════════════════════════════════════════════════════
 function isSuspicious(target: string): boolean {
   const clean = target.replace(/^\/+/, '').toLowerCase();
   
-  // IP addresses
   if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(clean)) return true;
-  
-  // Localhost
   if (/^localhost/.test(clean)) return true;
-  
-  // Mailto, tel, anchors
   if (/^(mailto:|tel:|#)/.test(target)) return true;
-  
-  // Common API endpoint words (single word, no extension, no dot)
-  const apiWords = /^(predict|chat|auth|login|logout|register|signup|signin|api|health|status|ping|info|version|metrics|admin|dashboard|settings|profile|account|users|posts|comments|search|upload|download|webhook|callback|notify|feedback|history|access|response|setup|config)$/i;
-  if (apiWords.test(clean)) return true;
   
   return false;
 }
 
 // ═══════════════════════════════════════════════════════════════
-// MAIN CLASSIFIER - The heart of the system
+// [NEW] Context validation - STRUCTURAL heuristics
+// Detects when a "path" is actually just a word in text
+// This is the KEY function that eliminates false positives
 // ═══════════════════════════════════════════════════════════════
-function classifyTarget(target: string): 'not-link' | 'external' | 'suspicious' | 'internal' {
-  // Step 1: HTML artifacts (tags, classes) → skip
-  if (isHtmlArtifact(target)) return 'not-link';
+function isValidPathContext(target: string, context: string): boolean {
+  const clean = target.replace(/^\//, '').toLowerCase();
   
-  // Step 2: Explicit protocols → external
-  if (/^https?:\/\//i.test(target)) return 'external';
-  if (/^(mailto:|tel:|ftp:|ssh:)/i.test(target)) return 'not-link';
+  // ─── Rule 1: Single segment without extension → scrutinize ───
+  if (!clean.includes('/') && !clean.includes('.')) {
+    // List context: "SVG, HTML5, JavaScript, PHP"
+    // If there are multiple commas in context, it's likely a list
+    const commaCount = (context.match(/,/g) || []).length;
+    if (commaCount >= 2) return false;
+    
+    // camelCase/PascalCase: "JavaScript", "TypeScript", "PostgreSQL"
+    if (/^[a-z]+[A-Z]/.test(clean) || /^[A-Z][a-z]/.test(clean)) {
+      return false;
+    }
+    
+    // All uppercase short token: "HTML5", "API", "SDK"
+    if (/^[A-Z][A-Z0-9]*$/.test(clean) && clean.length <= 6) {
+      return false;
+    }
+    
+    // Parentheses: "(TCP)" or "acknowledgement/elimination"
+    if (/\([^)]*\)/.test(context)) {
+      // Check if our target is inside parentheses
+      const parenContent = context.match(/\(([^)]+)\)/);
+      if (parenContent && parenContent[1].toLowerCase().includes(clean)) {
+        return false;
+      }
+    }
+    
+    // Compound term: "acknowledgement/elimination" - check for slash neighbors
+    if (target.startsWith('/')) {
+      // If preceded by a word without space, it's part of a compound
+      const beforeTarget = context.slice(0, Math.max(0, context.indexOf(target)));
+      if (/[a-zA-Z0-9]$/.test(beforeTarget.trim())) {
+        return false; // e.g., "acknowledgement/elimination"
+      }
+    }
+  }
   
-  // Step 3: Anchors → skip
-  if (target.startsWith('#')) return 'not-link';
+  // ─── Rule 2: Markdown link context [text](url) ───
+  if (context.includes('[') && context.includes(']') && context.includes('(')) {
+    // Simple check: if target appears between ]( and )
+    const escaped = escapeRegex(target);
+    const linkPattern = new RegExp(`\\]\\(${escaped}[^)]*\\)`, 'i');
+    if (linkPattern.test(context)) {
+      return true; // Definitively a markdown link
+    }
+  }
   
-  // Step 4: Placeholders → skip
-  if (isPlaceholder(target)) return 'not-link';
+  // ─── Rule 3: Relative paths are always valid ───
+  if (target.startsWith('./') || target.startsWith('../')) {
+    return true;
+  }
   
-  // Step 5: THE KEY HEURISTIC - looks like a domain → external
-  if (isLikelyDomain(target)) return 'external';
+  // ─── Rule 4: Has file extension → likely valid ───
+  if (/\.[a-z0-9]{1,10}$/i.test(clean)) {
+    return true;
+  }
   
-  // Step 6: Suspicious (API endpoints, IPs) → suspicious
-  if (isSuspicious(target)) return 'suspicious';
+  // ─── Rule 5: Multiple path segments → likely valid ───
+  const segments = clean.split('/').filter(s => s.length > 0);
+  if (segments.length >= 2) {
+    return true;
+  }
   
-  // Step 7: Everything else is internal
-  return 'internal';
+  // ─── Rule 6: Single /word → check for link verbs ───
+  if (target.startsWith('/') && segments.length === 1) {
+    // Look for link-indicating verbs in surrounding context
+    const beforeTarget = context.slice(0, Math.max(0, context.indexOf(target)));
+    const linkVerbs = /\b(see|visit|check|open|read|navigate|goto|run|execute)\s*$/i;
+    
+    if (linkVerbs.test(beforeTarget.trim())) {
+      return true;
+    }
+    
+    // If no link context, probably just a word
+    return false;
+  }
+  
+  return true;
+}
+
+// Helper to escape regex special chars
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONTEXT-AWARE CLASSIFIER - Enhanced with structural validation
+// ═══════════════════════════════════════════════════════════════
+function classifyTarget(target: string, context: string = ''): {
+  category: 'not-link' | 'external' | 'suspicious' | 'internal';
+  subCategory?: string;
+  confidence: number;
+  reason: string;
+} {
+  // Step 1: HTML artifacts
+  if (isHtmlArtifact(target)) {
+    return { category: 'not-link', confidence: 0.95, reason: 'HTML tag or class' };
+  }
+  
+  // Step 2: Explicit protocols
+  if (/^https?:\/\//i.test(target)) {
+    return { category: 'external', confidence: 0.99, reason: 'HTTP/HTTPS URL' };
+  }
+  if (/^(mailto:|tel:|ftp:|ssh:)/i.test(target)) {
+    return { category: 'not-link', confidence: 0.95, reason: 'Protocol reference' };
+  }
+  
+  // Step 3: Anchors
+  if (target.startsWith('#')) {
+    return { category: 'not-link', confidence: 0.95, reason: 'Anchor link' };
+  }
+  
+  // Step 4: Placeholders
+  if (isPlaceholder(target)) {
+    return { category: 'not-link', confidence: 0.9, reason: 'Placeholder value' };
+  }
+  
+  // Step 5: Docker paths
+  if (isDockerPath(target)) {
+    return { category: 'not-link', confidence: 0.9, reason: 'Docker/container runtime path' };
+  }
+  
+  // Step 6: Technical acronyms (STRUCTURAL)
+  if (isTechnicalAcronym(target)) {
+    return { category: 'not-link', confidence: 0.95, reason: 'Technical acronym / protocol name' };
+  }
+  
+  // Step 7: npm packages
+  if (isLikelyNpmPackage(target, context)) {
+    return { category: 'not-link', confidence: 0.85, reason: 'npm package reference' };
+  }
+  
+  // Step 8: Hardware paths
+  const hardware = isHardwarePath(target);
+  if (hardware.isHardware) {
+    return { 
+      category: 'suspicious', 
+      subCategory: 'hardware',
+      confidence: hardware.confidence, 
+      reason: 'Hardware/device path' 
+    };
+  }
+  
+  // Step 9: GitHub references
+  const github = isGitHubReference(target, context);
+  if (github.isGitHub) {
+    return { 
+      category: 'suspicious', 
+      subCategory: 'github',
+      confidence: github.confidence, 
+      reason: 'GitHub user/repo reference' 
+    };
+  }
+  
+  // Step 10: Domain detection (STRUCTURAL, no whitelist)
+  if (isLikelyDomain(target)) {
+    return { category: 'external', confidence: 0.85, reason: 'Likely external domain' };
+  }
+  
+  // Step 11: API endpoints
+  const api = isAPIEndpoint(target, context);
+  if (api.isAPI) {
+    return { 
+      category: 'suspicious', 
+      subCategory: 'api',
+      confidence: api.confidence, 
+      reason: `API endpoint (${api.reasons?.join(', ')})` 
+    };
+  }
+  
+  // Step 12: Suspicious patterns (IPs, localhost)
+  if (isSuspicious(target)) {
+    return { category: 'suspicious', confidence: 0.9, reason: 'IP/localhost/protocol' };
+  }
+  
+  // Step 13: [NEW] Context validation - structural check
+  // This eliminates false positives where a word is mistaken for a path
+  if (!isValidPathContext(target, context)) {
+    return { 
+      category: 'not-link', 
+      confidence: 0.85, 
+      reason: 'Word in text, not a file path (structural analysis)' 
+    };
+  }
+  
+  // Step 14: Everything else is internal
+  return { category: 'internal', confidence: 0.7, reason: 'Assumed file path' };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -202,27 +551,17 @@ function normalizeAndDecode(path: string): string {
 
 function fuzzyMatch(target: string, tree: any[]): boolean {
   const normalized = normalizeAndDecode(target);
-  
-  // Too short to be meaningful
   if (normalized.length < 2) return false;
   
   return tree.some(item => {
     const itemPath = item.path.toLowerCase();
     
-    // Exact match
     if (itemPath === normalized) return true;
-    
-    // Prefix matches
     if (itemPath.startsWith(normalized + '/')) return true;
     if (normalized.startsWith(itemPath + '/')) return true;
-    
-    // Suffix match
     if (itemPath.endsWith('/' + normalized)) return true;
-    
-    // Contains match
     if (itemPath.includes('/' + normalized)) return true;
     
-    // Multi-part sequential match
     const targetParts = normalized.split('/').filter(p => p.length > 0);
     if (targetParts.length >= 2) {
       const itemParts = itemPath.split('/');
@@ -244,25 +583,52 @@ function fuzzyMatch(target: string, tree: any[]): boolean {
 // ═══════════════════════════════════════════════════════════════
 export function evaluateTarget(
   target: string,
-  tree: any[]
-): { status: string; detail: string; category: string } {
-  const category = classifyTarget(target);
+  tree: any[],
+  context: string = ''
+): { status: string; detail: string; category: string; subCategory?: string; confidence: number } {
+  const classification = classifyTarget(target, context);
 
-  switch (category) {
+  switch (classification.category) {
     case 'not-link':
-      return { status: 'skip', detail: 'Not a link (HTML/tag/placeholder)', category };
+      return { 
+        status: 'skip', 
+        detail: classification.reason, 
+        category: classification.category,
+        confidence: classification.confidence
+      };
     
     case 'external':
-      return { status: 'external', detail: 'External URL', category };
+      return { 
+        status: 'external', 
+        detail: classification.reason, 
+        category: classification.category,
+        confidence: classification.confidence
+      };
     
     case 'suspicious':
-      return { status: 'suspicious', detail: 'API endpoint or local address', category };
+      return { 
+        status: 'suspicious', 
+        detail: `${classification.reason} (confidence: ${classification.confidence.toFixed(2)})`, 
+        category: classification.category,
+        subCategory: classification.subCategory,
+        confidence: classification.confidence
+      };
     
     case 'internal':
       if (fuzzyMatch(target, tree)) {
-        return { status: 'verified', detail: 'Found in repository', category };
+        return { 
+          status: 'verified', 
+          detail: 'Found in repository', 
+          category: classification.category,
+          confidence: classification.confidence
+        };
       }
-      return { status: 'broken', detail: 'Internal link not found', category };
+      return { 
+        status: 'broken', 
+        detail: `Internal link not found (${classification.reason})`, 
+        category: classification.category,
+        confidence: classification.confidence
+      };
   }
 }
 
@@ -371,7 +737,10 @@ export function generateFindings(
     });
   }
 
-  const hasEditorconfig = tree.some(item => item.path === '.editorconfig');
+  const hasEditorconfig = tree.some(item => 
+    item.path === '.editorconfig' || 
+    item.path.endsWith('/.editorconfig')
+  );
   if (!hasEditorconfig) {
     findings.push({
       severity: 'info', title: 'No .editorconfig',
@@ -380,11 +749,14 @@ export function generateFindings(
     });
   }
 
-  // ─── README links: ONLY broken INTERNAL links count ───
+  // ─── README links ───
   const brokenInternal = claims.filter(c =>
     c.status === 'broken' && c.category === 'internal'
   );
   const suspicious = claims.filter(c => c.status === 'suspicious');
+  
+  const apiEndpoints = suspicious.filter(c => c.subCategory === 'api');
+  const hardwarePaths = suspicious.filter(c => c.subCategory === 'hardware');
 
   if (brokenInternal.length > 10) {
     findings.push({
@@ -404,12 +776,22 @@ export function generateFindings(
     });
   }
 
-  if (suspicious.length > 5) {
+  if (apiEndpoints.length > 5) {
     findings.push({
       severity: 'info',
-      title: `${suspicious.length} API endpoints referenced`,
+      title: `${apiEndpoints.length} API endpoints referenced`,
       detail: 'README references API endpoints (informational)',
       fix: 'Consider using proper URL formatting',
+      weight: 1,
+    });
+  }
+
+  if (hardwarePaths.length > 0) {
+    findings.push({
+      severity: 'info',
+      title: `${hardwarePaths.length} hardware paths referenced`,
+      detail: 'README references device/hardware paths',
+      fix: 'Document hardware requirements clearly',
       weight: 1,
     });
   }

@@ -1,12 +1,20 @@
 // lib/github-error-patterns.ts
 
+export interface AutoFixPatch {
+  description: string;
+  file: string;
+  originalContent?: string;
+  fixedContent?: string;
+  patch: string; // unified diff format
+}
+
 export interface ErrorPattern {
   id: string;
   patterns: RegExp[];
   title: string;
   description: string;
   severity: 'critical' | 'error' | 'warning' | 'info';
-  category: 'build' | 'dependency' | 'config' | 'network' | 'security' | 'runtime';
+  category: 'build' | 'dependency' | 'config' | 'network' | 'security' | 'runtime' | 'data_pipeline' | 'memory_resource' | 'industrial_driver';
   solution: {
     explanation: string;
     steps: string[];
@@ -16,14 +24,6 @@ export interface ErrorPattern {
     preventInFuture: string;
   };
   relatedErrors?: string[];
-}
-
-export interface AutoFixPatch {
-  description: string;
-  file: string;
-  originalContent?: string;
-  fixedContent?: string;
-  patch: string; // unified diff format
 }
 
 export const ERROR_PATTERNS: ErrorPattern[] = [
@@ -558,11 +558,147 @@ module.exports = nextConfig;`,
       preventInFuture: 'Pull frequently. Use smaller, focused commits. Communicate with team.',
     },
   },
+
+  // ═══════════════════════════════════════
+  // DATA PIPELINE & ANALYTICS ERRORS
+  // ═══════════════════════════════════════
+  {
+    id: 'oom-memory-error',
+    patterns: [/MemoryError/i, /Process completed with exit code 137/i, /CUDA out of memory/i, /Out of memory: Kill process/i],
+    title: 'Out of Memory (OOM) / Process Killed',
+    description: 'Worker runner ran out of RAM while transforming large datasets or loading heavy model weights',
+    severity: 'critical',
+    category: 'memory_resource',
+    solution: {
+      explanation: 'The CI runner or local environment exhausted available memory during data processing.',
+      steps: [
+        'Switch to chunked processing for large files',
+        'Use lazy evaluation frameworks (Polars/Arrow)',
+        'Increase CI runner memory specifications if applicable',
+      ],
+      commands: [
+        '# Example: Chunked reading in pandas',
+        'pd.read_csv("large_file.csv", chunksize=10000)',
+        '',
+        '# Example: Polars lazy frame',
+        'pl.scan_parquet("data.parquet").filter(...).collect()',
+      ],
+      preventInFuture: 'Profile memory usage locally before pushing. Set memory limits in CI jobs to fail fast.',
+    },
+  },
+  {
+    id: 'dbt-test-failure',
+    patterns: [/FAIL 1 \w+ test/i, /dbt\.exceptions\.CompilationException/i, /Database Error in model/i, /Schema test failure/i],
+    title: 'Data Transformation / dbt Test Failure',
+    description: 'Data schema contract violated, primary key not unique, or null constraint detected',
+    severity: 'error',
+    category: 'data_pipeline',
+    solution: {
+      explanation: 'A dbt schema test or compilation step failed, indicating broken data contracts or SQL syntax errors.',
+      steps: [
+        'Check SQL schema tests in the dbt project',
+        'Confirm upstream seed data completeness',
+        'Verify foreign key integrity and uniqueness constraints',
+      ],
+      commands: [
+        '# Run dbt tests locally',
+        'dbt test',
+        '',
+        '# Compile models to check SQL syntax',
+        'dbt compile',
+        '',
+        '# Debug specific model',
+        'dbt run --select <model_name>',
+      ],
+      preventInFuture: 'Add generic tests to all staging models. Use dbt constraints for primary keys.',
+      docsUrl: 'https://docs.getdbt.com/docs/build/tests',
+    },
+  },
+  {
+    id: 'pytest-assertion-error',
+    patterns: [/FAILED\s+[\w/._]+::test_\w+\s+-\s+AssertionError/i, /pytest\.PytestUnraisableExceptionWarning/i],
+    title: 'Data Pipeline Test Assertion Failed',
+    description: 'Unit/integration test failed during data schema or calculation validation',
+    severity: 'error',
+    category: 'data_pipeline',
+    solution: {
+      explanation: 'A pytest assertion failed, meaning the actual data output did not match expected values.',
+      steps: [
+        'Inspect the test diff for expected vs actual output',
+        'Review edge-case handling in transformation functions',
+        'Check if upstream data changed unexpectedly',
+      ],
+      commands: [
+        '# Run specific failing test with verbose output',
+        'pytest tests/test_pipeline.py::test_function -vv',
+        '',
+        '# Show print statements during test',
+        'pytest -s -vv',
+      ],
+      preventInFuture: 'Use hypothesis for property-based testing. Pin test fixture data versions.',
+      docsUrl: 'https://docs.pytest.org/en/stable/how-to/assert.html',
+    },
+  },
+
+  // ═══════════════════════════════════════
+  // INDUSTRIAL / OT / PLC ERRORS
+  // ═══════════════════════════════════════
+  {
+    id: 'industrial-mock-connection-error',
+    patterns: [/ModbusIOException/i, /ConnectionRefusedError: \[Errno 111\]/i, /pymodbus\.exceptions/i, /pyserial\.SerialException/i, /Failed to connect to SCADA mock/i],
+    title: 'Industrial Protocol / SCADA Mocking Failure',
+    description: 'CI pipeline tried to interact with an industrial device/port without a running mock server',
+    severity: 'error',
+    category: 'industrial_driver',
+    solution: {
+      explanation: 'Integration tests require a virtual Modbus/TCP server or serial loopback that is not running in the CI environment.',
+      steps: [
+        'Ensure CI spins up a virtual Modbus/TCP server before tests',
+        'Use docker-compose or service containers for mock servers',
+        'Verify port bindings and network configuration',
+      ],
+      commands: [
+        '# Start pymodbus server in background',
+        'python -m pymodbus.server.tcp &',
+        '',
+        '# Or via docker in CI',
+        'docker run -d -p 502:502 pymodbus-server',
+      ],
+      preventInFuture: 'Never rely on physical hardware in CI. Always use deterministic mock servers with predefined register maps.',
+    },
+  },
+  {
+    id: 'python-dependency-conflict',
+    patterns: [/ResolutionImpossible/i, /No matching distribution found for/i, /ModuleNotFoundError: No module named/i, /ImportError: cannot import name/i],
+    title: 'Python Dependency Resolution Conflict',
+    description: 'Missing dependency or incompatible package version in runtime environment',
+    severity: 'error',
+    category: 'dependency',
+    solution: {
+      explanation: 'pip/poetry could not resolve dependencies or a required module is missing at runtime.',
+      steps: [
+        'Regenerate lockfiles in a clean virtual environment',
+        'Ensure native binary wheels exist for the CI OS/architecture',
+        'Check for platform-specific dependencies',
+      ],
+      commands: [
+        '# Clean reinstall with poetry',
+        'poetry lock --no-update && poetry install',
+        '',
+        '# Or with pip-tools',
+        'pip-compile requirements.in -o requirements.txt',
+        '',
+        '# Verify installation',
+        'pip check',
+      ],
+      preventInFuture: 'Always commit lock files. Use CI matrix testing across Python versions and OS platforms.',
+    },
+  },
 ];
 
 export function matchErrorPattern(message: string): ErrorPattern | null {
   const normalizedMessage = message.toLowerCase();
-  
+
   for (const pattern of ERROR_PATTERNS) {
     for (const regex of pattern.patterns) {
       if (regex.test(normalizedMessage) || regex.test(message)) {
@@ -570,14 +706,34 @@ export function matchErrorPattern(message: string): ErrorPattern | null {
       }
     }
   }
-  
+
   return null;
 }
 
 export function getPatternsByCategory(category: ErrorPattern['category']): ErrorPattern[] {
-  return ERROR_PATTERNS.filter(p => p.category === category);
+  return ERROR_PATTERNS.filter((p) => p.category === category);
 }
 
 export function getPatternsBySeverity(severity: ErrorPattern['severity']): ErrorPattern[] {
-  return ERROR_PATTERNS.filter(p => p.severity === severity);
+  return ERROR_PATTERNS.filter((p) => p.severity === severity);
+}
+
+/**
+ * Scans GitHub Actions logs and returns ALL matching error patterns.
+ * Unlike matchErrorPattern (which returns the first match), this returns
+ * every applicable pattern for comprehensive log diagnosis.
+ */
+export function diagnoseWorkflowLogs(rawLogs: string): ErrorPattern[] {
+  const matchedPatterns: ErrorPattern[] = [];
+
+  for (const pattern of ERROR_PATTERNS) {
+    for (const regex of pattern.patterns) {
+      if (regex.test(rawLogs)) {
+        matchedPatterns.push(pattern);
+        break; // Avoid duplicate entries for the same pattern ID
+      }
+    }
+  }
+
+  return matchedPatterns;
 }
