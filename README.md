@@ -384,7 +384,7 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 
 ### Good First Issues
 
-Check the [open issues](https://github.com/esmaeilireza/RepoScope/issues) labeled `good first issue` — these are perfect entry points for new contributors interested in:
+Check the [open issues](https://github.com/esmaeilireza/RepoScope/issues) labeled `good first issue`
 
 - Video production & walkthroughs
 - Technical writing & UX documentation
@@ -463,7 +463,5 @@ For security issues, please read [SECURITY.md](SECURITY.md) for responsible disc
 **Built with ❤️ by [Reza Esmaeili](https://github.com/esmaeilireza) and [Abbas Lotfi](https://github.com/abbas-pt)**
 
 *RepoScope — Bringing industrial-grade deterministic quality gates to DataOps, IIoT, and modern software pipelines.*
-
-⭐ **If you find this project useful, please give it a star!**
 
 </div>
