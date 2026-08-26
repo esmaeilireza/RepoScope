@@ -647,11 +647,39 @@ export function generateFindings(
     });
   }
 
-  const hasLicense = tree.some(item => item.path.toLowerCase().includes('license'));
+  // ─── License detection (NEW) ─────────────────────────────────
+  const licenseFilePattern =
+    /^(?:licen[cs]e|copying|notice)(?:\..+)?$|^(?:gpl|lgpl|agpl|mit|apache|bsd)(?:[-_.].*)?\.(?:txt|md)$/i;
+
+  const licenseFiles = tree
+    .map(item => item.path)
+    .filter(path => {
+      const filename = path.split('/').pop() ?? '';
+      return licenseFilePattern.test(filename);
+    });
+
+  const hasLicense = licenseFiles.length > 0;
+
+  const hasConventionalLicense = licenseFiles.some(path => {
+    const filename = path.split('/').pop() ?? '';
+    return /^(?:licen[cs]e|copying|notice)(?:\..+)?$/i.test(filename);
+  });
+
   if (!hasLicense) {
     findings.push({
-      severity: 'critical', title: 'No LICENSE',
-      detail: 'Missing license file', fix: 'Add LICENSE', weight: 15,
+      severity: 'critical',
+      title: 'No LICENSE',
+      detail: 'No license text or conventional license file was detected.',
+      fix: 'Add a LICENSE file that states the applicable license.',
+      weight: 15,
+    });
+  } else if (!hasConventionalLicense) {
+    findings.push({
+      severity: 'info',                     // corrected from `severity:: ${',`
+      title: 'Non-standard license filename',
+      detail: `License text detected in: ${licenseFiles.join(', ')}.`,
+      fix: 'Consider adding a conventional LICENSE file and clarify the applicable license in README.',
+      weight: 0,
     });
   }
 
@@ -719,17 +747,43 @@ export function generateFindings(
     });
   }
 
-  const hasChangelog = tree.some(item =>
-    item.path.toLowerCase().includes('changelog')
-  );
+  // ─── Changelog detection (NEW) ──────────────────────────────
+  const changelogFilePattern =
+    /^(?:changelog|changes?|history|news|release[-_ ]?notes)(?:\..+)?$/i;
+
+  const changelogFiles = tree
+    .map(item => item.path)
+    .filter(path => {
+      const filename = path.split('/').pop() ?? '';
+      return changelogFilePattern.test(filename);
+    });
+
+  const hasChangelog = changelogFiles.length > 0;
+
+  const hasConventionalChangelog = changelogFiles.some(path => {
+    const filename = path.split('/').pop() ?? '';
+    return /^changelog(?:\..+)?$/i.test(filename);
+  });
+
   if (!hasChangelog) {
     findings.push({
-      severity: 'info', title: 'No CHANGELOG',
-      detail: 'Missing changelog',
-      fix: 'Add CHANGELOG.md', weight: 1,
+      severity: 'info',
+      title: 'No change history',
+      detail: 'No CHANGELOG, HISTORY, NEWS, CHANGES, or release-notes file was detected.',
+      fix: 'Add a CHANGELOG.md or another documented change-history file.',
+      weight: 1,
+    });
+  } else if (!hasConventionalChangelog) {
+    findings.push({
+      severity: 'info',
+      title: 'Non-standard change-history filename',
+      detail: `Change history detected in: ${changelogFiles.join(', ')}.`,
+      fix: 'Consider documenting this file in README or using a conventional CHANGELOG filename.',
+      weight: 0,
     });
   }
 
+  // ─── Editorconfig ────────────────────────────────────────────
   const hasEditorconfig = tree.some(item => 
     item.path === '.editorconfig' || 
     item.path.endsWith('/.editorconfig')
