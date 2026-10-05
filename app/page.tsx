@@ -122,12 +122,12 @@ export default function Home() {
       let iiotReport = null;
 
       if (profile === 'dataops' && tree.length > 0) {
-        console.log('🔬 Running DataOps audit...');
+        console.warn('🔬 Running DataOps audit...');
         dataOpsReport = auditDataOpsRepository(tree);
       }
 
       if (profile === 'iiot' && tree.length > 0) {
-        console.log('⚙️ Running IIoT audit...');
+        console.warn('⚙️ Running IIoT audit...');
         iiotReport = auditIIoTRepository(tree);
       }
 

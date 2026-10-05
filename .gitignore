@@ -127,4 +127,4 @@ pip-delete-this-directory.txt
 # Misc
 # ============================================================
 public/pwa-icons/
-.vercel
+.vercelbuild-artifacts/

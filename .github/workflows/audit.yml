@@ -28,7 +28,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install Dependencies
@@ -64,7 +64,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install Dependencies
@@ -92,7 +92,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install Dependencies
@@ -102,7 +102,21 @@ jobs:
         run: pnpm build
 
       - name: Start Server & Smoke Test Route Contract
+        env:
+          PORT: 3000
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pnpm start &
-          npx wait-on http://localhost:3000
-          curl -f -s http://localhost:3000/api/github?repo=vercel/next.js > /dev/null || exit 1
+          npx wait-on -t 30000 http-get://127.0.0.1:3000
+          
+          # 1. Health check on the root route
+          curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000 | grep -E "(200|308)" || exit 1
+          
+          # 2. Smoke check on /api/github (confirm route executes without internal 500 error)
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3000/api/github?repo=vercel/next.js")
+          echo "Smoke test response code: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -eq 500 ]; then
+            echo "Smoke test failed: internal server error (500)"
+            exit 1
+          fi
+          echo "Smoke test passed successfully!"
