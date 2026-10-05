@@ -18,11 +18,22 @@ export const metadata: Metadata = {
     default: 'RepoScope 🛡️ — DataOps & Industrial Code Quality Gatekeeper',
     template: '%s | RepoScope',
   },
-  description: 'Automated repository health audits with specialized profiles for DataOps, IIoT/PLC, and Web Apps. Detects broken links, missing CI/CD, security anomalies, and generates CycloneDX SBOM.',
+  description:
+    'Automated repository health audits with specialized profiles for DataOps, IIoT/PLC, and Web Apps. Detects broken links, missing CI/CD, security anomalies, and generates CycloneDX SBOM.',
   keywords: [
-    'github-actions', 'devops', 'dataops', 'iiot', 'scada', 'plc',
-    'code-quality', 'repository-audit', 'security-audit', 'sbom',
-    'cyclonedx', 'nextjs', 'typescript',
+    'github-actions',
+    'devops',
+    'dataops',
+    'iiot',
+    'scada',
+    'plc',
+    'code-quality',
+    'repository-audit',
+    'security-audit',
+    'sbom',
+    'cyclonedx',
+    'nextjs',
+    'typescript',
   ],
   authors: [
     { name: 'Reza Esmaeili', url: 'https://github.com/esmaeilireza' },
@@ -31,7 +42,8 @@ export const metadata: Metadata = {
   creator: 'Reza Esmaeili',
   openGraph: {
     title: 'RepoScope 🛡️ — DataOps & Industrial Code Quality Gatekeeper',
-    description: 'Automated repository health audits with specialized profiles for DataOps, IIoT/PLC, and Web Apps.',
+    description:
+      'Automated repository health audits with specialized profiles for DataOps, IIoT/PLC, and Web Apps.',
     url: 'https://reposcope.vercel.app',
     siteName: 'RepoScope',
     locale: 'en_US',
@@ -60,10 +72,10 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.svg',
-    apple: '/apple-touch-icon.png',
+    icon: '/icon',
+    shortcut: '/icon',
+    apple: '/icon',
   },
-  manifest: '/site.webmanifest',
 };
 
 export default function RootLayout({
