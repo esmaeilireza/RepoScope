@@ -14,7 +14,7 @@
     "audit:all": "pnpm audit --registry=https://registry.npmjs.org/ --audit-level=high && node scripts/generate-sbom.mjs && eslint . && next build"
   },
   "dependencies": {
-    "@cyclonedx/cyclonedx-library": "^10.2.0",
+    "@cyclonedx/cyclonedx-library": "^10.3.0",
     "lucide-react": "^1.39.0",
     "next": "16.3.8",
     "react": "^18.3.1",
