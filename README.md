@@ -1,6 +1,13 @@
-# RepoScope 
+```markdown
+# RepoScope
 
-**DataOps & Industrial Code Quality Gatekeeper**
+> **DataOps & Industrial Code Quality Gatekeeper**  
+> Automated health-audit engine for public repositories, targeting Data Science, Analytics Engineering, and IIoT pipelines.
+
+[![RepoScope Audit](https://github.com/esmaeilireza/RepoScope/actions/workflows/audit.yml/badge.svg)](https://github.com/esmaeilireza/RepoScope/actions/workflows/audit.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript Strict](https://img.shields.io/badge/TypeScript-5.x_Strict-blue.svg)](https://www.typescriptlang.org/)
+[![Security: Audited](https://img.shields.io/badge/Security-Supply_Chain_Gated-emerald.svg)](./SECURITY.md)
 
 RepoScope is an automated health-audit engine for public repositories, customized specifically for **Data Science, Analytics Engineering, and Industrial IoT (IIoT)** pipelines. It ensures codebases running critical models, SCADA integration logic, and Python microservices maintain production-grade compliance before merging.
 
@@ -51,25 +58,23 @@ RepoScope supports three specialized audit profiles, each with tailored rules an
 git clone https://github.com/esmaeilireza/RepoScope.git
 cd RepoScope
 
-# Install dependencies
-pnpm install
-# or
-npm install
+# Deterministic install
+pnpm install --frozen-lockfile
 
 # Start development server
 pnpm dev
-# or
-npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000), paste any GitHub repository URL (e.g., `https://github.com/vercel/next.js`), select an **Audit Profile**, and click **Analyze Repository**.
+Open [http://localhost:3000](http://localhost:3000) in your browser, paste any GitHub repository URL (e.g., `https://github.com/vercel/next.js`), select an **Audit Profile**, and click **Analyze Repository**.
 
-### Other Scripts
+### Quality & Audit Scripts
 
 ```bash
-pnpm build    # Production build
-pnpm start    # Run production build
-pnpm lint     # Run ESLint
+pnpm audit:all # Run all 4 audit gates locally (Security, Code Review, Stability)
+pnpm audit:self # Type-check and lint
+pnpm build # Production build
+pnpm start # Run production build
+pnpm lint # Run ESLint
 ```
 
 ---
@@ -149,9 +154,7 @@ The audit engine uses a stable heuristic classifier to validate README links:
 
 ## 🧮 Health Score Calculation
 
-```
-Score = 100 - (critical × 20 + errors × 15 + warnings × 10 + info × 2)
-```
+$$\text{Score} = 100 - \left( 20 \times \text{Critical} + 15 \times \text{Error} + 10 \times \text{Warning} + 2 \times \text{Info} \right)$$
 
 ### Severity Levels
 
@@ -205,7 +208,7 @@ RepoScope includes an **AI-powered GitHub Actions Console** that:
 
 ## 📁 Project Structure
 
-```
+```text
 RepoScope/
 │
 ├── .github/                              # GitHub automation & CI/CD
@@ -214,6 +217,7 @@ RepoScope/
 │   │   ├── feature_request.md            # Feature request template
 │   │   └── question.md                   # Question template
 │   ├── workflows/
+│   │   ├── audit.yml                     # 4-layer CI/CD audit pipeline
 │   │   └── ci.yml                        # GitHub Actions CI pipeline
 │   ├── dependabot.yml                    # Automated dependency updates
 │   └── PULL_REQUEST_TEMPLATE.md          # PR template for contributors
@@ -223,7 +227,7 @@ RepoScope/
 │   │   └── github/
 │   │       └── route.ts                  # Secure proxy to GitHub API + enrichment
 │   ├── globals.css                       # Global styles + Tailwind directives
-│   ├── icon.tsx                          # Dynamic favicon generator
+│   ├── icon.tsx                          # Dynamic Node.js favicon generator
 │   ├── layout.tsx                        # Root layout: fonts, metadata, providers
 │   └── page.tsx                          # Main page: audit pipeline & rendering
 │
@@ -465,3 +469,4 @@ For security issues, please read [SECURITY.md](SECURITY.md) for responsible disc
 *RepoScope — Bringing industrial-grade deterministic quality gates to DataOps, IIoT, and modern software pipelines.*
 
 </div>
+```

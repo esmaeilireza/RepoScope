@@ -1,22 +1,35 @@
 # Security Policy
 
-## Supported versions
+RepoScope takes security and supply-chain integrity seriously. This document outlines our disclosure procedures, secret handling, and engineering controls.
 
-Only the latest commit on `main` is supported.
+## Supported Versions
 
-## Reporting a vulnerability
+Only the latest commit on the `main` branch is actively supported and maintained.
 
-Please do **not** open a public issue for security problems.
-Report them privately via GitHub Security Advisories:
-<https://github.com/esmaeilireza/RepoScope/security/advisories/new>
+| Version | Supported          |
+| ------- | ------------------ |
+| `main`  | :white_check_mark: |
+| < 0.1.0 | :x:                |
 
-You can expect an initial response within 7 days.
+## Reporting a Vulnerability
 
-## Token handling
+Please **do not open a public issue** for vulnerabilities or potential security flaws.
 
-- `GITHUB_TOKEN` is read server-side only, inside `app/api/github/route.ts`.
-- The token is never sent to the browser and never appears in an API response.
-- In deployments, set `GITHUB_TOKEN` as an environment variable in the hosting
-  provider's dashboard — never commit it to the repository.
-- If a token is ever committed, revoke it immediately at
-  <https://github.com/settings/tokens>.
+1. **Privately report via GitHub Security Advisories:**  
+   [Open an Advisory](https://github.com/esmaeilireza/RepoScope/security/advisories/new)
+2. **Response SLA:**
+   - **Acknowledgment:** Within 48 hours.
+   - **Triage & Assessment:** Within 7 business days.
+   - **Fix & Advisory Release:** Scheduled promptly with a CVE/GHSA reference where appropriate.
+
+## Token & Secret Handling
+
+- **Server-Side Isolation:** The optional `GITHUB_TOKEN` is consumed strictly server-side in `app/api/github/route.ts` through runtime environment variables (`process.env.GITHUB_TOKEN`).
+- **Zero Browser Exposure:** The token is never included in client bundles, never sent to the browser, and never serialized into JSON API responses.
+- **Production Deployments:** Configure `GITHUB_TOKEN` solely via your hosting provider's dashboard (e.g., Vercel / Railway / AWS). **Never commit `.env` or secrets to git.**
+- **Accidental Exposure:** If a token is committed, revoke it immediately at [GitHub Token Settings](https://github.com/settings/tokens).
+
+## Supply Chain & Dependency Gates
+
+- All pull requests and commits run continuous dependency vulnerability scans (`pnpm audit`) and static secret scanning (`gitleaks`).
+- CycloneDX Software Bill of Materials (SBOM) generation is integrated into RepoScope for pipeline transparency.

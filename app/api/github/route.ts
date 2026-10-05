@@ -5,41 +5,55 @@ import { auditDataOpsRepository } from '@/lib/dataops-audit';
 import { auditIIoTRepository } from '@/lib/iiot-audit';
 import { generateSBOM } from '@/lib/sbom-generator';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+interface GitHubTreeItem {
+  path: string;
+  mode?: string;
+  type: 'blob' | 'tree';
+  sha?: string;
+  size?: number;
+  url?: string;
+}
+
 const CACHE = new Map<string, { data: unknown; timestamp: number }>();
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes cache
 
-// ─── Enhanced fetch with retry and longer timeout ───
+// ─── Enhanced fetch with retry and configurable timeout ───
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
-  maxRetries: number = 3
+  maxRetries: number = 3,
+  timeoutMs: number = 30000
 ): Promise<Response> {
-  let lastError: any;
-  
+  let lastError: unknown;
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds (از 10 به 30 افزایش دادیم)
-      
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      clearTimeout(timeoutId);
       lastError = error;
-      console.warn(`Fetch attempt ${attempt}/${maxRetries} failed for ${url}:`, error.message);
-      
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.warn(`Fetch attempt ${attempt}/${maxRetries} failed for ${url}:`, errorMsg);
+
       if (attempt < maxRetries) {
-        // Exponential backoff: 1s, 2s, 4s
         const delay = Math.pow(2, attempt - 1) * 1000;
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
   }
-  
+
   throw lastError;
 }
 
@@ -49,10 +63,16 @@ export async function GET(request: NextRequest) {
   const tokenFromHeader = request.headers.get('x-github-token');
 
   if (!rawEndpoint) {
-    return NextResponse.json({ error: 'Missing endpoint' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing endpoint parameter' }, { status: 400 });
   }
 
-  const endpoint = decodeURIComponent(rawEndpoint);
+  const endpoint = decodeURIComponent(rawEndpoint).trim();
+
+  // Basic SSRF & Path traversal protection
+  if (!endpoint.startsWith('/') || endpoint.includes('://')) {
+    return NextResponse.json({ error: 'Invalid API endpoint format' }, { status: 400 });
+  }
+
   const authSuffix = tokenFromHeader ? 'auth' : 'anon';
   const cacheKey = `${authSuffix}_${endpoint}`;
   const cached = CACHE.get(cacheKey);
@@ -77,11 +97,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // استفاده از fetchWithRetry به جای fetch معمولی
     const response = await fetchWithRetry(
       `https://api.github.com${endpoint}`,
       { headers, redirect: 'follow' },
-      3 // حداکثر ۳ تلاش
+      3,
+      30000
     );
 
     if (!response.ok) {
@@ -91,18 +111,20 @@ export async function GET(request: NextRequest) {
       try {
         const errorJson = JSON.parse(errorText);
         errorMessage = errorJson.message || errorMessage;
-      } catch {}
+      } catch {
+        // Fallback
+      }
 
       if (response.status === 401) {
         errorMessage = tokenFromHeader
           ? 'Your GitHub token is invalid or expired.'
-          : 'This repository is private. Please provide a valid GitHub token.';
+          : 'This repository is private or requires authorization. Please provide a valid GitHub token.';
       }
 
       if (response.status === 403) {
         const remaining = response.headers.get('x-ratelimit-remaining');
-        if (remaining === '0' || errorMessage.includes('rate limit')) {
-          errorMessage = 'GitHub API rate limit reached (429). Please wait 1 hour and try again.';
+        if (remaining === '0' || errorMessage.toLowerCase().includes('rate limit')) {
+          errorMessage = 'GitHub API rate limit reached. Please authenticate with a token or wait 1 hour.';
         }
       }
 
@@ -116,62 +138,64 @@ export async function GET(request: NextRequest) {
 
       // ──────────────────────────────────────────────
       // DataOps, IIoT Audit & SBOM Integration
-      // Only runs when the endpoint is a Git Tree API call
       // ──────────────────────────────────────────────
       if (endpoint.includes('/git/trees/') && Array.isArray(data.tree)) {
+        // فیلتر کردن موارد commit/submodule تا تایپ کاملاً 'blob' | 'tree' باشد
+        const treeItems = (data.tree as any[]).filter(
+          (item) => item.type === 'blob' || item.type === 'tree'
+        ) as GitHubTreeItem[];
+
         // 1. Run specialized audits
-        const dataOpsReport = auditDataOpsRepository(data.tree);
-        const iiotReport = auditIIoTRepository(data.tree);
+        const dataOpsReport = auditDataOpsRepository(treeItems);
+        const iiotReport = auditIIoTRepository(treeItems);
 
         // 2. Fetch dependency files for SBOM generation
         const depFileNames = ['package.json', 'requirements.txt', 'pyproject.toml'];
         const depFiles: Record<string, string> = {};
-        
-        const depPaths = data.tree
-          .filter((item: any) => 
-            item.type === 'blob' && 
-            depFileNames.some(name => item.path.toLowerCase().endsWith(name.toLowerCase()))
-          )
-          .slice(0, 5); // Limit to 5 files max to avoid rate limit abuse
 
-        // Parse owner/repo from endpoint for fetching file contents
-        // endpoint format: /repos/owner/repo/git/trees/branch?recursive=1
+        const depPaths = treeItems
+          .filter(
+            (item) =>
+              item.type === 'blob' &&
+              depFileNames.some((name) => item.path.toLowerCase().endsWith(name.toLowerCase()))
+          )
+          .slice(0, 5);
+
         const endpointParts = endpoint.split('/');
         const owner = endpointParts[2];
         const repo = endpointParts[3];
 
-        // Fetch each dependency file in parallel using fetchWithRetry for reliability
-        await Promise.all(
-          depPaths.map(async (item: any) => {
-            try {
-              const fileResp = await fetchWithRetry(
-                `https://api.github.com/repos/${owner}/${repo}/contents/${item.path}`,
-                { headers },
-                2 // Fewer retries for file contents (non-critical)
-              );
-              
-              if (fileResp.ok) {
-                const fileData = await fileResp.json();
-                if (fileData.content) {
-                  depFiles[item.path] = Buffer.from(fileData.content, 'base64').toString('utf-8');
+        if (owner && repo && depPaths.length > 0) {
+          await Promise.all(
+            depPaths.map(async (item) => {
+              try {
+                const fileResp = await fetchWithRetry(
+                  `https://api.github.com/repos/${owner}/${repo}/contents/${item.path}`,
+                  { headers },
+                  2,
+                  10000
+                );
+
+                if (fileResp.ok) {
+                  const fileData = await fileResp.json();
+                  if (fileData.content) {
+                    depFiles[item.path] = Buffer.from(fileData.content, 'base64').toString('utf-8');
+                  }
                 }
+              } catch (e) {
+                console.warn(`Failed to fetch dependency file ${item.path}:`, e);
               }
-            } catch (e) {
-              // Silently fail — SBOM is non-critical
-              console.warn(`Failed to fetch dependency file ${item.path}:`, e);
-            }
-          })
-        );
+            })
+          );
+        }
 
-        // 3. Generate SBOM if we got any dependency files
-        const sbom = Object.keys(depFiles).length > 0 
-          ? generateSBOM(depFiles) 
-          : null;
+        // 3. Generate SBOM
+        const sbom = Object.keys(depFiles).length > 0 ? generateSBOM(depFiles) : null;
 
-        // 4. Return enriched data with all three additions
-        const enrichedData = { 
-          ...data, 
-          dataOpsReport, 
+        // 4. Return enriched payload
+        const enrichedData = {
+          ...data,
+          dataOpsReport,
           iiotReport,
           sbom,
         };
@@ -192,20 +216,24 @@ export async function GET(request: NextRequest) {
         },
       });
     }
-  } catch (err: any) {
-    console.error('API error:', err);
-    
-    // پیام خطای دقیق‌تر برای مشکلات شبکه
-    if (err.code === 'UND_ERR_CONNECT_TIMEOUT' || err.name === 'AbortError') {
+  } catch (err: unknown) {
+    console.error('API route execution error:', err);
+
+    const isAbort =
+      err instanceof Error &&
+      (err.name === 'AbortError' || err.message.includes('UND_ERR_CONNECT_TIMEOUT'));
+
+    if (isAbort) {
       return NextResponse.json(
-        { 
-          error: 'GitHub API connection timed out after 30 seconds. This usually indicates a temporary network issue. Please try again in a few moments.',
-          details: err.message 
+        {
+          error: 'GitHub API connection timed out. Please try again.',
+          details: err instanceof Error ? err.message : String(err),
         },
-        { status: 504 } // 504 Gateway Timeout
+        { status: 504 }
       );
     }
-    
-    return NextResponse.json({ error: 'Network error: ' + err.message }, { status: 500 });
+
+    const message = err instanceof Error ? err.message : 'Internal Server Error';
+    return NextResponse.json({ error: `Network error: ${message}` }, { status: 500 });
   }
 }
