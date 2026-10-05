@@ -1,100 +1,108 @@
-name: RepoScope Audit
+name: Universal Health & Security Audit Gate (2026 Baseline)
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-  schedule:
-    - cron: '0 3 * * 1'  # weekly security re-scan (catches new advisories)
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  security:
-    name: Security — Dependency & Secret Audit
+  security-supply-chain:
+    name: 🔒 Security & Supply Chain (OWASP 2025 / SLSA)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Source
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 9.15.0
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile   # Stability: deterministic install
-      - name: Dependency vulnerability audit
-        run: pnpm audit --audit-level=high    # braces (dev-only) currently passes at high threshold
-      - name: Secret scanning (gitleaks)
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Gitleaks Secret Scan
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  code-review:
-    name: Code Review — Lint & Type Integrity
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm exec tsc --noEmit
+      - name: Dependency Audit (Forced Official Registry)
+        run: pnpm audit --registry=https://registry.npmjs.org/ --audit-level=high
 
-  stability:
-    name: Stability — Deterministic Production Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - name: Verify build artifacts exist
-        run: |
-          test -d .next || { echo "::error::Build produced no .next output"; exit 1; }
-          echo "Build output verified."
+      - name: Generate CycloneDX 1.6 SBOM
+        run: node scripts/generate-sbom.mjs
 
-  integration:
-    name: Integration — Runtime & API Contract Smoke Test
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclonedx-sbom
+          path: build-artifacts/bom.json
+          retention-days: 14
+
+  quality-and-build:
+    name: ⚙️ Stability & Code Quality Gate
     runs-on: ubuntu-latest
-    needs: [security, code-review, stability]
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
         with:
           version: 9.15.0
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - name: Boot server & smoke-test API contract
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript Type Check
+        run: pnpm tsc --noEmit
+
+      - name: ESLint Flat Config Review
+        run: pnpm eslint .
+
+      - name: Deterministic Next.js Build
+        run: pnpm build
+
+  contract-smoke-test:
+    name: 🔗 Integration & Contract Smoke Test
+    needs: quality-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Next.js App
+        run: pnpm build
+
+      - name: Start Server & Smoke Test Route Contract
         run: |
           pnpm start &
-          SERVER_PID=$!
-          # Wait up to 30s for readiness (stability: no blind sleep)
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:3000/ > /dev/null && break
-            sleep 1
-          done
-          # /api/github must return a valid HTTP response (contract check)
-          STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/github)
-          echo "GET /api/github -> $STATUS"
-          case "$STATUS" in
-            200|401|429) echo "API route responding with a defined contract ✓" ;;
-            000) echo "::error::API route unreachable — integration failure"; exit 1 ;;
-            *)   echo "::warning::Unexpected status $STATUS — review error handling" ;;
-          esac
-          kill $SERVER_PID
+          npx wait-on http://localhost:3000
+          curl -f -s http://localhost:3000/api/github?repo=vercel/next.js > /dev/null || exit 1

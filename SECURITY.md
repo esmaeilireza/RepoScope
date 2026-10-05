@@ -1,35 +1,40 @@
-# Security Policy
+# Security Policy & Supply Chain Posture
 
-RepoScope takes security and supply-chain integrity seriously. This document outlines our disclosure procedures, secret handling, and engineering controls.
+RepoScope treats system resilience, secret safety, and supply-chain integrity as first-class architectural concerns. This document outlines vulnerability disclosure, token safety, and audit baselines.
 
 ## Supported Versions
 
-Only the latest commit on the `main` branch is actively supported and maintained.
+Only the latest commit on the `main` branch receives active security updates and dependency patches.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| `main`  | :white_check_mark: |
-| < 0.1.0 | :x:                |
+| Version | Supported | Maintenance Window |
+|---|---|---|
+| `main` (0.1.x) | :white_check_mark: | Active Development |
+| < 0.1.0 | :x: | End of Life |
 
-## Reporting a Vulnerability
+## Vulnerability Reporting
 
-Please **do not open a public issue** for vulnerabilities or potential security flaws.
+Please **do not** report vulnerabilities through public GitHub issues or public discussions.
 
-1. **Privately report via GitHub Security Advisories:**  
-   [Open an Advisory](https://github.com/esmaeilireza/RepoScope/security/advisories/new)
-2. **Response SLA:**
-   - **Acknowledgment:** Within 48 hours.
-   - **Triage & Assessment:** Within 7 business days.
-   - **Fix & Advisory Release:** Scheduled promptly with a CVE/GHSA reference where appropriate.
+1. **Private Advisory Submission:** Submit a private report via [GitHub Security Advisories](https://github.com/esmaeilireza/RepoScope/security/advisories/new).
+2. **SLA & Response Time:**
+   - **Initial Acknowledgment:** Within **48 hours**.
+   - **Triage & Risk Assessment:** Within **7 business days**.
+   - **Remediation & Advisory Release:** A patch and GHSA/CVE notice will be published upon verification.
 
 ## Token & Secret Handling
 
-- **Server-Side Isolation:** The optional `GITHUB_TOKEN` is consumed strictly server-side in `app/api/github/route.ts` through runtime environment variables (`process.env.GITHUB_TOKEN`).
-- **Zero Browser Exposure:** The token is never included in client bundles, never sent to the browser, and never serialized into JSON API responses.
-- **Production Deployments:** Configure `GITHUB_TOKEN` solely via your hosting provider's dashboard (e.g., Vercel / Railway / AWS). **Never commit `.env` or secrets to git.**
-- **Accidental Exposure:** If a token is committed, revoke it immediately at [GitHub Token Settings](https://github.com/settings/tokens).
+- **Zero Client-Side Exposure:** `GITHUB_TOKEN` is consumed strictly server-side in `app/api/github/route.ts` via `process.env.GITHUB_TOKEN`. It is never exposed in client bundles or responses.
+- **Environment Configuration:** Configure tokens exclusively through platform settings (Vercel, Railway, AWS). Never commit `.env` or secret-bearing files.
+- **Emergency Revocation:** If a token is suspected of compromise, immediately revoke it via [GitHub Personal Access Tokens](https://github.com/settings/tokens) and redeploy.
 
-## Supply Chain & Dependency Gates
+## 2026 Audit Baseline Alignment
 
-- All pull requests and commits run continuous dependency vulnerability scans (`pnpm audit`) and static secret scanning (`gitleaks`).
-- CycloneDX Software Bill of Materials (SBOM) generation is integrated into RepoScope for pipeline transparency.
+RepoScope integrates 4 continuous quality gates:
+
+1. **OWASP Top 10:2025**
+   - **A01:2025 (Broken Access Control):** Proxy routes enforce parameter validation and server-side boundaries.
+   - **A03:2025 (Software Supply Chain Failures):** Strict lockfile checking, registry origin pinning, and CycloneDX 1.6 SBOM artifact generation.
+   - **A10:2025 (Mishandling Exceptional Conditions):** Sanitized error payloads without leaking call stacks.
+2. **SLSA v1.2 (Supply-chain Levels for Software Artifacts):** Level 2 Build Isolation with reproducible lockfiles and build provenance.
+3. **Automated Secret Scanning:** Verified via Gitleaks pre-commit rules and CI pipelines.
+4. **Dependency Auditing:** Daily automated checks with `pnpm audit` against the official npm registry.

@@ -8,9 +8,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "sbom": "node scripts/generate-sbom.mjs",
     "audit:self": "tsc --noEmit && eslint .",
     "audit:sec": "pnpm audit --registry=https://registry.npmjs.org/ --audit-level=high",
-    "audit:all": "pnpm audit --registry=https://registry.npmjs.org/ --audit-level=high && eslint . && next build"
+    "audit:all": "pnpm audit --registry=https://registry.npmjs.org/ --audit-level=high && node scripts/generate-sbom.mjs && eslint . && next build"
   },
   "dependencies": {
     "@cyclonedx/cyclonedx-library": "^10.2.0",
