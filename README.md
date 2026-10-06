@@ -1,13 +1,39 @@
-```markdown
-# RepoScope
+# RepoScope 🛡️
 
 > **DataOps & Industrial Code Quality Gatekeeper**  
 > Automated health-audit engine for public repositories, targeting Data Science, Analytics Engineering, and IIoT pipelines.
 
-[![RepoScope Audit](https://github.com/esmaeilireza/RepoScope/actions/workflows/audit.yml/badge.svg)](https://github.com/esmaeilireza/RepoScope/actions/workflows/audit.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript Strict](https://img.shields.io/badge/TypeScript-5.x_Strict-blue.svg)](https://www.typescriptlang.org/)
-[![Security: Audited](https://img.shields.io/badge/Security-Supply_Chain_Gated-emerald.svg)](./SECURITY.md)
+<p align="center">
+  <a href="https://github.com/esmaeilireza/RepoScope/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/esmaeilireza/RepoScope/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=CI%20Pipeline" alt="CI Status" />
+  </a>
+  <a href="https://github.com/esmaeilireza/RepoScope/actions/workflows/audit.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/esmaeilireza/RepoScope/audit.yml?branch=main&style=for-the-badge&logo=shield&logoColor=white&label=Health%20%26%20Security%20Gate" alt="Audit Gate" />
+  </a>
+  <a href="https://reposcope-ochre.vercel.app/">
+    <img src="https://img.shields.io/badge/Live%20Demo-Vercel-black?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" />
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js%2016-Turbopack-black?style=flat-square&logo=next.js&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/TypeScript%205.x-Strict-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind%20CSS-3.4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/pnpm-9.15-F69220?style=flat-square&logo=pnpm&logoColor=white" alt="pnpm" />
+  <img src="https://img.shields.io/badge/ESLint%209-Flat%20Config-4B32C3?style=flat-square&logo=eslint&logoColor=white" alt="ESLint" />
+  <a href="./SECURITY.md">
+    <img src="https://img.shields.io/badge/SBOM-CycloneDX%20v1.6-0284C7?style=flat-square&logo=linuxfoundation&logoColor=white" alt="CycloneDX SBOM" />
+  </a>
+  <a href="./SECURITY.md">
+    <img src="https://img.shields.io/badge/Supply%20Chain-SLSA%20v1.2-10B981?style=flat-square&logo=googlecloud&logoColor=white" alt="SLSA Security" />
+  </a>
+  <a href="./SECURITY.md">
+    <img src="https://img.shields.io/badge/Compliance-NIST%20SP%20800--218-blueviolet?style=flat-square" alt="NIST Compliance" />
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square" alt="License: MIT" />
+  </a>
+</p>
 
 RepoScope is an automated health-audit engine for public repositories, customized specifically for **Data Science, Analytics Engineering, and Industrial IoT (IIoT)** pipelines. It ensures codebases running critical models, SCADA integration logic, and Python microservices maintain production-grade compliance before merging.
 
@@ -15,7 +41,6 @@ Coming from an industrial automation and PLC background where runtime failure is
 
 It doesn't just give you a score—it explains exactly **why** the health score is what it is, with actionable fixes.
 
----
 
 ## ✨ Features
 
