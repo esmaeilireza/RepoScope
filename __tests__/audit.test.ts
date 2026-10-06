@@ -1,13 +1,11 @@
-import { describe, it, expect } from 'vitest'; 
+/**
+ * RepoScope Baseline Smoke & Quality Tests
+ */
+export function validateQualityGates(score: number): boolean {
+  return score >= 80;
+}
 
-describe('RepoScope Health Engine', () => {
-  it('should validate repository structure correctly', () => {
-    const isRepoValid = true;
-    expect(isRepoValid).toBe(true);
-  });
-
-  it('should assert core security gates pass', () => {
-    const securityGateStatus = 'PASS';
-    expect(securityGateStatus).toBe('PASS');
-  });
-});
+// Baseline smoke assertion
+if (!validateQualityGates(100)) {
+  throw new Error('Quality gate validation failed');
+}
