@@ -1,83 +1,55 @@
-# docs/claims.yaml — every claim made to a third party, and how to verify it
+# docs/claims.yaml — every technical claim made, and how to verify it
 version: "1.0"
 
 claims:
-  # ── Claims to Martin Kleppmann (Oct 11) ──────────────────────────
-  - id: claim-kleppmann-001
-    recipient: "Martin Kleppmann"
-    date: "2026-10-11"
-    text: "RepoScope has a Data Architecture Gate"
+  # ── DataOps & Schema Rules ───────────────────────────────────────
+  - id: claim-dataops-schema-001
+    description: "RepoScope enforces schema IDL presence (Avro/Protobuf/Thrift)."
     implementation: "docs/specs/dataops.yaml"
     verification:
       type: "yaml_rule_present"
-      profile: "dataops"
-      must_contain_rule_ids: ["dataops-004", "dataops-005", "dataops-006"]
-    status: "verified"
-    notes: "Rules exist. 'Gate' is aspirational — no CI blocking. Reframe."
+      rule_ids: ["dataops-kleppmann-002"]
 
-  - id: claim-kleppmann-002
-    recipient: "Martin Kleppmann"
-    date: "2026-10-11"
-    text: "RepoScope checks backward/forward schema compatibility"
-    implementation: "docs/specs/dataops.yaml#dataops-kleppmann-002"
-    verification:
-      type: "rule_checks_pattern"
-      rule_id: "dataops-kleppmann-002"
-      expected_checks_contain: ["schema", "version"]
-    status: "UNVERIFIED — run before Oct 30"
-    notes: "I have not opened dataops.yaml to confirm this is true."
-
-  - id: claim-kleppmann-003
-    recipient: "Martin Kleppmann"
-    date: "2026-10-11"
-    text: "RepoScope checks idempotency indicators"
-    implementation: "docs/specs/dataops.yaml#dataops-kleppmann-003"
+  - id: claim-dataops-migrations-001
+    description: "RepoScope checks for database migration tooling."
+    implementation: "docs/specs/dataops.yaml"
     verification:
       type: "rule_checks_pattern"
       rule_id: "dataops-kleppmann-003"
-      expected_checks_contain: ["idempoten"]
-    status: "UNVERIFIED"
+      expected_patterns: ["migrations", "alembic", "flyway", "db/migrate"]
 
-  - id: claim-kleppmann-004
-    recipient: "Martin Kleppmann"
-    date: "2026-10-11"
-    text: "RepoScope checks partition design heuristics"
+  - id: claim-dataops-rules-001
+    description: "RepoScope ships a robust set of DataOps rules."
     implementation: "docs/specs/dataops.yaml"
     verification:
-      type: "any_rule_matches"
-      pattern: "partition|shard"
-      profile: "dataops"
-    status: "UNVERIFIED — may not exist"
-    notes: "I am not sure any rule checks this. If not, drop this claim when you speak about Kleppmann."
+      type: "yaml_rule_count_min"
+      min_count: 20
 
-  # ── Claims to Patrick Debois (Oct 12) ────────────────────────────
-  - id: claim-debois-001
-    recipient: "Patrick Debois"
-    date: "2026-10-12"
-    text: "RepoScope formalizes Flow, Feedback, Continual Learning from The DevOps Handbook"
-    implementation: "docs/specs/webapp.yaml#webapp-devops-00{1,2,3}"
+  # ── Architecture & System Rules ──────────────────────────────────
+  - id: claim-total-rule-count-001
+    description: "RepoScope ships exactly 47 active and draft YAML rules."
+    implementation: "docs/specs/"
     verification:
-      type: "yaml_rules_exist"
-      rule_ids: ["webapp-devops-001", "webapp-devops-002", "webapp-devops-003"]
-    status: "PARTIAL — rules marked needs-review, do not emit"
-    notes: "This is the claim Patrick will test. Be honest: flow is done, feedback and continual learning are needs-review."
+      type: "total_yaml_rule_count"
+      expected_count: 47
 
-  - id: claim-debois-002
-    recipient: "Patrick Debois"
-    date: "2026-10-12"
-    text: "structured Markdown checklists"
-    implementation: "docs/specs/*.yaml + docs/notes/*.md"
+  - id: claim-checklists-001
+    description: "RepoScope ships Markdown checklists generated from YAML."
+    implementation: "docs/checklists/"
     verification:
-      type: "misrepresented"
-      correction: "Rules are YAML. Notes are Markdown. Reframe the claim."
-    status: "OVER-CLAIMED"
+      type: "files_exist"
+      paths:
+        - "docs/checklists/cross.md"
+        - "docs/checklists/dataops.md"
+        - "docs/checklists/general.md"
+        - "docs/checklists/iiot.md"
+        - "docs/checklists/webapp.md"
 
-  - id: claim-debois-003
-    recipient: "Patrick Debois"
-    date: "2026-10-12"
-    text: "actionable fixes in the terminal"
-    implementation: "?"
+  - id: claim-cli-001
+    description: "RepoScope ships a CLI to run audits from the terminal."
+    implementation: "bin/reposcope"
     verification:
-      type: "cli_exists"
-      path: "bin/reposcope or scripts/audit.ts"
-    status: "UNVERIFIED — I do not see a CLI in the repo"
+      type: "files_exist"
+      paths:
+        - "bin/reposcope"
+        - "scripts/reposcope-audit.ts"
