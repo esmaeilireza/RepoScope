@@ -1,0 +1,244 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="946" viewBox="0 0 900 946" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" role="img" aria-label="Codebase map of my-reposcope-app">
+<style>
+    .bg{fill:#ffffff}
+    .frame{stroke:#d0d7de}
+    .dir{fill:none;stroke:#d0d7de;stroke-width:1}
+    .fileln{stroke:#ffffff;stroke-opacity:.55}
+    .txt{fill:#57606a}
+    .title{fill:#1f2328}
+    .mark{fill:#57606a}
+    @media (prefers-color-scheme: dark){
+      .bg{fill:#0d1117}
+      .frame{stroke:#30363d}
+      .dir{stroke:#30363d}
+      .fileln{stroke:#0d1117;stroke-opacity:.5}
+      .txt{fill:#8b949e}
+      .title{fill:#e6edf3}
+      .mark{fill:#8b949e}
+    }
+  </style>
+<title>RepoScope</title>
+<rect class="bg frame" x="0.5" y="0.5" width="899" height="945" rx="8"/>
+<circle class="dir" cx="597.4" cy="340.0" r="30.0"/>
+<circle class="dir" cx="546.0" cy="246.6" r="42.9"/>
+<circle class="dir" cx="635.6" cy="257.8" r="39.9"/>
+<circle class="dir" cx="682.0" cy="341.2" r="47.6"/>
+<circle class="dir" cx="331.5" cy="534.2" r="272.1"/>
+<circle class="dir" cx="486.1" cy="263.2" r="14.2"/>
+<circle class="dir" cx="709.1" cy="475.9" r="78.4"/>
+<circle class="dir" cx="750.5" cy="236.4" r="67.3"/>
+<circle class="dir" cx="440.1" cy="168.7" r="77.8"/>
+<circle class="dir" cx="586.5" cy="348.2" r="15.0"/>
+<circle class="dir" cx="610.4" cy="330.1" r="12.5"/>
+<circle class="dir" cx="626.2" cy="248.6" r="24.5"/>
+<circle class="dir" cx="659.2" cy="310.2" r="3.3"/>
+<circle class="dir" cx="184.2" cy="629.8" r="13.3"/>
+<circle class="dir" cx="380.9" cy="508.7" r="198.6"/>
+<circle class="dir" cx="125.2" cy="641.0" r="36.6"/>
+<circle class="dir" cx="720.5" cy="533.6" r="18.0"/>
+<circle class="dir" cx="651.1" cy="479.6" r="18.7"/>
+<circle class="dir" cx="750.5" cy="252.5" r="47.0"/>
+<circle class="dir" cx="463.5" cy="171.6" r="49.7"/>
+<circle class="dir" cx="614.6" cy="248.6" r="11.9"/>
+<circle class="dir" cx="639.2" cy="248.6" r="10.6"/>
+<circle class="dir" cx="365.2" cy="551.7" r="47.9"/>
+<circle class="dir" cx="464.6" cy="551.7" r="43.2"/>
+<circle class="dir" cx="420.0" cy="637.2" r="45.2"/>
+<circle class="dir" cx="422.5" cy="414.9" r="88.1"/>
+<circle class="dir" cx="320.7" cy="644.2" r="46.2"/>
+<circle class="dir" cx="395.8" cy="408.9" r="28.3"/>
+<circle class="dir" cx="466.5" cy="408.9" r="36.6"/>
+<circle class="dir" cx="422.1" cy="468.6" r="31.6"/>
+<circle class="dir" cx="422.8" cy="355.7" r="26.5"/>
+<circle class="fileln" cx="579.2" cy="304.9" r="6.2" fill="#6a9fb5" stroke-width="1"><title>PROJECT_STRUCTURE.md</title></circle>
+<circle class="fileln" cx="588.8" cy="304.9" r="2.5" fill="#b0b7c3" stroke-width="0.5"><title>.editorconfig</title></circle>
+<circle class="fileln" cx="586.5" cy="308.0" r="1.0" fill="#b0b7c3" stroke-width="0.5"><title>.env.example</title></circle>
+<circle class="fileln" cx="586.6" cy="301.2" r="1.4" fill="#cbcb41" stroke-width="0.5"><title>.eslintrc.json</title></circle>
+<circle class="fileln" cx="585.8" cy="349.8" r="4.6" fill="#6a9fb5" stroke-width="0.5"><title>.github/ISSUE_TEMPLATE/bug_report.md</title></circle>
+<circle class="fileln" cx="595.1" cy="349.8" r="4.0" fill="#6a9fb5" stroke-width="0.5"><title>.github/ISSUE_TEMPLATE/feature_request.md</title></circle>
+<circle class="fileln" cx="591.1" cy="357.7" r="4.2" fill="#cb171e" stroke-width="0.5"><title>.github/ISSUE_TEMPLATE/knowledge-source.yml</title></circle>
+<circle class="fileln" cx="591.0" cy="342.9" r="3.3" fill="#6a9fb5" stroke-width="0.5"><title>.github/ISSUE_TEMPLATE/question.md</title></circle>
+<circle class="fileln" cx="582.4" cy="339.7" r="5.1" fill="#cb171e" stroke-width="0.5"><title>.github/ISSUE_TEMPLATE/rule-proposal.yml</title></circle>
+<circle class="fileln" cx="607.6" cy="348.2" r="4.3" fill="#6a9fb5" stroke-width="0.5"><title>.github/PULL_REQUEST_TEMPLATE.md</title></circle>
+<circle class="fileln" cx="604.4" cy="355.0" r="2.5" fill="#cb171e" stroke-width="0.5"><title>.github/dependabot.yml</title></circle>
+<circle class="fileln" cx="606.4" cy="330.1" r="7.8" fill="#cb171e" stroke-width="1"><title>.github/workflows/audit.yml</title></circle>
+<circle class="fileln" cx="618.9" cy="330.1" r="3.7" fill="#cb171e" stroke-width="0.5"><title>.github/workflows/ci.yml</title></circle>
+<circle class="fileln" cx="599.1" cy="297.2" r="9.3" fill="#f14e32" stroke-width="1"><title>.gitignore</title></circle>
+<circle class="fileln" cx="584.9" cy="296.9" r="2.8" fill="#6a9fb5" stroke-width="0.5"><title>CHANGELOG.md</title></circle>
+<circle class="fileln" cx="578.3" cy="294.1" r="3.8" fill="#6a9fb5" stroke-width="0.5"><title>CONTRIBUTING.md</title></circle>
+<circle class="fileln" cx="587.0" cy="290.6" r="3.3" fill="#cccccc" stroke-width="0.5"><title>LICENSE</title></circle>
+<circle class="fileln" cx="554.6" cy="311.5" r="17.1" fill="#6a9fb5" stroke-width="1"><title>README.md</title></circle>
+<circle class="fileln" cx="580.4" cy="285.2" r="4.5" fill="#6a9fb5" stroke-width="0.5"><title>SECURITY.md</title></circle>
+<circle class="fileln" cx="565.6" cy="243.9" r="2.4" fill="#3178c6" stroke-width="0.5"><title>__tests__/audit.test.ts</title></circle>
+<circle class="fileln" cx="573.2" cy="243.9" r="4.5" fill="#3178c6" stroke-width="0.5"><title>__tests__/graph-grounding.test.ts</title></circle>
+<circle class="fileln" cx="566.9" cy="251.1" r="4.3" fill="#3178c6" stroke-width="0.5"><title>__tests__/graph-spec.test.ts</title></circle>
+<circle class="fileln" cx="565.9" cy="233.0" r="7.5" fill="#3178c6" stroke-width="1"><title>__tests__/llm-layer.test.ts</title></circle>
+<circle class="fileln" cx="580.5" cy="235.2" r="6.0" fill="#3178c6" stroke-width="1"><title>__tests__/specs.test.ts</title></circle>
+<circle class="fileln" cx="533.0" cy="250.9" r="26.8" fill="#3572a5" stroke-width="1"><title>__tests__/test_specs.py</title></circle>
+<circle class="fileln" cx="614.6" cy="248.6" r="10.9" fill="#3178c6" stroke-width="1"><title>app/api/github/route.ts</title></circle>
+<circle class="fileln" cx="639.2" cy="248.6" r="9.7" fill="#3178c6" stroke-width="1"><title>app/api/insight/route.ts</title></circle>
+<circle class="fileln" cx="661.9" cy="248.6" r="8.2" fill="#563d7c" stroke-width="1"><title>app/globals.css</title></circle>
+<circle class="fileln" cx="655.1" cy="260.0" r="4.0" fill="#3178c6" stroke-width="0.5"><title>app/icon.tsx</title></circle>
+<circle class="fileln" cx="656.6" cy="233.1" r="6.8" fill="#3178c6" stroke-width="1"><title>app/layout.tsx</title></circle>
+<circle class="fileln" cx="653.7" cy="277.5" r="12.1" fill="#3178c6" stroke-width="1"><title>app/page.tsx</title></circle>
+<circle class="fileln" cx="636.6" cy="277.4" r="3.6" fill="#3178c6" stroke-width="0.5"><title>app/sitemap.ts</title></circle>
+<circle class="fileln" cx="563.6" cy="330.5" r="2.0" fill="#b0b7c3" stroke-width="0.5"><title>bin/reposcope</title></circle>
+<circle class="fileln" cx="666.5" cy="337.0" r="10.0" fill="#3178c6" stroke-width="1"><title>components/AIInsight.tsx</title></circle>
+<circle class="fileln" cx="686.5" cy="337.0" r="8.4" fill="#3178c6" stroke-width="1"><title>components/ActionsDashboard.tsx</title></circle>
+<circle class="fileln" cx="678.2" cy="353.5" r="8.6" fill="#3178c6" stroke-width="1"><title>components/ActionsPanel.tsx</title></circle>
+<circle class="fileln" cx="678.7" cy="312.9" r="14.8" fill="#3178c6" stroke-width="1"><title>components/AuditTabs.tsx</title></circle>
+<circle class="fileln" cx="661.6" cy="354.3" r="6.6" fill="#3178c6" stroke-width="1"><title>components/Board.tsx</title></circle>
+<circle class="fileln" cx="693.7" cy="350.7" r="5.9" fill="#3178c6" stroke-width="0.5"><title>components/CommandBlock.tsx</title></circle>
+<circle class="fileln" cx="656.2" cy="321.2" r="7.3" fill="#3178c6" stroke-width="1"><title>components/ErrorCard.tsx</title></circle>
+<circle class="fileln" cx="651.0" cy="345.3" r="6.2" fill="#3178c6" stroke-width="1"><title>components/ExportButtons.tsx</title></circle>
+<circle class="fileln" cx="703.7" cy="325.3" r="10.8" fill="#3178c6" stroke-width="1"><title>components/RepoInput.tsx</title></circle>
+<circle class="fileln" cx="643.8" cy="332.0" r="7.7" fill="#3178c6" stroke-width="1"><title>components/ScoreBoard.tsx</title></circle>
+<circle class="fileln" cx="714.3" cy="349.1" r="13.1" fill="#3178c6" stroke-width="1"><title>components/SmartDiagnosis.tsx</title></circle>
+<circle class="fileln" cx="668.6" cy="364.0" r="4.3" fill="#3178c6" stroke-width="0.5"><title>components/StatusBadge.tsx</title></circle>
+<circle class="fileln" cx="691.3" cy="364.5" r="7.1" fill="#3178c6" stroke-width="1"><title>components/TokenInput.tsx</title></circle>
+<circle class="fileln" cx="659.2" cy="310.2" r="3.0" fill="#3178c6" stroke-width="0.5"><title>components/ui/Card.tsx</title></circle>
+<circle class="fileln" cx="174.1" cy="613.5" r="4.3" fill="#6a9fb5" stroke-width="0.5"><title>docs/attribution.md</title></circle>
+<circle class="fileln" cx="181.0" cy="613.5" r="2.0" fill="#6a9fb5" stroke-width="0.5"><title>docs/audit-use-cases.md</title></circle>
+<circle class="fileln" cx="181.2" cy="629.2" r="2.3" fill="#6a9fb5" stroke-width="0.5"><title>docs/checklists/cross.md</title></circle>
+<circle class="fileln" cx="190.2" cy="629.2" r="5.9" fill="#6a9fb5" stroke-width="0.5"><title>docs/checklists/dataops.md</title></circle>
+<circle class="fileln" cx="181.4" cy="637.2" r="5.0" fill="#6a9fb5" stroke-width="0.5"><title>docs/checklists/general.md</title></circle>
+<circle class="fileln" cx="182.1" cy="623.0" r="3.4" fill="#6a9fb5" stroke-width="0.5"><title>docs/checklists/iiot.md</title></circle>
+<circle class="fileln" cx="188.0" cy="620.1" r="2.6" fill="#6a9fb5" stroke-width="0.5"><title>docs/checklists/webapp.md</title></circle>
+<circle class="fileln" cx="181.0" cy="605.6" r="5.2" fill="#cb171e" stroke-width="0.5"><title>docs/claims.yaml</title></circle>
+<circle class="fileln" cx="160.6" cy="597.4" r="14.9" fill="#6a9fb5" stroke-width="1"><title>docs/knowledge-index.md</title></circle>
+<circle class="fileln" cx="166.1" cy="620.5" r="5.4" fill="#6a9fb5" stroke-width="0.5"><title>docs/methodology.md</title></circle>
+<circle class="fileln" cx="351.6" cy="551.9" r="12.9" fill="#6a9fb5" stroke-width="1"><title>docs/notes/dataops/analytics-engineering-with-sql-and-dbt.md</title></circle>
+<circle class="fileln" cx="378.7" cy="551.9" r="12.0" fill="#6a9fb5" stroke-width="1"><title>docs/notes/dataops/data-management-at-scale.md</title></circle>
+<circle class="fileln" cx="366.2" cy="574.8" r="12.1" fill="#6a9fb5" stroke-width="1"><title>docs/notes/dataops/data-quality-fundamentals.md</title></circle>
+<circle class="fileln" cx="366.2" cy="529.1" r="11.9" fill="#6a9fb5" stroke-width="1"><title>docs/notes/dataops/designing-data-intensive-applications.md</title></circle>
+<circle class="fileln" cx="340.3" cy="527.2" r="11.9" fill="#6a9fb5" stroke-width="1"><title>docs/notes/dataops/fundamentals-of-data-engineering.md</title></circle>
+<circle class="fileln" cx="340.2" cy="576.3" r="11.8" fill="#6a9fb5" stroke-width="1"><title>docs/notes/dataops/practical-dataops.md</title></circle>
+<circle class="fileln" cx="392.2" cy="529.6" r="12.0" fill="#6a9fb5" stroke-width="1"><title>docs/notes/dataops/the-data-warehouse-toolkit.md</title></circle>
+<circle class="fileln" cx="439.8" cy="551.9" r="11.6" fill="#6a9fb5" stroke-width="1"><title>docs/notes/graph-rag/agentic-graphrag.md</title></circle>
+<circle class="fileln" cx="466.9" cy="551.9" r="13.3" fill="#6a9fb5" stroke-width="1"><title>docs/notes/graph-rag/essential-graphrag.md</title></circle>
+<circle class="fileln" cx="451.5" cy="576.9" r="13.7" fill="#6a9fb5" stroke-width="1"><title>docs/notes/graph-rag/graph-algorithms.md</title></circle>
+<circle class="fileln" cx="451.5" cy="526.8" r="13.8" fill="#6a9fb5" stroke-width="1"><title>docs/notes/graph-rag/graph-databases.md</title></circle>
+<circle class="fileln" cx="480.4" cy="527.0" r="12.7" fill="#6a9fb5" stroke-width="1"><title>docs/notes/graph-rag/graph-powered-machine-learning.md</title></circle>
+<circle class="fileln" cx="390.7" cy="637.7" r="13.5" fill="#6a9fb5" stroke-width="1"><title>docs/notes/iiot/automating-manufacturing-systems-with-plcs.md</title></circle>
+<circle class="fileln" cx="421.0" cy="637.7" r="14.2" fill="#6a9fb5" stroke-width="1"><title>docs/notes/iiot/industrial-network-security.md</title></circle>
+<circle class="fileln" cx="405.2" cy="663.6" r="13.6" fill="#6a9fb5" stroke-width="1"><title>docs/notes/iiot/opc-unified-architecture.md</title></circle>
+<circle class="fileln" cx="405.2" cy="611.9" r="13.6" fill="#6a9fb5" stroke-width="1"><title>docs/notes/iiot/plc-controls-with-structured-text.md</title></circle>
+<circle class="fileln" cx="434.9" cy="610.8" r="13.7" fill="#6a9fb5" stroke-width="1"><title>docs/notes/iiot/practical-industrial-data-networks.md</title></circle>
+<circle class="fileln" cx="381.6" cy="408.9" r="12.9" fill="#6a9fb5" stroke-width="1"><title>docs/notes/industrial-ml/01-realtime-streams/designing-event-driven-systems.md</title></circle>
+<circle class="fileln" cx="409.8" cy="408.9" r="13.0" fill="#6a9fb5" stroke-width="1"><title>docs/notes/industrial-ml/01-realtime-streams/streaming-systems.md</title></circle>
+<circle class="fileln" cx="450.7" cy="396.7" r="15.3" fill="#6a9fb5" stroke-width="1"><title>docs/notes/industrial-ml/02-iiot-edge-digital-twins/building-industrial-digital-twins.md</title></circle>
+<circle class="fileln" cx="483.3" cy="396.7" r="14.6" fill="#6a9fb5" stroke-width="1"><title>docs/notes/industrial-ml/02-iiot-edge-digital-twins/hands-on-ai-for-iot.md</title></circle>
+<circle class="fileln" cx="467.9" cy="427.2" r="16.7" fill="#6a9fb5" stroke-width="1"><title>docs/notes/industrial-ml/02-iiot-edge-digital-twins/hands-on-industrial-iot.md</title></circle>
+<circle class="fileln" cx="406.3" cy="468.6" r="14.5" fill="#6a9fb5" stroke-width="1"><title>docs/notes/industrial-ml/03-time-series-sensor-analytics/deep-learning-for-time-series-forecasting.md</title></circle>
+<circle class="fileln" cx="437.9" cy="468.6" r="14.5" fill="#6a9fb5" stroke-width="1"><title>docs/notes/industrial-ml/03-time-series-sensor-analytics/machine-learning-for-time-series-with-python.md</title></circle>
+<circle class="fileln" cx="412.6" cy="346.8" r="11.9" fill="#6a9fb5" stroke-width="1"><title>docs/notes/industrial-ml/04-industrial-mlops/designing-machine-learning-systems.md</title></circle>
+<circle class="fileln" cx="436.1" cy="346.8" r="9.7" fill="#6a9fb5" stroke-width="1"><title>docs/notes/industrial-ml/04-industrial-mlops/industrial-machine-learning.md</title></circle>
+<circle class="fileln" cx="426.8" cy="368.6" r="12.0" fill="#6a9fb5" stroke-width="1"><title>docs/notes/industrial-ml/04-industrial-mlops/outlier-analysis.md</title></circle>
+<circle class="fileln" cx="311.3" cy="643.5" r="11.6" fill="#6a9fb5" stroke-width="1"><title>docs/notes/webapp/api-design-patterns.md</title></circle>
+<circle class="fileln" cx="336.7" cy="643.5" r="11.7" fill="#6a9fb5" stroke-width="1"><title>docs/notes/webapp/building-microservices.md</title></circle>
+<circle class="fileln" cx="323.9" cy="666.2" r="12.3" fill="#6a9fb5" stroke-width="1"><title>docs/notes/webapp/clean-architecture.md</title></circle>
+<circle class="fileln" cx="323.9" cy="622.6" r="10.8" fill="#6a9fb5" stroke-width="1"><title>docs/notes/webapp/continuous-delivery.md</title></circle>
+<circle class="fileln" cx="347.1" cy="621.6" r="10.5" fill="#6a9fb5" stroke-width="1"><title>docs/notes/webapp/designing-web-apis.md</title></circle>
+<circle class="fileln" cx="301.3" cy="622.2" r="10.0" fill="#6a9fb5" stroke-width="1"><title>docs/notes/webapp/production-ready-microservices.md</title></circle>
+<circle class="fileln" cx="348.8" cy="664.5" r="10.6" fill="#6a9fb5" stroke-width="1"><title>docs/notes/webapp/site-reliability-engineering.md</title></circle>
+<circle class="fileln" cx="286.9" cy="640.1" r="11.1" fill="#6a9fb5" stroke-width="1"><title>docs/notes/webapp/the-devops-handbook.md</title></circle>
+<circle class="fileln" cx="297.6" cy="665.0" r="11.9" fill="#6a9fb5" stroke-width="1"><title>docs/notes/webapp/web-application-security.md</title></circle>
+<circle class="fileln" cx="124.5" cy="645.2" r="5.6" fill="#cb171e" stroke-width="0.5"><title>docs/specs/_graph.yaml</title></circle>
+<circle class="fileln" cx="134.7" cy="645.2" r="3.7" fill="#cb171e" stroke-width="0.5"><title>docs/specs/_schema.yaml</title></circle>
+<circle class="fileln" cx="131.8" cy="654.5" r="5.2" fill="#cb171e" stroke-width="0.5"><title>docs/specs/cross.yaml</title></circle>
+<circle class="fileln" cx="134.2" cy="623.9" r="15.8" fill="#cb171e" stroke-width="1"><title>docs/specs/dataops.yaml</title></circle>
+<circle class="fileln" cx="114.4" cy="661.7" r="12.1" fill="#cb171e" stroke-width="1"><title>docs/specs/general.yaml</title></circle>
+<circle class="fileln" cx="146.9" cy="651.7" r="8.9" fill="#cb171e" stroke-width="1"><title>docs/specs/iiot.yaml</title></circle>
+<circle class="fileln" cx="115.8" cy="637.4" r="5.1" fill="#cb171e" stroke-width="0.5"><title>docs/specs/webapp.yaml</title></circle>
+<circle class="fileln" cx="166.7" cy="629.4" r="2.8" fill="#6a9fb5" stroke-width="0.5"><title>docs/token-handling.md</title></circle>
+<circle class="fileln" cx="531.3" cy="308.5" r="4.5" fill="#f1e05a" stroke-width="0.5"><title>eslint.config.mjs</title></circle>
+<circle class="fileln" cx="534.6" cy="299.6" r="4.2" fill="#cbcb41" stroke-width="0.5"><title>graph.json</title></circle>
+<circle class="fileln" cx="477.4" cy="263.2" r="5.1" fill="#3178c6" stroke-width="0.5"><title>hooks/useAIDiagnosis.ts</title></circle>
+<circle class="fileln" cx="491.6" cy="263.2" r="7.9" fill="#3178c6" stroke-width="1"><title>hooks/useGitHubActions.ts</title></circle>
+<circle class="fileln" cx="690.2" cy="469.4" r="9.4" fill="#3178c6" stroke-width="1"><title>lib/anomaly-detector.ts</title></circle>
+<circle class="fileln" cx="724.8" cy="469.4" r="22.4" fill="#3178c6" stroke-width="1"><title>lib/audit.ts</title></circle>
+<circle class="fileln" cx="699.0" cy="479.6" r="3.0" fill="#3178c6" stroke-width="0.5"><title>lib/config.ts</title></circle>
+<circle class="fileln" cx="694.5" cy="445.3" r="13.1" fill="#3178c6" stroke-width="1"><title>lib/dataops-audit.ts</title></circle>
+<circle class="fileln" cx="714.6" cy="440.3" r="5.9" fill="#3178c6" stroke-width="0.5"><title>lib/environment-parity.ts</title></circle>
+<circle class="fileln" cx="691.1" cy="487.9" r="7.6" fill="#3178c6" stroke-width="1"><title>lib/export.ts</title></circle>
+<circle class="fileln" cx="705.3" cy="494.8" r="6.9" fill="#3178c6" stroke-width="1"><title>lib/github-auto-fix.ts</title></circle>
+<circle class="fileln" cx="720.6" cy="503.8" r="9.3" fill="#3178c6" stroke-width="1"><title>lib/github-diagnostics.ts</title></circle>
+<circle class="fileln" cx="738.1" cy="426.1" r="19.1" fill="#3178c6" stroke-width="1"><title>lib/github-error-patterns.ts</title></circle>
+<circle class="fileln" cx="673.0" cy="457.7" r="9.7" fill="#3178c6" stroke-width="1"><title>lib/github-health-monitor.ts</title></circle>
+<circle class="fileln" cx="739.3" cy="499.5" r="8.2" fill="#3178c6" stroke-width="1"><title>lib/github-log-parser.ts</title></circle>
+<circle class="fileln" cx="678.0" cy="481.0" r="6.0" fill="#3178c6" stroke-width="1"><title>lib/github.ts</title></circle>
+<circle class="fileln" cx="688.4" cy="513.9" r="16.5" fill="#3178c6" stroke-width="1"><title>lib/iiot-audit.ts</title></circle>
+<circle class="fileln" cx="706.7" cy="423.6" r="9.8" fill="#3178c6" stroke-width="1"><title>lib/insight.ts</title></circle>
+<circle class="fileln" cx="713.2" cy="526.0" r="6.9" fill="#3178c6" stroke-width="1"><title>lib/knowledge/books.ts</title></circle>
+<circle class="fileln" cx="728.1" cy="526.0" r="6.7" fill="#3178c6" stroke-width="1"><title>lib/knowledge/citation-gate.ts</title></circle>
+<circle class="fileln" cx="720.9" cy="541.7" r="9.1" fill="#3178c6" stroke-width="1"><title>lib/knowledge/graph.ts</title></circle>
+<circle class="fileln" cx="720.8" cy="519.4" r="2.3" fill="#3178c6" stroke-width="0.5"><title>lib/knowledge/standards.ts</title></circle>
+<circle class="fileln" cx="756.7" cy="452.7" r="10.6" fill="#3178c6" stroke-width="1"><title>lib/link-classifier.ts</title></circle>
+<circle class="fileln" cx="644.5" cy="472.2" r="8.1" fill="#3178c6" stroke-width="1"><title>lib/llm/adapters.ts</title></circle>
+<circle class="fileln" cx="660.2" cy="472.2" r="6.4" fill="#3178c6" stroke-width="1"><title>lib/llm/client.ts</title></circle>
+<circle class="fileln" cx="654.4" cy="487.9" r="8.9" fill="#3178c6" stroke-width="1"><title>lib/llm/providers.ts</title></circle>
+<circle class="fileln" cx="745.2" cy="488.5" r="3.2" fill="#3178c6" stroke-width="0.5"><title>lib/rate-limiter.ts</title></circle>
+<circle class="fileln" cx="756.2" cy="481.8" r="8.5" fill="#3178c6" stroke-width="1"><title>lib/sbom-generator.ts</title></circle>
+<circle class="fileln" cx="774.1" cy="469.4" r="11.5" fill="#3178c6" stroke-width="1"><title>lib/types.ts</title></circle>
+<circle class="fileln" cx="679.6" cy="491.2" r="3.5" fill="#3178c6" stroke-width="0.5"><title>lib/utils.ts</title></circle>
+<circle class="fileln" cx="594.3" cy="238.4" r="2.0" fill="#3178c6" stroke-width="0.5"><title>next-env.d.ts</title></circle>
+<circle class="fileln" cx="593.5" cy="233.8" r="2.2" fill="#f1e05a" stroke-width="0.5"><title>next.config.js</title></circle>
+<circle class="fileln" cx="597.2" cy="225.4" r="6.2" fill="#cbcb41" stroke-width="1"><title>package.json</title></circle>
+<circle class="fileln" cx="606.6" cy="156.7" r="56.6" fill="#cb171e" stroke-width="1"><title>pnpm-lock.yaml</title></circle>
+<circle class="fileln" cx="498.2" cy="251.6" r="1.2" fill="#cb171e" stroke-width="0.5"><title>pnpm-workspace.yaml</title></circle>
+<circle class="fileln" cx="668.9" cy="288.9" r="1.9" fill="#f1e05a" stroke-width="0.5"><title>postcss.config.js</title></circle>
+<circle class="fileln" cx="749.7" cy="200.6" r="0.7" fill="#b0b7c3" stroke-width="0.5"><title>public/.gitkeep</title></circle>
+<circle class="fileln" cx="751.3" cy="200.6" r="0.7" fill="#e34c26" stroke-width="0.5"><title>public/googlea4e112c226b2506e.html</title></circle>
+<circle class="fileln" cx="723.3" cy="252.5" r="18.1" fill="#cbcb41" stroke-width="1"><title>public/knowledge/graph.json</title></circle>
+<circle class="fileln" cx="770.3" cy="252.5" r="25.0" fill="#cbcb41" stroke-width="1"><title>public/knowledge/specs.json</title></circle>
+<circle class="fileln" cx="750.5" cy="184.5" r="14.1" fill="#a074c4" stroke-width="1"><title>public/og-image.png</title></circle>
+<circle class="fileln" cx="743.6" cy="200.1" r="1.6" fill="#9aa0a6" stroke-width="0.5"><title>public/robots.txt</title></circle>
+<circle class="fileln" cx="761.4" cy="199.4" r="2.8" fill="#b0b7c3" stroke-width="0.5"><title>public/site.webmanifest</title></circle>
+<circle class="fileln" cx="559.7" cy="199.8" r="1.9" fill="#6d8086" stroke-width="0.5"><title>pytest.ini</title></circle>
+<circle class="fileln" cx="388.4" cy="167.9" r="11.6" fill="#3572a5" stroke-width="1"><title>scripts/build_knowledge.py</title></circle>
+<circle class="fileln" cx="404.7" cy="167.9" r="3.4" fill="#f1e05a" stroke-width="0.5"><title>scripts/check-structure.mjs</title></circle>
+<circle class="fileln" cx="404.1" cy="177.1" r="5.1" fill="#3572a5" stroke-width="0.5"><title>scripts/diagnose.py</title></circle>
+<circle class="fileln" cx="404.5" cy="157.7" r="5.9" fill="#3572a5" stroke-width="0.5"><title>scripts/evaluate_claims.py</title></circle>
+<circle class="fileln" cx="394.9" cy="188.4" r="8.2" fill="#3572a5" stroke-width="1"><title>scripts/fix_notes_metadata.py</title></circle>
+<circle class="fileln" cx="380.8" cy="184.6" r="5.3" fill="#f1e05a" stroke-width="0.5"><title>scripts/generate-sbom.mjs</title></circle>
+<circle class="fileln" cx="477.5" cy="168.9" r="2.8" fill="#6a9fb5" stroke-width="0.5"><title>scripts/kg/README.md</title></circle>
+<circle class="fileln" cx="481.7" cy="168.9" r="1.0" fill="#3572a5" stroke-width="0.5"><title>scripts/kg/__init__.py</title></circle>
+<circle class="fileln" cx="481.8" cy="172.5" r="2.3" fill="#cbcb41" stroke-width="0.5"><title>scripts/kg/aliases.json</title></circle>
+<circle class="fileln" cx="486.5" cy="156.4" r="11.3" fill="#3572a5" stroke-width="1"><title>scripts/kg/assemble_graph.py</title></circle>
+<circle class="fileln" cx="471.4" cy="182.7" r="11.0" fill="#3572a5" stroke-width="1"><title>scripts/kg/extract.py</title></circle>
+<circle class="fileln" cx="483.4" cy="169.6" r="0.7" fill="#6a9fb5" stroke-width="0.5"><title>scripts/kg/knowledge-index.md</title></circle>
+<circle class="fileln" cx="460.1" cy="158.9" r="13.1" fill="#3572a5" stroke-width="1"><title>scripts/kg/neo4j_export.py</title></circle>
+<circle class="fileln" cx="497.7" cy="180.6" r="13.2" fill="#3572a5" stroke-width="1"><title>scripts/kg/neo4j_import.py</title></circle>
+<circle class="fileln" cx="473.0" cy="135.7" r="11.4" fill="#3572a5" stroke-width="1"><title>scripts/kg/neo4j_validate.py</title></circle>
+<circle class="fileln" cx="438.9" cy="186.8" r="19.0" fill="#3572a5" stroke-width="1"><title>scripts/kg/route_knowledge.py</title></circle>
+<circle class="fileln" cx="504.7" cy="160.9" r="6.0" fill="#3572a5" stroke-width="0.5"><title>scripts/kg/validate_graph.py</title></circle>
+<circle class="fileln" cx="394.8" cy="151.2" r="4.8" fill="#3572a5" stroke-width="0.5"><title>scripts/render_checklists.py</title></circle>
+<circle class="fileln" cx="381.0" cy="147.6" r="8.2" fill="#3178c6" stroke-width="1"><title>scripts/reposcope-audit.ts</title></circle>
+<circle class="fileln" cx="370.2" cy="159.8" r="6.7" fill="#3178c6" stroke-width="1"><title>scripts/verify-knowledge-registry.ts</title></circle>
+<circle class="fileln" cx="370.4" cy="176.5" r="6.8" fill="#3572a5" stroke-width="1"><title>scripts/verify_claims.py</title></circle>
+<circle class="fileln" cx="651.3" cy="209.4" r="6.8" fill="#89e051" stroke-width="1"><title>setup.sh</title></circle>
+<circle class="fileln" cx="554.7" cy="196.8" r="3.5" fill="#3178c6" stroke-width="0.5"><title>tailwind.config.ts</title></circle>
+<circle class="fileln" cx="546.6" cy="195.3" r="4.2" fill="#cbcb41" stroke-width="0.5"><title>tsconfig.json</title></circle>
+<text class="txt" x="597.4" y="307.0" text-anchor="middle" font-size="9.0" font-weight="600">.github</text>
+<text class="txt" x="546.0" y="200.7" text-anchor="middle" font-size="12.6" font-weight="600">__tests__</text>
+<text class="txt" x="635.6" y="214.9" text-anchor="middle" font-size="11.7" font-weight="600">app</text>
+<text class="txt" x="682.0" y="290.6" text-anchor="middle" font-size="14.0" font-weight="600">components</text>
+<text class="txt" x="331.5" y="259.1" text-anchor="middle" font-size="15.0" font-weight="600">docs</text>
+<text class="txt" x="709.1" y="394.4" text-anchor="middle" font-size="15.0" font-weight="600">lib</text>
+<text class="txt" x="750.5" y="166.2" text-anchor="middle" font-size="15.0" font-weight="600">public</text>
+<text class="txt" x="440.1" y="87.9" text-anchor="middle" font-size="15.0" font-weight="600">scripts</text>
+<text class="title" x="14" y="26" font-size="16" font-weight="700">my-reposcope-app</text>
+<text class="mark" x="888" y="22" text-anchor="end" font-size="12" opacity="0.85">🗺 repocarto</text>
+<circle cx="19" cy="923" r="5" fill="#6a9fb5"/>
+<text class="txt" x="29" y="927" font-size="12">Markdown</text>
+<circle cx="102.6" cy="923" r="5" fill="#3178c6"/>
+<text class="txt" x="112.6" y="927" font-size="12">TypeScript</text>
+<circle cx="200.6" cy="923" r="5" fill="#cb171e"/>
+<text class="txt" x="210.6" y="927" font-size="12">YAML</text>
+<circle cx="255.39999999999998" cy="923" r="5" fill="#3572a5"/>
+<text class="txt" x="265.4" y="927" font-size="12">Python</text>
+<circle cx="324.59999999999997" cy="923" r="5" fill="#cbcb41"/>
+<text class="txt" x="334.59999999999997" y="927" font-size="12">JSON</text>
+<circle cx="379.4" cy="923" r="5" fill="#a074c4"/>
+<text class="txt" x="389.4" y="927" font-size="12">Image</text>
+</svg>
