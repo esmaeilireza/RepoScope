@@ -1250,6 +1250,79 @@
           }
         ],
         "full_text": "Rule: Undocumented PLC program change\nID: iiot-006\nProfile: iiot\nSeverity: warning\nWhy it matters: Controller logic changes without version control or a change record undermine NERC CIP-003-4 / CIP-007-4 auditability and mask unauthorized modifications.\n\nHow to fix: Track every PLC program change in a CHANGELOG at the plc/ or scada/\ndirectory root, and reference the change ticket ID in the commit message.\n\nReferences: Industrial Network Security"
+      },
+      {
+        "id": "iiot-007",
+        "profile": "iiot",
+        "severity": "error",
+        "title": "Hardcoded hardware port in production code",
+        "rationale": "A hardcoded serial port (COM3, /dev/ttyUSB0) or Modbus port (502) breaks deployment portability across edge devices and containerized environments.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "COM[1-9]|/dev/tty(USB|ACM)|:502\\b",
+            "must_exist": false,
+            "file_glob": "**/*.py",
+            "error_when": "pattern_present",
+            "message": "Hardcoded hardware port found — use an environment variable"
+          }
+        ],
+        "fix": "Move hardware ports to environment variables:\n  os.environ.get(\"PLC_PORT\", \"502\")\n",
+        "references": [
+          {
+            "book": "Practical Industrial Data Networks",
+            "concept": "network segmentation"
+          }
+        ],
+        "full_text": "Rule: Hardcoded hardware port in production code\nID: iiot-007\nProfile: iiot\nSeverity: error\nWhy it matters: A hardcoded serial port (COM3, /dev/ttyUSB0) or Modbus port (502) breaks deployment portability across edge devices and containerized environments.\n\nHow to fix: Move hardware ports to environment variables:\n  os.environ.get(\"PLC_PORT\", \"502\")\n\nReferences: Practical Industrial Data Networks"
+      },
+      {
+        "id": "iiot-008",
+        "profile": "iiot",
+        "severity": "warning",
+        "title": "No deterministic IIoT mock testing detected",
+        "rationale": "Physical PLCs cannot be provisioned in ephemeral CI runners. Projects that interact with hardware must include protocol mocking libraries to keep tests deterministic.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{tests/**/*modbus*,__mocks__/**,conftest.py,mock_server.py}",
+            "error_when": "file_absent",
+            "message": "No IIoT mock testing infrastructure found"
+          }
+        ],
+        "fix": "Add protocol mocks: pymodbus.device.ModbusSimulatorServer (Python),\nsinon + modbus-serial (JS), or mockito + plc4j (Java).\n",
+        "references": [
+          {
+            "book": "Automating Manufacturing Systems with PLCs",
+            "concept": "deterministic execution"
+          }
+        ],
+        "full_text": "Rule: No deterministic IIoT mock testing detected\nID: iiot-008\nProfile: iiot\nSeverity: warning\nWhy it matters: Physical PLCs cannot be provisioned in ephemeral CI runners. Projects that interact with hardware must include protocol mocking libraries to keep tests deterministic.\n\nHow to fix: Add protocol mocks: pymodbus.device.ModbusSimulatorServer (Python),\nsinon + modbus-serial (JS), or mockito + plc4j (Java).\n\nReferences: Automating Manufacturing Systems with PLCs"
+      },
+      {
+        "id": "iiot-009",
+        "profile": "iiot",
+        "severity": "warning",
+        "title": "Missing fail-safe timeouts on protocol connections",
+        "rationale": "Unbounded protocol calls hang the control loop on network partitions, violating deterministic execution. Explicit timeouts are mandatory.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "timeout\\s*[=:]",
+            "must_exist": true,
+            "file_glob": "**/*.py",
+            "error_when": "pattern_absent",
+            "message": "No explicit timeout set on protocol connections"
+          }
+        ],
+        "fix": "Set explicit timeouts on every protocol client:\n  ModbusTcpClient(host, timeout=3)\n  mqtt.connect(url, { connectTimeout: 5000 })\n",
+        "references": [
+          {
+            "book": "Industrial Network Security",
+            "concept": "fail-safe networking"
+          }
+        ],
+        "full_text": "Rule: Missing fail-safe timeouts on protocol connections\nID: iiot-009\nProfile: iiot\nSeverity: warning\nWhy it matters: Unbounded protocol calls hang the control loop on network partitions, violating deterministic execution. Explicit timeouts are mandatory.\n\nHow to fix: Set explicit timeouts on every protocol client:\n  ModbusTcpClient(host, timeout=3)\n  mqtt.connect(url, { connectTimeout: 5000 })\n\nReferences: Industrial Network Security"
       }
     ]
   }

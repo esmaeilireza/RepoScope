@@ -158,3 +158,65 @@ rules:
     references:
       - book: "Industrial Network Security"
         concept: "change-control-and-configuration-management"
+  - id: iiot-007
+    profile: iiot
+    severity: error
+    title: "Hardcoded hardware port in production code"
+    rationale: >
+      A hardcoded serial port (COM3, /dev/ttyUSB0) or Modbus port (502) breaks
+      deployment portability across edge devices and containerized environments.
+    checks:
+      - type: pattern_match
+        pattern: "COM[1-9]|/dev/tty(USB|ACM)|:502\\b"
+        must_exist: false
+        file_glob: "**/*.py"
+        error_when: "pattern_present"
+        message: "Hardcoded hardware port found — use an environment variable"
+    fix: |
+      Move hardware ports to environment variables:
+        os.environ.get("PLC_PORT", "502")
+    references:
+      - book: "Practical Industrial Data Networks"
+        concept: "network segmentation"
+
+  - id: iiot-008
+    profile: iiot
+    severity: warning
+    title: "No deterministic IIoT mock testing detected"
+    rationale: >
+      Physical PLCs cannot be provisioned in ephemeral CI runners. Projects
+      that interact with hardware must include protocol mocking libraries to
+      keep tests deterministic.
+    checks:
+      - type: file_exists
+        path_glob: "{tests/**/*modbus*,__mocks__/**,conftest.py,mock_server.py}"
+        error_when: "file_absent"
+        message: "No IIoT mock testing infrastructure found"
+    fix: |
+      Add protocol mocks: pymodbus.device.ModbusSimulatorServer (Python),
+      sinon + modbus-serial (JS), or mockito + plc4j (Java).
+    references:
+      - book: "Automating Manufacturing Systems with PLCs"
+        concept: "deterministic execution"
+
+  - id: iiot-009
+    profile: iiot
+    severity: warning
+    title: "Missing fail-safe timeouts on protocol connections"
+    rationale: >
+      Unbounded protocol calls hang the control loop on network partitions,
+      violating deterministic execution. Explicit timeouts are mandatory.
+    checks:
+      - type: pattern_match
+        pattern: "timeout\\s*[=:]"
+        must_exist: true
+        file_glob: "**/*.py"
+        error_when: "pattern_absent"
+        message: "No explicit timeout set on protocol connections"
+    fix: |
+      Set explicit timeouts on every protocol client:
+        ModbusTcpClient(host, timeout=3)
+        mqtt.connect(url, { connectTimeout: 5000 })
+    references:
+      - book: "Industrial Network Security"
+        concept: "fail-safe networking"

@@ -11,9 +11,6 @@
  * with physical processes where network latency, hardware unavailability, and state corruption
  * can lead to catastrophic physical or financial consequences.
  *
- * This module translates these physical-world constraints into automated static analysis checks
- * suitable for modern CI/CD pipelines.
- *
  * Every check carries a `ruleId` that MUST match a YAML spec id in
  * docs/specs/iiot.yaml. This is the join key used by the Week-4 Citation Gate.
  */
@@ -23,7 +20,13 @@ import type { GitHubTreeItem } from './types';
 export interface IIoTCheckResult {
   /** Must match a YAML spec id in docs/specs/iiot.yaml (e.g. 'iiot-004'). */
   ruleId: string;
-  category: 'hardware_abstraction' | 'deterministic_testing' | 'fail_safe_networking';
+  category:
+    | 'safety'
+    | 'network_segmentation'
+    | 'change_control'
+    | 'hardware_abstraction'
+    | 'deterministic_testing'
+    | 'fail_safe_networking';
   status: 'pass' | 'warn' | 'fail';
   title: string;
   message: string;
@@ -32,7 +35,7 @@ export interface IIoTCheckResult {
 }
 
 export interface IIoTAuditReport {
-  score: number; // 0 to 100
+  score: number;
   checks: IIoTCheckResult[];
   summary: {
     totalChecks: number;
@@ -43,175 +46,68 @@ export interface IIoTAuditReport {
 }
 
 // =====================================================================
-// 1. HARDWARE ABSTRACTION PATTERNS
-// Theory: The 12-Factor App methodology dictates that environment-specific
-// configurations (like hardware ports and IPs) must be strictly separated
-// from code to ensure portability across edge, on-premise, and cloud deployments.
+// 1. HARDWARE ABSTRACTION PATTERNS (used by iiot-007)
 // =====================================================================
-
-/** Windows COM ports (COM1..COM99) */
 const COM_PORT_REGEX = /\b(COM[1-9]\d?)\b/i;
-
-/** Linux serial devices (e.g., /dev/ttyUSB0, /dev/ttyACM0) */
 const LINUX_SERIAL_REGEX = /\/dev\/tty(USB|ACM|S|AMA|O)\d+/i;
-
-/** Modbus TCP default ports (502 is the standard IANA-assigned port) */
 const MODBUS_PORT_REGEX = /[:\s](502|5020|50200)\b/;
-
-/** Common industrial Ethernet ports (EtherNet/IP: 44818, PROFINET hints) */
 const INDUSTRIAL_PORT_REGEX = /\b(44818|44819|2000|2001)\b/;
-
-/** Hardcoded private IPs commonly used for PLCs in code (not configs) */
-const HARDCODED_PLC_IP_REGEX = /['"`]192\.168\.\d{1,3}\.\d{1,3}['"`]/;
-
-/** Baud rate hardcoding (common industrial values) */
 const BAUD_RATE_REGEX = /\b(9600|19200|38400|57600|115200)\s*(,\s*['"`]?[N8E1O])/i;
 
 // =====================================================================
-// 2. DETERMINISTIC TESTING & MOCKING PATTERNS (MULTI-LANGUAGE)
-// Theory: Physical hardware cannot be reliably provisioned in ephemeral CI/CD
-// runners. Relying on physical PLCs for unit tests introduces non-determinism
-// and pipeline flakiness. Mocking is mandatory for IIoT CI/CD.
+// 2. PLC IP DETECTION (used by iiot-002)
+// Widened to match YAML pattern: 192.168.* | 10.0.* | 172.16-31.*
 // =====================================================================
+const HARDCODED_PLC_IP_REGEX =
+  /\b(192\.168\.\d{1,3}\.\d{1,3}|10\.0\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3})\b/;
 
-/**
- * Expanded to support multiple language ecosystems.
- * Different languages use different mocking/testing libraries for IIoT work.
- */
+// =====================================================================
+// 3. DETERMINISTIC TESTING PATTERNS (used by iiot-008)
+// =====================================================================
 const MOCK_LIBRARIES = [
-  // Python ecosystem
   'pymodbus.server', 'pymodbus.simulator', 'pycomm3', 'python-snap7',
   'opcua.mock', 'asyncua.test', 'MockPLC', 'MockServer', 'mock_modbus',
-  'faker', 'mock.patch', 'unittest.mock', 'pytest-mock', 'hypothesis',
-  'modbus-tk', 'minimalmodbus',
-
-  // JavaScript/TypeScript ecosystem
+  'mock.patch', 'unittest.mock', 'pytest-mock', 'hypothesis',
   'sinon', 'mocha', 'chai', 'jest', 'vitest', 'jasmine',
-  'mqtt', 'mqtt.js', 'modbus-serial', 'modbus-tcp', 'node-opcua',
-  'serialport', 'node-serialport', 'socket.io-client',
-  'mock-socket', 'nock', 'proxyquire', 'rewire',
-  'ioredis-mock', 'redis-mock',
-
-  // Java ecosystem
-  'mockito', 'junit', 'powermock', 's7connector',
-  'apache-plc4x', 'plc4j', 'eclipse-milo',
-
-  // C# / .NET ecosystem
+  'node-opcua', 'modbus-serial', 'mock-socket', 'nock',
+  'mockito', 'junit', 'powermock', 'plc4j', 'eclipse-milo',
   'nunit', 'xunit', 'moq', 'hslcommunication',
-  's7netplus', 'opcfoundation',
-
-  // General industrial
   'mockserver', 'wiremock', 'testcontainers',
 ];
 
-/**
- * Expanded test file patterns for multi-language IIoT projects.
- */
 const IIOT_TEST_PATTERNS = [
-  // Python test patterns
   /test_.*modbus/i, /test_.*plc/i, /test_.*scada/i, /test_.*opcua/i,
   /test_.*serial/i, /test_.*mqtt/i, /test_.*device/i, /test_.*protocol/i,
-
-  // JS/TS test patterns
   /.*\.(test|spec)\.(ts|js|tsx|jsx)$/,
-  /test.*device/i, /test.*protocol/i, /test.*connection/i,
-
-  // Java test patterns
-  /.*Test\.java$/, /.*IT\.java$/,
-
-  // C# test patterns
-  /.*Tests?\.cs$/,
-
-  // General test/mock directories
-  /tests\/.*mock/i, /test\/.*mock/i,
-  /__tests__\/.*device/i, /__tests__\/.*protocol/i,
+  /.*Test\.java$/, /.*Tests?\.cs$/,
   /__mocks__\//i,
 ];
 
-/**
- * Device-specific test directory patterns.
- * Many IIoT projects organize tests by device/protocol type.
- */
-const IIOT_TEST_DIRECTORIES = [
-  /\/test\/devices?\//i,
-  /\/tests\/devices?\//i,
-  /\/test\/protocols?\//i,
-  /\/tests\/protocols?\//i,
-  /\/test\/modbus/i,
-  /\/test\/mqtt/i,
-  /\/test\/opc/i,
-  /\/test\/plc/i,
-  /\/test\/scada/i,
-  /\/test\/serial/i,
-  /\/test\/hardware/i,
-  /\/__tests__\/devices?\//i,
-  /\/__tests__\/protocols?\//i,
-];
-
-/**
- * Simulator configuration files across ecosystems.
- */
 const SIMULATOR_CONFIG_FILES = [
-  // Python simulators
   'modbus_simulator.py', 'plc_mock.py', 'scada_mock.py', 'simulator.py',
   'mock_server.py', 'conftest.py', 'pytest.ini', 'tox.ini',
-
-  // JS/TS simulators
   'modbus-simulator.js', 'plc-mock.js', 'mqtt-broker.js',
   'jest.config.js', 'jest.config.ts', 'vitest.config.ts',
-  '.mocharc.js', '.mocharc.json', 'mocha.opts',
-
-  // Docker-based simulators
   'docker-compose.simulation.yml', 'docker-compose.test.yml',
-  'docker-compose.yml',
-
-  // Java/C# simulators
-  'application-test.yml', 'application-test.properties',
 ];
 
-/**
- * Protocol library detection across ecosystems.
- * Used to identify IIoT-related code that needs testing.
- */
 const PROTOCOL_LIBRARIES = [
-  // Python protocols
   'pymodbus', 'pycomm3', 'python-snap7', 'asyncua', 'opcua',
   'minimalmodbus', 'modbus-tk', 'mqtt', 'paho-mqtt',
-
-  // JavaScript protocols
-  'mqtt', 'modbus-serial', 'modbus-tcp', 'node-opcua',
-  'serialport', 'socket.io', 'socket.io-client', 'ws', 'websocket',
-  'amqplib', 'amqp', 'kafkajs', 'nats', 'ioredis',
-
-  // Java protocols
+  'modbus-serial', 'modbus-tcp', 'node-opcua', 'serialport',
   'plc4j', 'apache-plc4x', 's7connector', 'eclipse-milo',
-  'paho-mqtt-client', 'eclipse-paho',
-
-  // C# protocols
-  's7netplus', 'hslcommunication', 'mqtt', 'rabbitmq',
+  's7netplus', 'hslcommunication',
 ];
 
 // =====================================================================
 // HELPER FUNCTIONS
 // =====================================================================
 
-/**
- * Determines if a file is a production source file, excluding tests, mocks, and configs.
- * We only want to flag hardcoded values in production logic, not in test fixtures.
- */
 function isProductionSourceFile(path: string): boolean {
   const lowerPath = path.toLowerCase();
   const codeExtensions = [
-    '.py',           // Python
-    '.ts', '.tsx',   // TypeScript
-    '.js', '.jsx',   // JavaScript
-    '.c', '.cpp', '.h', '.hpp',  // C/C++
-    '.rs',           // Rust
-    '.go',           // Go
-    '.java',         // Java
-    '.cs',           // C#
-    '.st',           // Structured Text (PLC)
-    '.iec',          // IEC 61131-3
+    '.py', '.ts', '.tsx', '.js', '.jsx', '.c', '.cpp', '.h', '.hpp',
+    '.rs', '.go', '.java', '.cs', '.st', '.iec',
   ];
 
   const isCode = codeExtensions.some((ext) => lowerPath.endsWith(ext));
@@ -230,31 +126,16 @@ function isProductionSourceFile(path: string): boolean {
   return isCode && !isTestOrMock;
 }
 
-/**
- * Enhanced dependency file detection with multi-language support.
- * Checks if a dependency file contains required IIoT mocking libraries.
- */
 function hasMockingDependencies(path: string, content: string | undefined): boolean {
   const lowerPath = path.toLowerCase();
   const isDependencyFile =
     lowerPath.endsWith('requirements.txt') ||
-    lowerPath.endsWith('requirements-dev.txt') ||
     lowerPath.endsWith('pyproject.toml') ||
     lowerPath.endsWith('setup.py') ||
-    lowerPath.endsWith('pipfile') ||
-    lowerPath.endsWith('pipfile.lock') ||
-    lowerPath.endsWith('poetry.lock') ||
     lowerPath.endsWith('package.json') ||
-    lowerPath.endsWith('package-lock.json') ||
-    lowerPath.endsWith('yarn.lock') ||
-    lowerPath.endsWith('pnpm-lock.yaml') ||
     lowerPath.endsWith('cargo.toml') ||
     lowerPath.endsWith('pom.xml') ||
-    lowerPath.endsWith('build.gradle') ||
-    lowerPath.endsWith('build.gradle.kts') ||
-    lowerPath.endsWith('packages.config') ||
-    lowerPath.endsWith('.csproj') ||
-    lowerPath.endsWith('gemfile');
+    lowerPath.endsWith('build.gradle');
 
   if (!isDependencyFile || !content) return false;
 
@@ -262,10 +143,6 @@ function hasMockingDependencies(path: string, content: string | undefined): bool
   return MOCK_LIBRARIES.some((lib) => lowerContent.includes(lib.toLowerCase()));
 }
 
-/**
- * Detect if a dependency file contains IIoT protocol libraries.
- * This helps identify projects that NEED testing infrastructure.
- */
 function hasProtocolDependencies(path: string, content: string | undefined): boolean {
   const lowerPath = path.toLowerCase();
   const isDependencyFile =
@@ -282,35 +159,6 @@ function hasProtocolDependencies(path: string, content: string | undefined): boo
   return PROTOCOL_LIBRARIES.some((lib) => lowerContent.includes(lib.toLowerCase()));
 }
 
-/**
- * Detect test script definitions in configuration files.
- */
-function hasTestScript(path: string, content: string | undefined): boolean {
-  const lowerPath = path.toLowerCase();
-  if (
-    !lowerPath.endsWith('package.json') &&
-    !lowerPath.endsWith('pyproject.toml') &&
-    !lowerPath.endsWith('makefile') &&
-    !lowerPath.endsWith('cargo.toml')
-  ) {
-    return false;
-  }
-
-  if (!content) return false;
-
-  const lowerContent = content.toLowerCase();
-  return (
-    lowerContent.includes('"test"') ||
-    lowerContent.includes("'test'") ||
-    lowerContent.includes('mocha') ||
-    lowerContent.includes('jest') ||
-    lowerContent.includes('pytest') ||
-    lowerContent.includes('junit') ||
-    lowerContent.includes('nunit') ||
-    lowerContent.includes('cargo test')
-  );
-}
-
 // =====================================================================
 // MAIN AUDIT ORCHESTRATOR
 // =====================================================================
@@ -321,7 +169,6 @@ export function auditIIoTRepository(
 ): IIoTAuditReport {
   const checks: IIoTCheckResult[] = [];
 
-  // Pre-filter files to reduce cognitive load and processing time
   const productionFiles = treeItems.filter(
     (item) => item.type === 'blob' && isProductionSourceFile(item.path)
   );
@@ -330,15 +177,150 @@ export function auditIIoTRepository(
     .map((item) => item.path);
 
   // ───────────────────────────────────────────────
-  // CHECK 1: Hardware Abstraction (Hardcoded Ports/IPs)
+  // iiot-002 — Hardcoded PLC IP address (YAML: severity error)
   // ───────────────────────────────────────────────
-  const hardcodedPortFiles: string[] = [];
   const hardcodedIpFiles: string[] = [];
-
   for (const file of productionFiles) {
     const content = fileContents?.[file.path];
     if (!content) continue;
+    if (HARDCODED_PLC_IP_REGEX.test(content)) {
+      hardcodedIpFiles.push(file.path);
+    }
+  }
 
+  if (hardcodedIpFiles.length > 0) {
+    checks.push({
+      ruleId: 'iiot-002',
+      category: 'hardware_abstraction',
+      status: 'fail',
+      title: 'Hardcoded PLC IP address',
+      message: `Hardcoded private IP found in ${hardcodedIpFiles.length} file(s) — use an environment variable instead.`,
+      affectedFiles: hardcodedIpFiles.slice(0, 5),
+      recommendation:
+        'Put the address in .env: PLC_HOST=192.168.1.10. In code: os.getenv(\'PLC_HOST\', \'localhost\').',
+    });
+  } else {
+    checks.push({
+      ruleId: 'iiot-002',
+      category: 'hardware_abstraction',
+      status: 'pass',
+      title: 'No hardcoded PLC IP address',
+      message: 'No hardcoded private IPs detected in production code.',
+      recommendation: 'Continue reading PLC_HOST from environment variables.',
+    });
+  }
+
+  // ───────────────────────────────────────────────
+  // iiot-004 — Inadequate Physical Lockout/Tagout (YAML: severity critical)
+  // ───────────────────────────────────────────────
+  const hasLotoDocs = allBlobPaths.some((path) => {
+    if (path.startsWith('docs/safety/')) return true;
+    if (path.startsWith('docs/loto/')) return true;
+    if (/(^|\/)LOCKOUT[^/]*\.md$/i.test(path)) return true;
+    if (/(^|\/)SAFETY\.md$/i.test(path)) return true;
+    return false;
+  });
+
+  if (hasLotoDocs) {
+    checks.push({
+      ruleId: 'iiot-004',
+      category: 'safety',
+      status: 'pass',
+      title: 'Site-level Lockout/Tagout reference present',
+      message: 'Repository references a site-level LOTO / safety procedure.',
+      recommendation: 'Keep the LOTO document synchronized with the physical interlock inventory.',
+    });
+  } else {
+    checks.push({
+      ruleId: 'iiot-004',
+      category: 'safety',
+      status: 'fail',
+      title: 'Inadequate Physical Lockout/Tagout and Operational Safety Culture',
+      message: 'No site-level Lockout/Tagout or safety documentation reference found.',
+      recommendation:
+        'Reference the site LOTO procedure from docs/safety/loto.md and link to the physical interlock inventory maintained outside source control.',
+    });
+  }
+
+  // ───────────────────────────────────────────────
+  // iiot-005 — OT network segmentation diagram (YAML: severity error)
+  // ───────────────────────────────────────────────
+  const hasNetworkDiagram = allBlobPaths.some((path) => {
+    if (path.startsWith('docs/network/')) return true;
+    if (/^docs\/architecture\/network[^/]*/i.test(path)) return true;
+    if (/(^|\/)topology\.(yaml|yml|md|d2)$/i.test(path)) return true;
+    return false;
+  });
+
+  if (hasNetworkDiagram) {
+    checks.push({
+      ruleId: 'iiot-005',
+      category: 'network_segmentation',
+      status: 'pass',
+      title: 'OT network segmentation diagram present',
+      message: 'Zone-and-conduit topology documented.',
+      recommendation: 'Review the diagram when firewall rules change.',
+    });
+  } else {
+    checks.push({
+      ruleId: 'iiot-005',
+      category: 'network_segmentation',
+      status: 'fail',
+      title: 'OT network segmentation diagram missing',
+      message: 'No network topology / zone-conduit diagram found in docs/.',
+      recommendation:
+        'Commit a zone-and-conduit diagram under docs/network/topology.md (or .d2) showing enterprise, DMZ, supervisory, and control enclaves with the firewall rules between them.',
+    });
+  }
+
+  // ───────────────────────────────────────────────
+  // iiot-006 — Undocumented PLC program change (YAML: severity warning)
+  // ───────────────────────────────────────────────
+  const hasPlcSources = allBlobPaths.some((path) => {
+    if (path.startsWith('plc/')) return true;
+    if (path.startsWith('scada/')) return true;
+    if (path.endsWith('.st')) return true;
+    if (path.endsWith('.scl')) return true;
+    return false;
+  });
+
+  if (hasPlcSources) {
+    const hasPlcChangelog = allBlobPaths.some((path) => {
+      if (/(^|\/)CHANGELOG(\.[a-z0-9]+)?$/i.test(path)) return true;
+      if (/^plc\/CHANGELOG/i.test(path)) return true;
+      if (/^scada\/CHANGELOG/i.test(path)) return true;
+      return false;
+    });
+
+    if (hasPlcChangelog) {
+      checks.push({
+        ruleId: 'iiot-006',
+        category: 'change_control',
+        status: 'pass',
+        title: 'PLC program change log present',
+        message: 'PLC/SCADA sources are accompanied by a CHANGELOG.',
+        recommendation: 'Continue recording change ticket IDs in commit messages.',
+      });
+    } else {
+      checks.push({
+        ruleId: 'iiot-006',
+        category: 'change_control',
+        status: 'warn',
+        title: 'Undocumented PLC program change',
+        message: 'PLC/SCADA sources present but no CHANGELOG recorded.',
+        recommendation:
+          'Track every PLC program change in a CHANGELOG at the plc/ or scada/ directory root, and reference the change ticket ID in the commit message.',
+      });
+    }
+  }
+
+  // ───────────────────────────────────────────────
+  // iiot-007 — Hardcoded hardware port (bonus rule)
+  // ───────────────────────────────────────────────
+  const hardcodedPortFiles: string[] = [];
+  for (const file of productionFiles) {
+    const content = fileContents?.[file.path];
+    if (!content) continue;
     if (
       COM_PORT_REGEX.test(content) ||
       LINUX_SERIAL_REGEX.test(content) ||
@@ -348,135 +330,87 @@ export function auditIIoTRepository(
     ) {
       hardcodedPortFiles.push(file.path);
     }
-
-    if (HARDCODED_PLC_IP_REGEX.test(content)) {
-      hardcodedIpFiles.push(file.path);
-    }
   }
 
   if (hardcodedPortFiles.length > 0) {
     checks.push({
-      ruleId: 'iiot-004',
+      ruleId: 'iiot-007',
       category: 'hardware_abstraction',
       status: 'fail',
-      title: 'Hardcoded Hardware Ports Detected in Production Code',
-      message: `Found hardcoded serial/COM ports or Modbus port references in ${hardcodedPortFiles.length} file(s). This violates the 12-factor app methodology, making the code non-portable across edge and containerized environments.`,
+      title: 'Hardcoded hardware port in production code',
+      message: `Found hardcoded serial/COM ports or Modbus port references in ${hardcodedPortFiles.length} file(s).`,
       affectedFiles: hardcodedPortFiles.slice(0, 5),
       recommendation:
         'Abstract hardware configurations into environment variables (e.g., `os.environ["PLC_PORT"]`). Document required hardware parameters in a `.env.example` file.',
     });
   } else {
     checks.push({
-      ruleId: 'iiot-004',
+      ruleId: 'iiot-007',
       category: 'hardware_abstraction',
       status: 'pass',
-      title: 'Strict Hardware Abstraction Enforced',
-      message: 'No hardcoded physical ports or baud rates detected in production logic.',
-      recommendation:
-        'Maintain this boundary. Ensure deployment scripts (Helm, Docker) inject these variables at runtime.',
-    });
-  }
-
-  if (hardcodedIpFiles.length > 0) {
-    checks.push({
-      ruleId: 'iiot-002',
-      category: 'hardware_abstraction',
-      status: 'warn',
-      title: 'Hardcoded PLC IP Addresses Detected',
-      message: `Found direct IP literals for PLC/SCADA devices in ${hardcodedIpFiles.length} file(s). Production network topologies change; IPs should never be committed to source.`,
-      affectedFiles: hardcodedIpFiles.slice(0, 5),
-      recommendation:
-        'Replace hardcoded IPs with environment lookups. Centralize connection endpoints in a dedicated `config.py` or `network_config.ts` module.',
+      title: 'No hardcoded hardware ports',
+      message: 'No hardcoded physical ports or baud rates detected.',
+      recommendation: 'Maintain this boundary. Ensure deployment scripts inject these at runtime.',
     });
   }
 
   // ───────────────────────────────────────────────
-  // CHECK 2: Deterministic Testing (Mocks & Simulators)
+  // iiot-008 — No deterministic IIoT mock testing (bonus rule)
   // ───────────────────────────────────────────────
-
   const hasMockLibs = treeItems.some((item) =>
     hasMockingDependencies(item.path, fileContents?.[item.path])
   );
-
-  const hasTestScripts = treeItems.some((item) =>
-    hasTestScript(item.path, fileContents?.[item.path])
-  );
-
   const hasSimulatorConfig = allBlobPaths.some((path) =>
     SIMULATOR_CONFIG_FILES.some((sim) => path.toLowerCase().endsWith(sim.toLowerCase()))
   );
-
   const hasIiotTestFiles = allBlobPaths.some((path) =>
     IIOT_TEST_PATTERNS.some((regex) => regex.test(path))
   );
 
-  const hasIiotTestDirs = allBlobPaths.some((path) =>
-    IIOT_TEST_DIRECTORIES.some((regex) => regex.test(path))
-  );
-
-  const hasProtocolDeps = treeItems.some((item) =>
-    hasProtocolDependencies(item.path, fileContents?.[item.path])
-  );
-
-  const hasComprehensiveTests = hasMockLibs && (hasIiotTestFiles || hasIiotTestDirs);
-  const hasPartialTests = (hasMockLibs || hasSimulatorConfig) && hasTestScripts;
-  const hasTestInfrastructure = hasTestScripts && (hasIiotTestFiles || hasIiotTestDirs);
-
-  if (hasComprehensiveTests) {
+  if (hasMockLibs && (hasIiotTestFiles || hasSimulatorConfig)) {
     checks.push({
-      ruleId: 'iiot-005',
+      ruleId: 'iiot-008',
       category: 'deterministic_testing',
       status: 'pass',
-      title: 'Deterministic IIoT Mock Testing Present',
+      title: 'Deterministic IIoT mock testing present',
       message:
-        'Repository includes mocking libraries and dedicated IIoT test files/directories, ensuring CI pipelines can validate protocol logic without physical hardware.',
+        'Repository includes mocking libraries and dedicated IIoT test files or simulator config, ensuring CI can validate protocol logic without physical hardware.',
       recommendation:
-        'Excellent. Consider adding property-based tests (e.g., `hypothesis` in Python, `fast-check` in JS) to simulate edge cases like packet fragmentation or malformed Modbus frames.',
+        'Consider adding property-based tests (hypothesis in Python, fast-check in JS) to simulate malformed Modbus frames.',
     });
-  } else if (hasPartialTests || hasTestInfrastructure) {
+  } else if (hasMockLibs || hasIiotTestFiles || hasSimulatorConfig) {
     checks.push({
-      ruleId: 'iiot-005',
+      ruleId: 'iiot-008',
       category: 'deterministic_testing',
       status: 'warn',
-      title: 'Partial Test Infrastructure Detected',
+      title: 'Partial test infrastructure detected',
       message:
-        'Some testing components exist (test scripts, directories, or mocking libs), but comprehensive IIoT-specific mock coverage could not be fully confirmed.',
-      recommendation: hasProtocolDeps
-        ? 'Project uses IIoT protocols. Ensure all network-bound code paths have corresponding mock tests using sinon (JS), unittest.mock (Python), or mockito (Java).'
-        : 'Ensure all network-bound code paths have corresponding mock tests. Consider adding protocol-specific test directories.',
-    });
-  } else if (hasProtocolDeps) {
-    checks.push({
-      ruleId: 'iiot-005',
-      category: 'deterministic_testing',
-      status: 'fail',
-      title: 'No Industrial Protocol Mock Testing Detected',
-      message:
-        'Project uses IIoT protocol libraries but no mocking libraries, simulator configs, or test directories were found. Code interacting with physical hardware cannot be safely validated in ephemeral CI runners.',
+        'Some testing components exist, but comprehensive IIoT-specific mock coverage could not be fully confirmed.',
       recommendation:
-        'Add protocol-appropriate mocking libraries: sinon/mocha/chai (JS), pytest-mock/pymodbus (Python), or mockito/junit (Java). Create dedicated test directories for device/protocol testing.',
+        'Ensure all network-bound code paths have corresponding mock tests using sinon (JS), unittest.mock (Python), or mockito (Java).',
     });
   } else {
-    checks.push({
-      ruleId: 'iiot-005',
-      category: 'deterministic_testing',
-      status: 'warn',
-      title: 'Limited IIoT Testing Infrastructure',
-      message:
-        'No IIoT-specific mocking libraries, simulator configs, or test directories were detected. If this project interacts with hardware, add testing infrastructure.',
-      recommendation:
-        'If this project interacts with physical hardware, add appropriate mocking libraries and create test directories for device/protocol validation.',
-    });
+    const hasProtocolDeps = treeItems.some((item) =>
+      hasProtocolDependencies(item.path, fileContents?.[item.path])
+    );
+    if (hasProtocolDeps) {
+      checks.push({
+        ruleId: 'iiot-008',
+        category: 'deterministic_testing',
+        status: 'fail',
+        title: 'No deterministic IIoT mock testing detected',
+        message:
+          'Project uses IIoT protocol libraries but no mocking libraries, simulator configs, or test directories were found.',
+        recommendation:
+          'Add protocol-appropriate mocking libraries: sinon/mocha/chai (JS), pytest-mock/pymodbus (Python), or mockito/junit (Java).',
+      });
+    }
   }
 
   // ───────────────────────────────────────────────
-  // CHECK 3: Fail-Safe Networking (Timeouts & Retries)
-  // Theory: Network partitions are a certainty in industrial environments.
-  // Unbounded blocking calls will hang the control loop, violating deterministic execution.
+  // iiot-009 — Missing fail-safe timeouts (bonus rule)
   // ───────────────────────────────────────────────
   const unsafeConnectionFiles: string[] = [];
-  let robustConnectionCount = 0;
-
   for (const file of productionFiles) {
     const content = fileContents?.[file.path];
     if (!content) continue;
@@ -485,60 +419,37 @@ export function auditIIoTRepository(
       /import.*modbus|from.*modbus/i.test(content) ||
       /import.*plc|from.*snap7|from.*pycomm|from.*opcua/i.test(content) ||
       /require\s*\(['"](mqtt|serialport|node-opcua|modbus)/i.test(content) ||
-      /import\s+.*\s+from\s+['"](mqtt|serialport|node-opcua|modbus)/i.test(content) ||
-      /const\s+.*\s*=\s*require\s*\(['"](mqtt|serialport|node-opcua)/i.test(content) ||
-      /import\s+.*mqtt.*|import\s+.*serialport/i.test(content) ||
-      /new\s+mqtt\.Client|mqtt\.connect/i.test(content) ||
-      /new\s+SerialPort|serialport\.open/i.test(content);
+      /import\s+.*\s+from\s+['"](mqtt|serialport|node-opcua|modbus)/i.test(content);
 
     if (!hasProtocolImport) continue;
 
     const hasTimeout = /timeout\s*[=:]\s*\d+/i.test(content);
-    const hasRetryLogic = /retry|reconnect|max_attempts|backoff|retries/i.test(content);
-    const hasExceptionHandling = /try\s*:|try\s*{|catch\s*\(|\.catch\s*\(/.test(content);
-
     if (!hasTimeout) {
       unsafeConnectionFiles.push(file.path);
-    } else {
-      robustConnectionCount++;
-      if (hasRetryLogic || hasExceptionHandling) robustConnectionCount++;
     }
   }
 
   if (unsafeConnectionFiles.length > 0) {
     checks.push({
-      ruleId: 'iiot-006',
+      ruleId: 'iiot-009',
       category: 'fail_safe_networking',
       status: 'warn',
-      title: 'Industrial Connections Missing Fail-Safe Timeouts',
-      message: `Found ${unsafeConnectionFiles.length} file(s) with protocol imports but no explicit timeout settings. Unbounded connections will hang the application during network partitions.`,
+      title: 'Industrial connections missing fail-safe timeouts',
+      message: `Found ${unsafeConnectionFiles.length} file(s) with protocol imports but no explicit timeout settings.`,
       affectedFiles: unsafeConnectionFiles.slice(0, 5),
       recommendation:
-        'Always set explicit timeouts on clients (e.g., `ModbusTcpClient(host, timeout=3)` or `mqtt.connect(url, {connectTimeout: 5000})`). Implement exponential backoff for critical PLC reconnections.',
-    });
-  } else if (robustConnectionCount > 0) {
-    checks.push({
-      ruleId: 'iiot-006',
-      category: 'fail_safe_networking',
-      status: 'pass',
-      title: 'Robust, Fail-Safe Connection Handling Detected',
-      message:
-        'Industrial protocol connections include explicit timeouts and error handling, adhering to deterministic execution best practices.',
-      recommendation:
-        'Document connection failure modes and fallback states in the README so operators understand system behavior during PLC downtime.',
+        'Always set explicit timeouts on clients (e.g., `ModbusTcpClient(host, timeout=3)` or `mqtt.connect(url, {connectTimeout: 5000})`). Implement exponential backoff for critical reconnections.',
     });
   }
 
   // ───────────────────────────────────────────────
-  // SCORING ENGINE
+  // SCORING
   // ───────────────────────────────────────────────
   const failures = checks.filter((c) => c.status === 'fail').length;
   const warnings = checks.filter((c) => c.status === 'warn').length;
   const passed = checks.filter((c) => c.status === 'pass').length;
 
-  // Hardware abstraction and Fail-safe networking are critical in IIoT.
-  // Fails penalize heavily (-35), Warnings moderately (-15).
-  let calculatedScore = 100 - (failures * 35) - (warnings * 15);
+  let calculatedScore = 100 - failures * 35 - warnings * 15;
   calculatedScore = Math.max(0, Math.min(100, calculatedScore));
 
   return {
