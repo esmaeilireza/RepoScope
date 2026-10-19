@@ -1,10 +1,3 @@
-Here is the fully updated `README.md` with the SVG codebase map integrated into the "Project Structure" section. 
-
-I placed the SVG right below the section header so it acts as a beautiful visual map, followed by your collapsible text-based directory tree for detailed reference.
-
-### The Updated `README.md`
-
-```markdown
 # RepoScope 🛡️
 
 > **DataOps & Industrial Code Quality Gatekeeper**  
