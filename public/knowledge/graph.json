@@ -1,0 +1,662 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-10-14T00:00:00Z",
+  "stats": {
+    "nodes": 39,
+    "edges": 54,
+    "rules": 11,
+    "concepts": 14,
+    "books": 14
+  },
+  "nodes": [
+    {
+      "id": "rule:iiot-001",
+      "type": "rule",
+      "label": "Missing Modbus error handler",
+      "severity": "critical",
+      "profile": "iiot",
+      "rationale": "In OT environments, a Modbus timeout without exception handling can cause silent loss of telemetry and unreliable process decisions.",
+      "fix": "Wrap Modbus reads in try/except for ModbusIOException.\nUse pymodbus.device.ModbusSimulatorServer as the test mock."
+    },
+    {
+      "id": "rule:iiot-002",
+      "type": "rule",
+      "label": "Hardcoded PLC IP address",
+      "severity": "error",
+      "profile": "iiot",
+      "rationale": "Hardcoded private OT addresses break environment portability and weaken network segmentation boundaries.",
+      "fix": "Move PLC host addresses to environment variables, for example PLC_HOST, and keep real values out of source control."
+    },
+    {
+      "id": "rule:iiot-003",
+      "type": "rule",
+      "label": "No requirements.txt pin",
+      "severity": "warning",
+      "profile": "iiot",
+      "rationale": "Unpinned dependencies can introduce silent driver or library ABI changes in high-uptime industrial environments.",
+      "fix": "Pin runtime dependencies with exact versions, for example pymodbus==3.6.3, and regenerate requirements.txt from a locked environment."
+    },
+    {
+      "id": "rule:dataops-001",
+      "type": "rule",
+      "label": "Missing data pipeline tests",
+      "severity": "critical",
+      "profile": "dataops",
+      "rationale": "Untested pipelines can pass corrupted data downstream and undermine trust in analytics outputs.",
+      "fix": "Add at least one schema or expectation test for pipeline outputs, using tools such as pandera or great_expectations."
+    },
+    {
+      "id": "rule:dataops-002",
+      "type": "rule",
+      "label": "No schema validation on ingestion",
+      "severity": "error",
+      "profile": "dataops",
+      "rationale": "Ingestion without schema contracts allows upstream shape changes to corrupt downstream computation silently.",
+      "fix": "Validate incoming datasets with an explicit schema contract before transformation or loading."
+    },
+    {
+      "id": "rule:dataops-003",
+      "type": "rule",
+      "label": "Missing .env.example",
+      "severity": "warning",
+      "profile": "dataops",
+      "rationale": "Without a sample environment file, contributors may miss required variables or commit real credentials.",
+      "fix": "Add .env.example with placeholder keys and ensure real .env files are ignored by Git."
+    },
+    {
+      "id": "rule:webapp-001",
+      "type": "rule",
+      "label": "No rate limiting on API routes",
+      "severity": "critical",
+      "profile": "webapp",
+      "rationale": "APIs without rate limiting are exposed to abuse, cost blowups, and reliability degradation for all users.",
+      "fix": "Add rate limiting to public API routes, for example with Upstash Ratelimit and Vercel KV or an equivalent gateway control."
+    },
+    {
+      "id": "rule:webapp-002",
+      "type": "rule",
+      "label": "Missing Content Security Policy",
+      "severity": "error",
+      "profile": "webapp",
+      "rationale": "Without CSP, injected scripts have a larger attack surface and browser-side mitigations are weaker.",
+      "fix": "Configure a Content Security Policy header appropriate for the app, starting with restrictive defaults and explicit allowances."
+    },
+    {
+      "id": "rule:general-001",
+      "type": "rule",
+      "label": "Potential hardcoded secret",
+      "severity": "critical",
+      "profile": "webapp",
+      "rationale": "Credentials committed to source control remain exposed in Git history even after deletion.",
+      "fix": "Move secrets to the runtime environment, rotate exposed credentials, and add secret scanning to CI."
+    },
+    {
+      "id": "rule:cross-001",
+      "type": "rule",
+      "label": "IIoT + DataOps ABI conflict risk",
+      "severity": "error",
+      "profile": "cross",
+      "rationale": "Mixing industrial drivers and analytics libraries in one environment can create silent dependency conflicts.",
+      "fix": "Separate OT driver dependencies from analytics/data dependencies using isolated virtual environments or separate requirement files."
+    },
+    {
+      "id": "rule:cross-002",
+      "type": "rule",
+      "label": "IIoT control plane exposed via web API",
+      "severity": "warning",
+      "profile": "cross",
+      "rationale": "Web surfaces that reference PLC or Modbus controls can unintentionally bridge IT and OT safety boundaries.",
+      "fix": "Require authentication and authorization for any API route that touches OT control paths, and enforce network segmentation between IT and OT."
+    },
+    {
+      "id": "concept:fail-safe-networking",
+      "type": "concept",
+      "label": "fail-safe networking",
+      "definition": "Design communication paths so failures are detected and do not create unsafe silent states.",
+      "domain": "iiot",
+      "source": {
+        "book": "Industrial Network Security"
+      }
+    },
+    {
+      "id": "concept:deterministic-execution",
+      "type": "concept",
+      "label": "deterministic execution",
+      "definition": "Prefer predictable, repeatable execution behavior in control software and runtime dependencies.",
+      "domain": "iiot",
+      "source": {
+        "book": "PLC Controls with Structured Text"
+      }
+    },
+    {
+      "id": "concept:network-segmentation",
+      "type": "concept",
+      "label": "network segmentation",
+      "definition": "Separate trust zones and control traffic to limit blast radius and unauthorized access.",
+      "domain": "iiot",
+      "source": {
+        "book": "Industrial Network Security"
+      }
+    },
+    {
+      "id": "concept:zone-and-conduit-model",
+      "type": "concept",
+      "label": "zone and conduit model",
+      "definition": "Organize industrial systems into zones and controlled conduits for security and segmentation.",
+      "domain": "iiot",
+      "source": {
+        "book": "IEC 62443"
+      }
+    },
+    {
+      "id": "concept:data-quality-dimensions",
+      "type": "concept",
+      "label": "data quality dimensions",
+      "definition": "Assess data using dimensions such as completeness, validity, consistency, timeliness, and accuracy.",
+      "domain": "dataops",
+      "source": {
+        "book": "Data Quality Fundamentals"
+      }
+    },
+    {
+      "id": "concept:reproducibility",
+      "type": "concept",
+      "label": "reproducibility",
+      "definition": "Ensure the same inputs, code, and configuration can produce the same results over time.",
+      "domain": "dataops",
+      "source": {
+        "book": "Designing Data-Intensive Applications"
+      }
+    },
+    {
+      "id": "concept:schema-contracts",
+      "type": "concept",
+      "label": "schema contracts",
+      "definition": "Define expected data structure and semantics at boundaries so changes are detected early.",
+      "domain": "dataops",
+      "source": {
+        "book": "Fundamentals of Data Engineering"
+      }
+    },
+    {
+      "id": "concept:dimensional-modeling",
+      "type": "concept",
+      "label": "dimensional modeling",
+      "definition": "Model analytical data using facts and dimensions to support consistent reporting and analysis.",
+      "domain": "dataops",
+      "source": {
+        "book": "The Data Warehouse Toolkit"
+      }
+    },
+    {
+      "id": "concept:environment-parity",
+      "type": "concept",
+      "label": "environment parity",
+      "definition": "Keep development, test, and production environments sufficiently equivalent to reduce surprise failures.",
+      "domain": "dataops",
+      "source": {
+        "book": "Practical DataOps"
+      }
+    },
+    {
+      "id": "concept:error-budgets",
+      "type": "concept",
+      "label": "error budgets",
+      "definition": "Allocate allowable unreliability so feature velocity and reliability goals can be balanced explicitly.",
+      "domain": "webapp",
+      "source": {
+        "book": "Site Reliability Engineering"
+      }
+    },
+    {
+      "id": "concept:api-abuse",
+      "type": "concept",
+      "label": "API abuse",
+      "definition": "Protect APIs from excessive, automated, or malicious use that degrades availability or confidentiality.",
+      "domain": "webapp",
+      "source": {
+        "book": "OWASP Top 10"
+      }
+    },
+    {
+      "id": "concept:output-encoding",
+      "type": "concept",
+      "label": "output encoding",
+      "definition": "Encode untrusted data for the target context to prevent injection and script execution risks.",
+      "domain": "webapp",
+      "source": {
+        "book": "Web Application Security"
+      }
+    },
+    {
+      "id": "concept:deployment-pipeline",
+      "type": "concept",
+      "label": "deployment pipeline",
+      "definition": "Automate build, test, and release steps so changes can be deployed reliably and repeatably.",
+      "domain": "webapp",
+      "source": {
+        "book": "Continuous Delivery"
+      }
+    },
+    {
+      "id": "concept:secrets-management",
+      "type": "concept",
+      "label": "secrets management",
+      "definition": "Keep credentials out of source code and control their storage, rotation, and runtime injection.",
+      "domain": "webapp",
+      "source": {
+        "book": "Web Application Security"
+      }
+    },
+    {
+      "id": "book:industrial-network-security",
+      "type": "book",
+      "label": "Industrial Network Security",
+      "kind": "book"
+    },
+    {
+      "id": "book:plc-controls-with-structured-text",
+      "type": "book",
+      "label": "PLC Controls with Structured Text",
+      "kind": "book"
+    },
+    {
+      "id": "book:iec-62443",
+      "type": "book",
+      "label": "IEC 62443",
+      "kind": "standard"
+    },
+    {
+      "id": "book:practical-industrial-data-networks",
+      "type": "book",
+      "label": "Practical Industrial Data Networks",
+      "kind": "book"
+    },
+    {
+      "id": "book:automating-manufacturing-systems-with-plcs",
+      "type": "book",
+      "label": "Automating Manufacturing Systems with PLCs",
+      "kind": "book"
+    },
+    {
+      "id": "book:data-quality-fundamentals",
+      "type": "book",
+      "label": "Data Quality Fundamentals",
+      "kind": "book"
+    },
+    {
+      "id": "book:designing-data-intensive-applications",
+      "type": "book",
+      "label": "Designing Data-Intensive Applications",
+      "kind": "book"
+    },
+    {
+      "id": "book:fundamentals-of-data-engineering",
+      "type": "book",
+      "label": "Fundamentals of Data Engineering",
+      "kind": "book"
+    },
+    {
+      "id": "book:the-data-warehouse-toolkit",
+      "type": "book",
+      "label": "The Data Warehouse Toolkit",
+      "kind": "book"
+    },
+    {
+      "id": "book:practical-dataops",
+      "type": "book",
+      "label": "Practical DataOps",
+      "kind": "book"
+    },
+    {
+      "id": "book:site-reliability-engineering",
+      "type": "book",
+      "label": "Site Reliability Engineering",
+      "kind": "book"
+    },
+    {
+      "id": "book:owasp-top-10",
+      "type": "book",
+      "label": "OWASP Top 10",
+      "kind": "standard"
+    },
+    {
+      "id": "book:web-application-security",
+      "type": "book",
+      "label": "Web Application Security",
+      "kind": "book"
+    },
+    {
+      "id": "book:continuous-delivery",
+      "type": "book",
+      "label": "Continuous Delivery",
+      "kind": "book"
+    }
+  ],
+  "edges": [
+    {
+      "source": "rule:iiot-001",
+      "target": "concept:fail-safe-networking",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:iiot-001",
+      "target": "book:industrial-network-security",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:iiot-001",
+      "target": "concept:deterministic-execution",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:iiot-001",
+      "target": "book:plc-controls-with-structured-text",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:iiot-001",
+      "target": "concept:network-segmentation",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:iiot-001",
+      "target": "book:iec-62443",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:iiot-002",
+      "target": "concept:network-segmentation",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:iiot-002",
+      "target": "book:practical-industrial-data-networks",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:iiot-002",
+      "target": "concept:zone-and-conduit-model",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:iiot-002",
+      "target": "book:iec-62443",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:iiot-003",
+      "target": "concept:deterministic-execution",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:iiot-003",
+      "target": "book:automating-manufacturing-systems-with-plcs",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:dataops-001",
+      "target": "concept:data-quality-dimensions",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:dataops-001",
+      "target": "book:data-quality-fundamentals",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:dataops-001",
+      "target": "concept:reproducibility",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:dataops-001",
+      "target": "book:designing-data-intensive-applications",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:dataops-002",
+      "target": "concept:schema-contracts",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:dataops-002",
+      "target": "book:fundamentals-of-data-engineering",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:dataops-002",
+      "target": "concept:dimensional-modeling",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:dataops-002",
+      "target": "book:the-data-warehouse-toolkit",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:dataops-003",
+      "target": "concept:environment-parity",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:dataops-003",
+      "target": "book:practical-dataops",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:webapp-001",
+      "target": "concept:error-budgets",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:webapp-001",
+      "target": "book:site-reliability-engineering",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:webapp-001",
+      "target": "concept:api-abuse",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:webapp-001",
+      "target": "book:owasp-top-10",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:webapp-002",
+      "target": "concept:output-encoding",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:webapp-002",
+      "target": "book:web-application-security",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:webapp-002",
+      "target": "concept:deployment-pipeline",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:webapp-002",
+      "target": "book:continuous-delivery",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:general-001",
+      "target": "concept:secrets-management",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:general-001",
+      "target": "book:web-application-security",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:cross-001",
+      "target": "concept:environment-parity",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:cross-001",
+      "target": "book:practical-dataops",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:cross-001",
+      "target": "concept:reproducibility",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:cross-001",
+      "target": "book:designing-data-intensive-applications",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:cross-002",
+      "target": "concept:network-segmentation",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:cross-002",
+      "target": "book:industrial-network-security",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:cross-002",
+      "target": "concept:zone-and-conduit-model",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "rule:cross-002",
+      "target": "book:iec-62443",
+      "type": "grounded_by",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:fail-safe-networking",
+      "target": "book:industrial-network-security",
+      "type": "cited_in",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:deterministic-execution",
+      "target": "book:plc-controls-with-structured-text",
+      "type": "cited_in",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:network-segmentation",
+      "target": "book:industrial-network-security",
+      "type": "cited_in",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:zone-and-conduit-model",
+      "target": "book:iec-62443",
+      "type": "cited_in",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:data-quality-dimensions",
+      "target": "book:data-quality-fundamentals",
+      "type": "cited_in",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:reproducibility",
+      "target": "book:designing-data-intensive-applications",
+      "type": "cited_in",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:schema-contracts",
+      "target": "book:fundamentals-of-data-engineering",
+      "type": "cited_in",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:dimensional-modeling",
+      "target": "book:the-data-warehouse-toolkit",
+      "type": "cited_in",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:environment-parity",
+      "target": "book:practical-dataops",
+      "type": "cited_in",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:error-budgets",
+      "target": "book:site-reliability-engineering",
+      "type": "cited_in",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:api-abuse",
+      "target": "book:owasp-top-10",
+      "type": "cited_in",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:output-encoding",
+      "target": "book:web-application-security",
+      "type": "cited_in",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:deployment-pipeline",
+      "target": "book:continuous-delivery",
+      "type": "cited_in",
+      "weight": 1.0
+    },
+    {
+      "source": "concept:secrets-management",
+      "target": "book:web-application-security",
+      "type": "cited_in",
+      "weight": 1.0
+    }
+  ]
+}

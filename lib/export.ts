@@ -1,9 +1,23 @@
+// lib/export.ts
+
+import type { Finding } from './types';
+
 export type AuditExportResult = {
-  meta: any;
-  tree: any[];
-  branches: any[];
-  claims: any[];
-  findings: any[];
+  meta: {
+    full_name: string;
+    html_url: string;
+    default_branch: string;
+    description?: string;
+  };
+  tree: Array<{ path: string; type: string; size?: number }>;
+  branches: Array<{ name: string; protected?: boolean }>;
+  claims: Array<{
+    line?: number | string;
+    target: string;
+    status: string;
+    detail: string;
+  }>;
+  findings: Finding[];
   expl: {
     score: number;
     critical: number;
@@ -35,16 +49,23 @@ export function buildAuditJson(result: AuditExportResult) {
     },
     findings: result.findings,
     readmeClaims: result.claims,
-    branches: result.branches.map(branch => ({ name: branch.name, protected: branch.protected })),
-    tree: result.tree.map(entry => ({ path: entry.path, type: entry.type, size: entry.size })),
+    branches: result.branches.map((branch) => ({
+      name: branch.name,
+      protected: branch.protected,
+    })),
+    tree: result.tree.map((entry) => ({
+      path: entry.path,
+      type: entry.type,
+      size: entry.size,
+    })),
   };
 }
 
-function escapeMarkdown(value: unknown) {
+function escapeMarkdown(value: unknown): string {
   return String(value ?? '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
 }
 
-export function buildAuditMarkdown(result: AuditExportResult) {
+export function buildAuditMarkdown(result: AuditExportResult): string {
   const lines = [
     `# RepoScope audit: ${result.meta.full_name}`,
     '',
@@ -65,9 +86,14 @@ export function buildAuditMarkdown(result: AuditExportResult) {
   if (result.findings.length === 0) {
     lines.push('No findings were reported.', '');
   } else {
-    lines.push('| Severity | Finding | Details | Suggested fix |', '| --- | --- | --- | --- |');
-    result.findings.forEach(finding => {
-      lines.push(`| ${escapeMarkdown(finding.severity)} | ${escapeMarkdown(finding.title)} | ${escapeMarkdown(finding.detail)} | ${escapeMarkdown(finding.fix)} |`);
+    lines.push(
+      '| Rule ID | Severity | Finding | Details | Suggested fix |',
+      '| --- | --- | --- | --- | --- |'
+    );
+    result.findings.forEach((finding) => {
+      lines.push(
+        `| \`${escapeMarkdown(finding.ruleId)}\` | ${escapeMarkdown(finding.severity)} | ${escapeMarkdown(finding.title)} | ${escapeMarkdown(finding.detail)} | ${escapeMarkdown(finding.fix)} |`
+      );
     });
     lines.push('');
   }
@@ -77,8 +103,10 @@ export function buildAuditMarkdown(result: AuditExportResult) {
     lines.push('No README claims were analyzed.', '');
   } else {
     lines.push('| Line | Target | Status | Detail |', '| ---: | --- | --- | --- |');
-    result.claims.forEach(claim => {
-      lines.push(`| ${claim.line} | ${escapeMarkdown(claim.target)} | ${escapeMarkdown(claim.status)} | ${escapeMarkdown(claim.detail)} |`);
+    result.claims.forEach((claim) => {
+      lines.push(
+        `| ${claim.line ?? ''} | ${escapeMarkdown(claim.target)} | ${escapeMarkdown(claim.status)} | ${escapeMarkdown(claim.detail)} |`
+      );
     });
     lines.push('');
   }

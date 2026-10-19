@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Resolve the directory of this script
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Execute using local tsx. 
+# --no-install prevents npx from downloading the public npm package named "reposcope"
+exec npx --no-install tsx "$DIR/../scripts/reposcope-audit.ts" "$@"

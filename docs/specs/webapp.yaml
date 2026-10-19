@@ -1,0 +1,72 @@
+# docs/specs/webapp.yaml — General Web App audit rules
+version: "1.0"
+profile: webapp
+
+rules:
+  - id: webapp-001
+    profile: webapp
+    severity: critical
+    title: "No rate limiting on API routes"
+    rationale: >
+      An API without rate limiting is exposed to abuse and denial-of-service
+      pressure. On serverless platforms it can also create direct cost risk. In
+      reliability engineering terms, there is no protection for the shared error
+      budget.
+    checks:
+      - type: pattern_match
+        pattern: "rateLimit|rate-limit|upstash|redis|kv"
+        must_exist: false
+        file_glob: "**/*.{ts,tsx,js,jsx}"
+        error_when: "pattern_absent"
+        message: "No rate limiting pattern found in application source files"
+    fix: |
+      Use @upstash/ratelimit with Vercel KV or middleware rate limiting.
+    references:
+      - book: "Site Reliability Engineering"
+        concept: "error-budgets"
+      - standard: "OWASP Top 10"
+        concept: "api-abuse"
+
+  - id: webapp-002
+    profile: webapp
+    severity: error
+    title: "Missing Content Security Policy"
+    rationale: >
+      Without CSP, injected JavaScript has a larger attack surface. Hardening
+      headers are a relatively cheap deployment-time control because they can be
+      applied centrally without changing every application code path.
+    checks:
+      - type: pattern_match
+        pattern: "Content-Security-Policy|contentSecurityPolicy"
+        must_exist: false
+        file_glob: "**/*.{ts,tsx,js,jsx,json}"
+        error_when: "pattern_absent"
+        message: "No CSP header configuration found"
+    fix: |
+      Add the Content-Security-Policy header in next.config.js or server header configuration.
+    references:
+      - book: "Web Application Security"
+        concept: "output-encoding"
+      - book: "Continuous Delivery"
+        concept: "deployment-pipeline"
+
+  - id: general-security-001
+    profile: webapp
+    severity: critical
+    title: "Potential hardcoded secret"
+    rationale: >
+      A hardcoded credential in source control remains exposed in Git history
+      even after removal. Secrets belong in the runtime environment or a secret
+      manager, not in the codebase.
+    checks:
+      - type: pattern_match
+        pattern: '(password|api_key|secret)\s*=\s*["''][^"'']{6,}'
+        must_exist: false
+        file_glob: "**/*"
+        error_when: "pattern_present"
+        message: "Possible hardcoded credential found"
+    fix: |
+      Move the secret to an environment variable and rotate the exposed key.
+    references:
+      - book: "Web Application Security"
+        concept: "secrets-management"

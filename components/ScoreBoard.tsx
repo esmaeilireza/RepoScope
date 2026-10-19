@@ -1,6 +1,29 @@
 'use client';
 
-export default function ScoreBoard({ score, explanation }: { score: number; explanation: any }) {
+import type { AuditScore, FindingSeverity } from '@/lib/types';
+
+interface ScoreBoardProps {
+  /** Overall 0-100 score. Duplicated inside `explanation.score` for the caller's convenience. */
+  score: number;
+  /** Return value of `scoreAndExplain()` from lib/audit.ts. */
+  explanation: AuditScore;
+}
+
+const SEVERITY_ICO: Record<FindingSeverity, string> = {
+  critical: '!!!',
+  error: '!!',
+  warning: '!',
+  info: 'i',
+};
+
+const SEVERITY_CLASS: Record<FindingSeverity, string> = {
+  critical: 'sev-error',
+  error: 'sev-error',
+  warning: 'sev-warning',
+  info: 'sev-info',
+};
+
+export default function ScoreBoard({ score, explanation }: ScoreBoardProps) {
   const C = 2 * Math.PI * 36;
   const color = score >= 80 ? '#34d399' : score >= 60 ? '#fbbf24' : '#fb7185';
   const label = score >= 80 ? 'Excellent' : score >= 60 ? 'Needs attention' : 'Critical';
@@ -9,7 +32,6 @@ export default function ScoreBoard({ score, explanation }: { score: number; expl
 
   return (
     <div className="card-static rounded-2xl p-6 anim">
-      {/* Score Circle Section */}
       <div className="flex items-center gap-8 mb-6">
         <div className="relative w-24 h-24 flex-shrink-0">
           <svg className="w-24 h-24 -rotate-90">
@@ -55,28 +77,18 @@ export default function ScoreBoard({ score, explanation }: { score: number; expl
         </div>
       </div>
 
-      {/* Why this score section */}
       <div className="border-t border-edge pt-4">
         <h3 className="text-sm font-black text-white mb-3">Why this score?</h3>
         <div className="space-y-2">
-          {explanation.items && explanation.items.map((item: any, idx: number) => {
-            const icoClass = item.severity === 'critical' || item.severity === 'error'
-              ? 'sev-error'
-              : item.severity === 'warning'
-              ? 'sev-warning'
-              : 'sev-info';
-            
-            const ico = item.severity === 'critical' ? '!!!'
-                      : item.severity === 'error' ? '!!'
-                      : item.severity === 'warning' ? '!'
-                      : 'i';
+          {explanation.items.map((item, idx) => {
+            const sevClass = SEVERITY_CLASS[item.severity];
+            const ico = SEVERITY_ICO[item.severity];
 
             return (
               <div key={idx} className="find-row">
-                <div className={`sev-ico ${icoClass}`}>{ico}</div>
-                
+                <div className={`sev-ico ${sevClass}`}>{ico}</div>
+
                 <div className="flex-1 min-w-0">
-                  {/* Row 1: Title + Points (separate line) */}
                   <div className="mb-1">
                     <span className="font-bold text-white text-sm">
                       {item.title}
@@ -86,14 +98,13 @@ export default function ScoreBoard({ score, explanation }: { score: number; expl
                         (-{item.points} pts)
                       </span>
                     )}
+                    <span className="ml-2 text-[10px] font-mono text-slate-500">
+                      {item.ruleId}
+                    </span>
                   </div>
-                  
-                  {/* Row 2: Detail */}
-                  <p className="text-slate-400 text-xs mb-1">
-                    {item.detail}
-                  </p>
-                  
-                  {/* Row 3: Fix suggestion */}
+
+                  <p className="text-slate-400 text-xs mb-1">{item.detail}</p>
+
                   <p className="text-mint text-xs">
                     <span className="font-bold">Fix:</span> {item.fix}
                   </p>

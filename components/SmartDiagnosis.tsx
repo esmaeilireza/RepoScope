@@ -3,15 +3,17 @@ import { useState } from 'react';
 import {
   DiagnosticResult,
   generateRunSpecificCommands,
-  // ErrorPattern removed – we use inline type instead
 } from '@/lib/github-diagnostics';
 import { generateFixProposals, generateFixCommands, FixProposal } from '@/lib/github-auto-fix';
+import type { SmartDiagnosis as SmartDiagnosisEnrichment } from '@/lib/types';
 
 interface SmartDiagnosisProps {
   diagnostic: DiagnosticResult;
   runId: number;
   owner: string;
   repo: string;
+  /** Optional Week-5 enrichment: AI-generated summary + citations from the graph. */
+  enriched?: SmartDiagnosisEnrichment;
 }
 
 export default function SmartDiagnosis({
@@ -19,6 +21,7 @@ export default function SmartDiagnosis({
   runId,
   owner,
   repo,
+  enriched,
 }: SmartDiagnosisProps) {
   const [activeTab, setActiveTab] = useState<'diagnosis' | 'fixes' | 'logs'>('diagnosis');
   const [copied, setCopied] = useState<string | null>(null);
@@ -39,7 +42,6 @@ export default function SmartDiagnosis({
     info: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-200', icon: 'ℹ️' },
   };
 
-  // ✅ Use inline union type – no need to import ErrorPattern
   const highestSeverity = diagnostic.patterns.reduce<'critical' | 'error' | 'warning' | 'info'>(
     (max, p) => {
       const order = { critical: 4, error: 3, warning: 2, info: 1 };
@@ -75,16 +77,40 @@ export default function SmartDiagnosis({
         </div>
       </div>
 
+      {/* ─── Week-5: graph-grounded enrichment (optional) ─── */}
+      {enriched && (
+        <div className="mb-4 p-3 bg-black/30 rounded-lg border border-purple-500/30 space-y-2">
+          <p className="text-sm text-slate-200 leading-relaxed">{enriched.summary}</p>
+          <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
+            {enriched.citations.length > 0 ? (
+              <span className="inline-flex items-center gap-1.5 text-mint">
+                <span className="w-1.5 h-1.5 rounded-full bg-mint" />
+                grounded · {enriched.citations.length} citation
+                {enriched.citations.length > 1 ? 's' : ''}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-amberx">
+                <span className="w-1.5 h-1.5 rounded-full bg-amberx" />
+                unverified
+              </span>
+            )}
+            {enriched.strippedCount > 0 && (
+              <span className="text-slate-500">{enriched.strippedCount} stripped</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex gap-2 mb-4 border-b border-gray-700">
         {[
           { id: 'diagnosis', label: '🔍 Diagnosis', count: diagnostic.patterns.length },
           { id: 'fixes', label: '⚡ Auto-Fixes', count: fixProposals.length },
           { id: 'logs', label: '📄 Logs', count: diagnostic.parsedLogs.errors.length },
-        ].map(tab => (
+        ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id as 'diagnosis' | 'fixes' | 'logs')}
             className={`px-4 py-2 text-sm font-medium transition border-b-2 -mb-px ${
               activeTab === tab.id
                 ? 'border-blue-500 text-white'
@@ -106,16 +132,22 @@ export default function SmartDiagnosis({
             <div key={idx} className="p-4 bg-black/30 rounded-lg border border-gray-700">
               <div className="flex items-start justify-between mb-2">
                 <h5 className="font-semibold text-white">{pattern.title}</h5>
-                <span className={`text-xs px-2 py-0.5 rounded ${
-                  pattern.severity === 'critical' ? 'bg-red-600' :
-                  pattern.severity === 'error' ? 'bg-orange-600' :
-                  pattern.severity === 'warning' ? 'bg-yellow-600' : 'bg-blue-600'
-                } text-white`}>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded ${
+                    pattern.severity === 'critical'
+                      ? 'bg-red-600'
+                      : pattern.severity === 'error'
+                        ? 'bg-orange-600'
+                        : pattern.severity === 'warning'
+                          ? 'bg-yellow-600'
+                          : 'bg-blue-600'
+                  } text-white`}
+                >
                   {pattern.severity.toUpperCase()}
                 </span>
               </div>
               <p className="text-sm text-gray-300 mb-3">{pattern.solution.explanation}</p>
-              
+
               <div className="mb-3">
                 <h6 className="text-xs font-semibold text-gray-400 mb-1">📋 Solution Steps:</h6>
                 <ol className="list-decimal list-inside space-y-1 text-sm text-gray-300">
@@ -197,10 +229,12 @@ export default function SmartDiagnosis({
               <div className="flex items-center justify-between px-4 py-2 bg-gray-900/50 border-b border-gray-800">
                 <span className="text-xs font-mono text-gray-400">❌ Error Logs</span>
                 <button
-                  onClick={() => copyText(
-                    diagnostic.parsedLogs.errors.map(e => e.content).join('\n'),
-                    'error-logs'
-                  )}
+                  onClick={() =>
+                    copyText(
+                      diagnostic.parsedLogs.errors.map((e) => e.content).join('\n'),
+                      'error-logs'
+                    )
+                  }
                   className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded"
                 >
                   {copied === 'error-logs' ? '✓ Copied!' : '📋 Copy'}
@@ -304,8 +338,8 @@ function FixProposalCard({
         onClick={() => onCopy(fixCommands.join('\n'), `fix-${fix.pattern.id}`)}
         className="w-full py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded font-medium text-white text-sm transition"
       >
-        {copied === `fix-${fix.pattern.id}` 
-          ? '✓ Commands Copied! Paste in Terminal' 
+        {copied === `fix-${fix.pattern.id}`
+          ? '✓ Commands Copied! Paste in Terminal'
           : '📋 Copy Auto-Fix Commands'}
       </button>
     </div>

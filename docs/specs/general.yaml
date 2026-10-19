@@ -1,0 +1,296 @@
+# docs/specs/general.yaml — cross-profile general audit rules
+version: "1.0"
+profile: webapp
+
+rules:
+  - id: general-api-001
+    profile: webapp
+    severity: warning
+    title: "API route without input validation"
+    rationale: >
+      API routes that accept unvalidated input expose downstream services to
+      injection, SSRF, and abuse. Validate and type-check at the boundary.
+    checks:
+      - type: pattern_match
+        pattern: "zod|joi|yup|class-validator|pydantic"
+        must_exist: true
+        file_glob: "**/api/**/*.{ts,tsx,js,jsx}"
+        error_when: "pattern_absent"
+        message: "No input validation library detected in API routes"
+    fix: |
+      Add schema validation at the API boundary (zod, joi, yup, or equivalent).
+    references:
+      - book: "Web Application Security"
+        concept: "input-validation"
+      - standard: "OWASP Top 10"
+        concept: "injection"
+
+  - id: general-cicd-001
+    profile: webapp
+    severity: warning
+    title: "Missing CI/CD pipeline"
+    rationale: >
+      Repositories without automated delivery pipelines cannot reliably support
+      continuous delivery principles.
+    checks:
+      - type: file_exists
+        path_glob: ".github/workflows/*.{yml,yaml}"
+        error_when: "file_absent"
+        message: "No GitHub Actions workflow found"
+    fix: |
+      Add a .github/workflows/ci.yml with build and test steps.
+    references:
+      - book: "Continuous Delivery"
+        concept: "deployment-pipeline"
+      - book: "The DevOps Handbook"
+        concept: "continuous-integration"
+
+  - id: general-config-001
+    profile: webapp
+    severity: warning
+    title: "Missing .env.example"
+    rationale: >
+      Without .env.example, new contributors do not know which variables are
+      required and may commit real credentials.
+    checks:
+      - type: file_exists
+        path_glob: ".env.example"
+        error_when: "file_absent"
+        message: ".env.example not found in repository root"
+      - type: file_absent
+        path_glob: ".env"
+        error_when: "file_present"
+        message: ".env file committed — add to .gitignore"
+    fix: |
+      Create .env.example with placeholder values, and add .env to .gitignore.
+    references:
+      - book: "The DevOps Handbook"
+        concept: "configuration-management"
+
+  - id: general-deps-001
+    profile: webapp
+    severity: warning
+    title: "Unpinned dependency versions"
+    rationale: >
+      Unpinned dependencies cause non-reproducible builds and unexpected
+      breakage when a transitive dependency releases a new version.
+    checks:
+      - type: file_exists
+        path_glob: "package.json"
+        error_when: "file_absent"
+        message: "No package.json found"
+    fix: |
+      Pin dependency versions exactly and use the pnpm lockfile.
+    references:
+      - book: "Continuous Delivery"
+        concept: "reproducible-builds"
+
+  - id: general-docs-001
+    profile: webapp
+    severity: info
+    title: "Missing README"
+    rationale: >
+      A repository without a README cannot be onboarded by a new contributor
+      without talking to the original author.
+    checks:
+      - type: file_exists
+        path_glob: "README*"
+        error_when: "file_absent"
+        message: "No README found"
+    fix: |
+      Add a README.md with setup, run, and test instructions.
+    references:
+      - book: "The DevOps Handbook"
+        concept: "documentation"
+
+  - id: general-docs-002
+    profile: webapp
+    severity: info
+    title: "Missing LICENSE"
+    rationale: >
+      Absence of a license file leaves the legal status of the codebase
+      undefined and blocks downstream usage.
+    checks:
+      - type: file_exists
+        path_glob: "LICENSE*"
+        error_when: "file_absent"
+        message: "No LICENSE file found"
+    fix: |
+      Add a LICENSE file (MIT, Apache-2.0, or proprietary notice).
+    references:
+      - book: "The DevOps Handbook"
+        concept: "open-source-hygiene"
+
+  - id: general-docs-003
+    profile: webapp
+    severity: info
+    title: "Missing CONTRIBUTING guide"
+    rationale: >
+      Without a CONTRIBUTING guide, external PRs frequently violate project
+      conventions.
+    checks:
+      - type: file_exists
+        path_glob: "CONTRIBUTING*"
+        error_when: "file_absent"
+        message: "No CONTRIBUTING file found"
+    fix: |
+      Add CONTRIBUTING.md with branch, commit, and PR conventions.
+    references:
+      - book: "The DevOps Handbook"
+        concept: "collaboration"
+
+  - id: general-docs-004
+    profile: webapp
+    severity: info
+    title: "Missing CHANGELOG"
+    rationale: >
+      Without a CHANGELOG, downstream consumers cannot assess the impact of a
+      version upgrade.
+    checks:
+      - type: file_exists
+        path_glob: "CHANGELOG*"
+        error_when: "file_absent"
+        message: "No CHANGELOG file found"
+    fix: |
+      Add CHANGELOG.md following keepachangelog.com conventions.
+    references:
+      - book: "Continuous Delivery"
+        concept: "release-notes"
+
+  - id: general-legal-001
+    profile: webapp
+    severity: warning
+    title: "Missing SECURITY.md"
+    rationale: >
+      Without a SECURITY.md, security researchers cannot report vulnerabilities
+      responsibly.
+    checks:
+      - type: file_exists
+        path_glob: "SECURITY*"
+        error_when: "file_absent"
+        message: "No SECURITY file found"
+    fix: |
+      Add SECURITY.md with a private disclosure channel.
+    references:
+      - book: "Web Application Security"
+        concept: "responsible-disclosure"
+
+  - id: general-legal-002
+    profile: webapp
+    severity: warning
+    title: "Missing privacy policy or data handling doc"
+    rationale: >
+      Applications that collect user data without a documented privacy policy
+      risk compliance violations (GDPR, CCPA).
+    checks:
+      - type: pattern_match
+        pattern: "privacy|gdpr|ccpa|data-processing"
+        must_exist: true
+        file_glob: "**/*.{md,mdx}"
+        error_when: "pattern_absent"
+        message: "No privacy or data-handling documentation found"
+    fix: |
+      Add a privacy policy and document data retention and deletion procedures.
+    references:
+      - book: "Web Application Security"
+        concept: "compliance"
+
+  - id: general-links-001
+    profile: webapp
+    severity: info
+    title: "Documentation link integrity"
+    rationale: >
+      Broken links in README and docs erode trust and waste reader time.
+    checks:
+      - type: pattern_match
+        pattern: "https?://"
+        must_exist: true
+        file_glob: "README*"
+        error_when: "pattern_absent"
+        message: "No links found in README — verify link integrity manually"
+    fix: |
+      Run a link checker (e.g., lychee) in CI.
+    references:
+      - book: "The DevOps Handbook"
+        concept: "documentation"
+
+  - id: general-maint-001
+    profile: webapp
+    severity: warning
+    title: "Missing dependency-update automation"
+    rationale: >
+      Without automated dependency updates, security patches are delayed and
+      the codebase drifts behind upstream fixes.
+    checks:
+      - type: file_exists
+        path_glob: ".github/dependabot.{yml,yaml}"
+        error_when: "file_absent"
+        message: "No dependabot config found"
+    fix: |
+      Add .github/dependabot.yml with weekly update schedules.
+    references:
+      - book: "Continuous Delivery"
+        concept: "dependency-management"
+
+  - id: general-quality-001
+    profile: webapp
+    severity: warning
+    title: "Missing linter configuration"
+    rationale: >
+      Without a linter, style and correctness regressions slip through code
+      review and accumulate as technical debt.
+    checks:
+      - type: file_exists
+        path_glob: ".eslintrc*"
+        error_when: "file_absent"
+        message: "No ESLint config found"
+    fix: |
+      Add ESLint with next/core-web-vitals or equivalent ruleset.
+    references:
+      - book: "Clean Architecture"
+        concept: "code-quality"
+
+  - id: general-security-001
+    profile: webapp
+    severity: critical
+    title: "Potential hardcoded secret"
+    rationale: >
+      A hardcoded credential in source control remains exposed in Git history
+      even after removal. Secrets belong in the runtime environment or a
+      secret manager, not in the codebase.
+    checks:
+      - type: pattern_match
+        pattern: '(password|api_key|secret)\s*=\s*["''][^"'']{6,}'
+        must_exist: false
+        file_glob: "**/*"
+        error_when: "pattern_present"
+        message: "Possible hardcoded credential found"
+    fix: |
+      Move the secret to an environment variable and rotate the exposed key.
+    references:
+      - book: "Web Application Security"
+        concept: "secrets-management"
+
+  # ─── IIoT hardware rules (test groups iiot-hw-* with general-* IDs) ───
+  - id: iiot-hw-001
+    profile: iiot
+    severity: warning
+    title: "Missing OT hardware specification document"
+    rationale: >
+      Industrial deployments depend on deterministic compute characteristics
+      (PLC scan time, controller memory headroom, watchdog intervals). Without
+      a version-controlled hardware spec, capacity drift goes unnoticed until
+      a scan-cycle overrun trips the controller mid-shift.
+    checks:
+      - type: file_exists
+        path_glob: "{docs/hardware/**,HARDWARE.md,docs/hardware-spec*}"
+        error_when: "file_absent"
+        message: "No OT hardware specification found — document controller model, RAM, scan-time budget, and watchdog config"
+    fix: |
+      Add docs/hardware/ot-spec.md documenting the controller model,
+      available memory, expected scan time, and watchdog interval.
+    references:
+      - book: "Automating Manufacturing Systems with PLCs"
+        concept: "deterministic-execution"
+      - standard: "IEC 61131-3"
+        concept: "program-organization-units"

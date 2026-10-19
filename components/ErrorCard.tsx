@@ -1,6 +1,7 @@
 import { FormattedRun } from '@/hooks/useGitHubActions';
 import StatusBadge from './StatusBadge';
 import SmartDiagnosis from './SmartDiagnosis';
+import type { SmartDiagnosis as SmartDiagnosisEnrichment } from '@/lib/types';
 
 interface ErrorCardProps {
   run: FormattedRun;
@@ -8,17 +9,26 @@ interface ErrorCardProps {
   onToggle: () => void;
   owner: string;
   repo: string;
+  /** Optional Week-5 enrichment, passed straight through to SmartDiagnosis. */
+  enriched?: SmartDiagnosisEnrichment;
 }
 
-export default function ErrorCard({ run, expanded, onToggle, owner, repo }: ErrorCardProps) {
+export default function ErrorCard({
+  run,
+  expanded,
+  onToggle,
+  owner,
+  repo,
+  enriched,
+}: ErrorCardProps) {
   return (
     <div
       className={`border rounded-lg transition-all ${
         run.status === 'failure'
           ? 'border-red-500/30 bg-red-500/5 hover:border-red-500/50'
           : run.status === 'success'
-          ? 'border-green-500/30 bg-green-500/5 hover:border-green-500/50'
-          : 'border-yellow-500/30 bg-yellow-500/5 hover:border-yellow-500/50'
+            ? 'border-green-500/30 bg-green-500/5 hover:border-green-500/50'
+            : 'border-yellow-500/30 bg-yellow-500/5 hover:border-yellow-500/50'
       }`}
     >
       <button
@@ -61,6 +71,7 @@ export default function ErrorCard({ run, expanded, onToggle, owner, repo }: Erro
               runId={run.id}
               owner={owner}
               repo={repo}
+              enriched={enriched}
             />
           ) : run.status === 'failure' ? (
             <div className="p-4 bg-gray-900/50 rounded-lg text-gray-400 text-sm">

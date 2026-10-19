@@ -495,3 +495,98 @@ For security issues, please read [SECURITY.md](SECURITY.md) for responsible disc
 
 </div>
 ```
+## Knowledge Base
+
+Rules are grounded in recognized industry literature:
+
+**DataOps & Analytics Engineering**
+- Fundamentals of Data Engineering (Reis & Housley)
+- The Data Warehouse Toolkit (Kimball & Ross)
+- Analytics Engineering with dbt (Carroll)
+
+**Industrial / IIoT**
+- Industrial Network Security (Knapp)
+- Hands-On IIoT (2nd ed.)
+- OPC Unified Architecture
+
+**General Web App & SRE**
+- Site Reliability Engineering (Google)
+- Clean Architecture (Martin)
+- The DevOps Handbook
+
+
+                        ┌─────────────────────────────┐
+                        │   TARGET REPO (any GitHub)  │
+                        │   file tree + manifests     │
+                        └──────────────┬──────────────┘
+                                       │  scan
+                                       ▼
+                        ┌─────────────────────────────┐
+                        │  Deterministic Profile       │
+                        │  Router (route_knowledge.py) │
+                        │  scores: iiot/dataops/webapp │
+                        └──────────────┬──────────────┘
+                                       │
+     ┌─────────────────────────────────┼─────────────────────────────────┐
+     ▼                                 ▼                                 ▼
+┌─────────────────┐        ┌─────────────────────┐        ┌──────────────────────┐
+│ LAYER G         │        │ LAYER M             │        │ LAYER P              │
+│ GROUNDING       │        │ GLOBAL (always on)  │        │ PROFILE (routed)     │
+│ always on       │        │                     │        │ exactly one primary  │
+├─────────────────┤        ├─────────────────────┤        ├──────────────────────┤
+│ docs/notes/     │        │ docs/notes/         │        │ docs/notes/webapp/   │
+│   graph-rag/    │        │   industrial-ml/    │        │ docs/notes/iiot/     │
+│                 │        │     01..04          │        │ docs/notes/dataops/  │
+│ Supplies:       │        │ Supplies:           │        │ Supplies:            │
+│ • rule→concept  │        │ • streaming lens    │        │ • Section 9 static   │
+│   →book chain   │        │ • edge/twin lens    │        │   checks             │
+│ • citation      │        │ • time-series lens  │        │ • Section 10 rules   │
+│   integrity     │        │ • MLOps/drift lens  │        │ • Section 11 YAML    │
+│ • bounded       │        │ • anomaly lens      │        │                      │
+│   traversal     │        │                     │        │                      │
+│                 │        │ Applied to EVERY    │        │ Selected by repo     │
+│ HOW to claim    │        │ repo, regardless of │        │ signals              │
+│                 │        │ profile             │        │ WHAT to check        │
+└────────┬────────┘        └──────────┬──────────┘        └───────────┬──────────┘
+         │                            │                               │
+         └────────────────────────────┴───────────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────────┐
+                        │  Context Assembler          │
+                        │  (token-budgeted, section-  │
+                        │   selective extraction)     │
+                        └──────────────┬──────────────┘
+                                       ▼
+                        ┌─────────────────────────────┐
+                        │  Ollama @ localhost:11434   │
+                        │  Qwen3.5-9B-Q4_K_M (local)  │
+                        └──────────────┬──────────────┘
+                                       ▼
+                        ┌─────────────────────────────┐
+                        │  Citation Gate parity check │
+                        │  every cited book ∈ registry│
+                        └─────────────────────────────┘
+						
+						
+						
+						## What's actually implemented
+
+**Status (Oct 2026):** 22 of 47 rules currently fire in the audit engine.
+The remaining 25 are `status: draft` in `docs/specs/*.yaml` — declared
+as roadmap, not yet wired to checks. This gap is enforced by
+`test_active_rules_are_all_implemented_in_typescript`.
+
+| Domain | Active rules | Draft rules |
+|---|---|---|
+| general (webapp baseline) | 14 | 0 |
+| dataops | 5 | 19 |
+| iiot | 4 | 2 |
+| cross | 0 | 2 |
+| webapp | 0 | 2 |
+
+**CLI:** `npx reposcope --repo <path> [--profile <name>] [--strict]`
+exits non-zero on violations. This is the "gate" — a rule set that
+returns a signal your CI can act on.
+
+**Run it against this repo:** `pnpm audit:self`

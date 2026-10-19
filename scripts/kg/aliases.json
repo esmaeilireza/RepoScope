@@ -1,0 +1,11 @@
+{
+  "concept_aliases": {
+    "Idempotent Consumers": "idempotency",
+    "Idempotent consumer": "idempotency",
+    "exactly-once processing": "idempotency"
+  },
+  "book_aliases": {
+    "Kleppmann, Martin -": "Designing Data-Intensive Applications",
+    "The Data Warehouse Toolkit_ The Definitive Guide to Dimensional Modeling": "The Data Warehouse Toolkit"
+  }
+}

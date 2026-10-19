@@ -1,0 +1,36 @@
+{
+  "nodes": [
+    {
+      "id": "rule:iiot-001",
+      "type": "rule",
+      "label": "...",
+      "severity": "critical",
+      "profile": "iiot",
+      "rationale": "...",
+      "fix": "..."
+    },
+    {
+      "id": "concept:fail-safe-networking",
+      "type": "concept",
+      "label": "fail-safe networking",
+      "definition": "...",
+      "domain": "iiot",
+      "source": {
+        "book": "Industrial Network Security"
+      }
+    },
+    {
+      "id": "book:industrial-network-security",
+      "type": "book",
+      "label": "Industrial Network Security",
+      "kind": "book"
+    }
+  ],
+  "edges": [
+    {
+      "source": "rule:iiot-001",
+      "target": "concept:fail-safe-networking",
+      "type": "grounded_by"
+    }
+  ]
+}

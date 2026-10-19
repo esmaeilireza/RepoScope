@@ -1,0 +1,53 @@
+name: "Add a spec rule (YAML only)"
+description: Propose a new audit rule via a spec manifest — no TypeScript required.
+labels: ["spec", "good first issue"]
+body:
+  - type: dropdown
+    id: profile
+    attributes:
+      label: Profile
+      options: ["iiot", "dataops", "webapp", "cross"]
+    validations:
+      required: true
+  - type: input
+    id: rule_id
+    attributes:
+      label: Rule ID
+      description: "Convention: domain-### (e.g. iiot-004) or domain-topic-###"
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options: ["critical", "error", "warning", "info"]
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      description: Why this matters, from the domain's perspective (OT, data, or web).
+    validations:
+      required: true
+  - type: textarea
+    id: checks
+    attributes:
+      label: Checks
+      description: "pattern_match / file_exists / file_absent, with file_glob and message"
+    validations:
+      required: true
+  - type: textarea
+    id: fix
+    attributes:
+      label: Fix
+      description: Concrete terminal-level remediation.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: "At least one: book title OR standard (e.g. IEC 62443) + the concept it grounds"
+    validations:
+      required: true

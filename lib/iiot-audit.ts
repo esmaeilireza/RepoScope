@@ -1,3 +1,5 @@
+// lib/iiot-audit.ts
+
 /**
  * @module iiot-audit
  * @description
@@ -12,21 +14,15 @@
  * This module translates these physical-world constraints into automated static analysis checks
  * suitable for modern CI/CD pipelines.
  *
- * [FIX #3] Multi-Language Support:
- * Previously only detected Python IIoT ecosystems. Now supports JavaScript/TypeScript,
- * Python, Java, and C# ecosystems commonly used in industrial automation.
+ * Every check carries a `ruleId` that MUST match a YAML spec id in
+ * docs/specs/iiot.yaml. This is the join key used by the Week-4 Citation Gate.
  */
 
-export interface GitHubTreeItem {
-  path: string;
-  mode?: string;
-  type: 'blob' | 'tree';
-  sha?: string;
-  size?: number;
-  url?: string;
-}
+import type { GitHubTreeItem } from './types';
 
 export interface IIoTCheckResult {
+  /** Must match a YAML spec id in docs/specs/iiot.yaml (e.g. 'iiot-004'). */
+  ruleId: string;
   category: 'hardware_abstraction' | 'deterministic_testing' | 'fail_safe_networking';
   status: 'pass' | 'warn' | 'fail';
   title: string;
@@ -79,7 +75,7 @@ const BAUD_RATE_REGEX = /\b(9600|19200|38400|57600|115200)\s*(,\s*['"`]?[N8E1O])
 // =====================================================================
 
 /**
- * [FIX #3] Expanded to support multiple language ecosystems.
+ * Expanded to support multiple language ecosystems.
  * Different languages use different mocking/testing libraries for IIoT work.
  */
 const MOCK_LIBRARIES = [
@@ -88,44 +84,44 @@ const MOCK_LIBRARIES = [
   'opcua.mock', 'asyncua.test', 'MockPLC', 'MockServer', 'mock_modbus',
   'faker', 'mock.patch', 'unittest.mock', 'pytest-mock', 'hypothesis',
   'modbus-tk', 'minimalmodbus',
-  
+
   // JavaScript/TypeScript ecosystem
   'sinon', 'mocha', 'chai', 'jest', 'vitest', 'jasmine',
   'mqtt', 'mqtt.js', 'modbus-serial', 'modbus-tcp', 'node-opcua',
   'serialport', 'node-serialport', 'socket.io-client',
   'mock-socket', 'nock', 'proxyquire', 'rewire',
   'ioredis-mock', 'redis-mock',
-  
+
   // Java ecosystem
   'mockito', 'junit', 'powermock', 's7connector',
   'apache-plc4x', 'plc4j', 'eclipse-milo',
-  
+
   // C# / .NET ecosystem
   'nunit', 'xunit', 'moq', 'hslcommunication',
   's7netplus', 'opcfoundation',
-  
+
   // General industrial
   'mockserver', 'wiremock', 'testcontainers',
 ];
 
 /**
- * [FIX #3] Expanded test file patterns for multi-language IIoT projects.
+ * Expanded test file patterns for multi-language IIoT projects.
  */
 const IIOT_TEST_PATTERNS = [
   // Python test patterns
   /test_.*modbus/i, /test_.*plc/i, /test_.*scada/i, /test_.*opcua/i,
   /test_.*serial/i, /test_.*mqtt/i, /test_.*device/i, /test_.*protocol/i,
-  
+
   // JS/TS test patterns
   /.*\.(test|spec)\.(ts|js|tsx|jsx)$/,
   /test.*device/i, /test.*protocol/i, /test.*connection/i,
-  
+
   // Java test patterns
   /.*Test\.java$/, /.*IT\.java$/,
-  
+
   // C# test patterns
   /.*Tests?\.cs$/,
-  
+
   // General test/mock directories
   /tests\/.*mock/i, /test\/.*mock/i,
   /__tests__\/.*device/i, /__tests__\/.*protocol/i,
@@ -133,7 +129,7 @@ const IIOT_TEST_PATTERNS = [
 ];
 
 /**
- * [FIX #3] Added device-specific test directory patterns.
+ * Device-specific test directory patterns.
  * Many IIoT projects organize tests by device/protocol type.
  */
 const IIOT_TEST_DIRECTORIES = [
@@ -159,51 +155,49 @@ const SIMULATOR_CONFIG_FILES = [
   // Python simulators
   'modbus_simulator.py', 'plc_mock.py', 'scada_mock.py', 'simulator.py',
   'mock_server.py', 'conftest.py', 'pytest.ini', 'tox.ini',
-  
+
   // JS/TS simulators
   'modbus-simulator.js', 'plc-mock.js', 'mqtt-broker.js',
   'jest.config.js', 'jest.config.ts', 'vitest.config.ts',
   '.mocharc.js', '.mocharc.json', 'mocha.opts',
-  
+
   // Docker-based simulators
   'docker-compose.simulation.yml', 'docker-compose.test.yml',
   'docker-compose.yml',
-  
+
   // Java/C# simulators
   'application-test.yml', 'application-test.properties',
 ];
 
 /**
- * [FIX #3] Protocol library detection across ecosystems.
+ * Protocol library detection across ecosystems.
  * Used to identify IIoT-related code that needs testing.
  */
 const PROTOCOL_LIBRARIES = [
   // Python protocols
   'pymodbus', 'pycomm3', 'python-snap7', 'asyncua', 'opcua',
   'minimalmodbus', 'modbus-tk', 'mqtt', 'paho-mqtt',
-  
+
   // JavaScript protocols
   'mqtt', 'modbus-serial', 'modbus-tcp', 'node-opcua',
   'serialport', 'socket.io', 'socket.io-client', 'ws', 'websocket',
   'amqplib', 'amqp', 'kafkajs', 'nats', 'ioredis',
-  
+
   // Java protocols
   'plc4j', 'apache-plc4x', 's7connector', 'eclipse-milo',
   'paho-mqtt-client', 'eclipse-paho',
-  
+
   // C# protocols
   's7netplus', 'hslcommunication', 'mqtt', 'rabbitmq',
 ];
 
 // =====================================================================
-// HELPER FUNCTIONS (Engineering Excellence: Separation of Concerns)
+// HELPER FUNCTIONS
 // =====================================================================
 
 /**
  * Determines if a file is a production source file, excluding tests, mocks, and configs.
  * We only want to flag hardcoded values in production logic, not in test fixtures.
- *
- * [FIX #3] Expanded code extensions to include all major IIoT languages.
  */
 function isProductionSourceFile(path: string): boolean {
   const lowerPath = path.toLowerCase();
@@ -237,7 +231,7 @@ function isProductionSourceFile(path: string): boolean {
 }
 
 /**
- * [FIX #3] Enhanced dependency file detection with multi-language support.
+ * Enhanced dependency file detection with multi-language support.
  * Checks if a dependency file contains required IIoT mocking libraries.
  */
 function hasMockingDependencies(path: string, content: string | undefined): boolean {
@@ -265,13 +259,11 @@ function hasMockingDependencies(path: string, content: string | undefined): bool
   if (!isDependencyFile || !content) return false;
 
   const lowerContent = content.toLowerCase();
-  
-  // Check for any IIoT-related mocking or testing library
   return MOCK_LIBRARIES.some((lib) => lowerContent.includes(lib.toLowerCase()));
 }
 
 /**
- * [FIX #3] Detect if a dependency file contains IIoT protocol libraries.
+ * Detect if a dependency file contains IIoT protocol libraries.
  * This helps identify projects that NEED testing infrastructure.
  */
 function hasProtocolDependencies(path: string, content: string | undefined): boolean {
@@ -291,17 +283,21 @@ function hasProtocolDependencies(path: string, content: string | undefined): boo
 }
 
 /**
- * [FIX #3] Detect test script definitions in configuration files.
+ * Detect test script definitions in configuration files.
  */
 function hasTestScript(path: string, content: string | undefined): boolean {
   const lowerPath = path.toLowerCase();
-  if (!lowerPath.endsWith('package.json') && !lowerPath.endsWith('pyproject.toml') && 
-      !lowerPath.endsWith('makefile') && !lowerPath.endsWith('cargo.toml')) {
+  if (
+    !lowerPath.endsWith('package.json') &&
+    !lowerPath.endsWith('pyproject.toml') &&
+    !lowerPath.endsWith('makefile') &&
+    !lowerPath.endsWith('cargo.toml')
+  ) {
     return false;
   }
-  
+
   if (!content) return false;
-  
+
   const lowerContent = content.toLowerCase();
   return (
     lowerContent.includes('"test"') ||
@@ -324,10 +320,14 @@ export function auditIIoTRepository(
   fileContents?: Record<string, string>
 ): IIoTAuditReport {
   const checks: IIoTCheckResult[] = [];
-  
+
   // Pre-filter files to reduce cognitive load and processing time
-  const productionFiles = treeItems.filter((item) => item.type === 'blob' && isProductionSourceFile(item.path));
-  const allBlobPaths = treeItems.filter((item) => item.type === 'blob').map((item) => item.path);
+  const productionFiles = treeItems.filter(
+    (item) => item.type === 'blob' && isProductionSourceFile(item.path)
+  );
+  const allBlobPaths = treeItems
+    .filter((item) => item.type === 'blob')
+    .map((item) => item.path);
 
   // ───────────────────────────────────────────────
   // CHECK 1: Hardware Abstraction (Hardcoded Ports/IPs)
@@ -356,112 +356,123 @@ export function auditIIoTRepository(
 
   if (hardcodedPortFiles.length > 0) {
     checks.push({
+      ruleId: 'iiot-004',
       category: 'hardware_abstraction',
       status: 'fail',
       title: 'Hardcoded Hardware Ports Detected in Production Code',
       message: `Found hardcoded serial/COM ports or Modbus port references in ${hardcodedPortFiles.length} file(s). This violates the 12-factor app methodology, making the code non-portable across edge and containerized environments.`,
       affectedFiles: hardcodedPortFiles.slice(0, 5),
-      recommendation: 'Abstract hardware configurations into environment variables (e.g., `os.environ["PLC_PORT"]`). Document required hardware parameters in a `.env.example` file.',
+      recommendation:
+        'Abstract hardware configurations into environment variables (e.g., `os.environ["PLC_PORT"]`). Document required hardware parameters in a `.env.example` file.',
     });
   } else {
     checks.push({
+      ruleId: 'iiot-004',
       category: 'hardware_abstraction',
       status: 'pass',
       title: 'Strict Hardware Abstraction Enforced',
       message: 'No hardcoded physical ports or baud rates detected in production logic.',
-      recommendation: 'Maintain this boundary. Ensure deployment scripts (Helm, Docker) inject these variables at runtime.',
+      recommendation:
+        'Maintain this boundary. Ensure deployment scripts (Helm, Docker) inject these variables at runtime.',
     });
   }
 
   if (hardcodedIpFiles.length > 0) {
     checks.push({
+      ruleId: 'iiot-002',
       category: 'hardware_abstraction',
       status: 'warn',
       title: 'Hardcoded PLC IP Addresses Detected',
       message: `Found direct IP literals for PLC/SCADA devices in ${hardcodedIpFiles.length} file(s). Production network topologies change; IPs should never be committed to source.`,
       affectedFiles: hardcodedIpFiles.slice(0, 5),
-      recommendation: 'Replace hardcoded IPs with environment lookups. Centralize connection endpoints in a dedicated `config.py` or `network_config.ts` module.',
+      recommendation:
+        'Replace hardcoded IPs with environment lookups. Centralize connection endpoints in a dedicated `config.py` or `network_config.ts` module.',
     });
   }
 
   // ───────────────────────────────────────────────
   // CHECK 2: Deterministic Testing (Mocks & Simulators)
-  // [FIX #3] Enhanced with multi-language detection and broader heuristics
   // ───────────────────────────────────────────────
-  
-  // Check for mocking libraries in dependency files
-  const hasMockLibs = treeItems.some((item) => hasMockingDependencies(item.path, fileContents?.[item.path]));
-  
-  // Check for test scripts defined in configuration
-  const hasTestScripts = treeItems.some((item) => hasTestScript(item.path, fileContents?.[item.path]));
-  
-  // Check for simulator configuration files
+
+  const hasMockLibs = treeItems.some((item) =>
+    hasMockingDependencies(item.path, fileContents?.[item.path])
+  );
+
+  const hasTestScripts = treeItems.some((item) =>
+    hasTestScript(item.path, fileContents?.[item.path])
+  );
+
   const hasSimulatorConfig = allBlobPaths.some((path) =>
     SIMULATOR_CONFIG_FILES.some((sim) => path.toLowerCase().endsWith(sim.toLowerCase()))
   );
 
-  // Check for IIoT-specific test file patterns
   const hasIiotTestFiles = allBlobPaths.some((path) =>
     IIOT_TEST_PATTERNS.some((regex) => regex.test(path))
   );
-  
-  // [FIX #3] Check for device-specific test directories (e.g., server/test/devices/)
+
   const hasIiotTestDirs = allBlobPaths.some((path) =>
     IIOT_TEST_DIRECTORIES.some((regex) => regex.test(path))
   );
 
-  // Check if project uses IIoT protocols (needs testing infrastructure)
-  const hasProtocolDeps = treeItems.some((item) => hasProtocolDependencies(item.path, fileContents?.[item.path]));
-  
-  // Determine overall testing status using composite logic
+  const hasProtocolDeps = treeItems.some((item) =>
+    hasProtocolDependencies(item.path, fileContents?.[item.path])
+  );
+
   const hasComprehensiveTests = hasMockLibs && (hasIiotTestFiles || hasIiotTestDirs);
   const hasPartialTests = (hasMockLibs || hasSimulatorConfig) && hasTestScripts;
   const hasTestInfrastructure = hasTestScripts && (hasIiotTestFiles || hasIiotTestDirs);
 
   if (hasComprehensiveTests) {
     checks.push({
+      ruleId: 'iiot-005',
       category: 'deterministic_testing',
       status: 'pass',
       title: 'Deterministic IIoT Mock Testing Present',
-      message: 'Repository includes mocking libraries and dedicated IIoT test files/directories, ensuring CI pipelines can validate protocol logic without physical hardware.',
-      recommendation: 'Excellent. Consider adding property-based tests (e.g., `hypothesis` in Python, `fast-check` in JS) to simulate edge cases like packet fragmentation or malformed Modbus frames.',
+      message:
+        'Repository includes mocking libraries and dedicated IIoT test files/directories, ensuring CI pipelines can validate protocol logic without physical hardware.',
+      recommendation:
+        'Excellent. Consider adding property-based tests (e.g., `hypothesis` in Python, `fast-check` in JS) to simulate edge cases like packet fragmentation or malformed Modbus frames.',
     });
   } else if (hasPartialTests || hasTestInfrastructure) {
     checks.push({
+      ruleId: 'iiot-005',
       category: 'deterministic_testing',
       status: 'warn',
       title: 'Partial Test Infrastructure Detected',
-      message: 'Some testing components exist (test scripts, directories, or mocking libs), but comprehensive IIoT-specific mock coverage could not be fully confirmed.',
-      recommendation: hasProtocolDeps 
+      message:
+        'Some testing components exist (test scripts, directories, or mocking libs), but comprehensive IIoT-specific mock coverage could not be fully confirmed.',
+      recommendation: hasProtocolDeps
         ? 'Project uses IIoT protocols. Ensure all network-bound code paths have corresponding mock tests using sinon (JS), unittest.mock (Python), or mockito (Java).'
         : 'Ensure all network-bound code paths have corresponding mock tests. Consider adding protocol-specific test directories.',
     });
   } else if (hasProtocolDeps) {
-    // Project uses IIoT protocols but has no testing infrastructure
     checks.push({
+      ruleId: 'iiot-005',
       category: 'deterministic_testing',
       status: 'fail',
       title: 'No Industrial Protocol Mock Testing Detected',
-      message: 'Project uses IIoT protocol libraries but no mocking libraries, simulator configs, or test directories were found. Code interacting with physical hardware cannot be safely validated in ephemeral CI runners.',
-      recommendation: 'Add protocol-appropriate mocking libraries: sinon/mocha/chai (JS), pytest-mock/pymodbus (Python), or mockito/junit (Java). Create dedicated test directories for device/protocol testing.',
+      message:
+        'Project uses IIoT protocol libraries but no mocking libraries, simulator configs, or test directories were found. Code interacting with physical hardware cannot be safely validated in ephemeral CI runners.',
+      recommendation:
+        'Add protocol-appropriate mocking libraries: sinon/mocha/chai (JS), pytest-mock/pymodbus (Python), or mockito/junit (Java). Create dedicated test directories for device/protocol testing.',
     });
   } else {
-    // No protocol deps and no tests - might not be an IIoT project
     checks.push({
+      ruleId: 'iiot-005',
       category: 'deterministic_testing',
       status: 'warn',
       title: 'Limited IIoT Testing Infrastructure',
-      message: 'No IIoT-specific mocking libraries, simulator configs, or test directories were detected. If this project interacts with hardware, add testing infrastructure.',
-      recommendation: 'If this project interacts with physical hardware, add appropriate mocking libraries and create test directories for device/protocol validation.',
+      message:
+        'No IIoT-specific mocking libraries, simulator configs, or test directories were detected. If this project interacts with hardware, add testing infrastructure.',
+      recommendation:
+        'If this project interacts with physical hardware, add appropriate mocking libraries and create test directories for device/protocol validation.',
     });
   }
 
   // ───────────────────────────────────────────────
   // CHECK 3: Fail-Safe Networking (Timeouts & Retries)
-  // Theory: Network partitions are a certainty in industrial environments (EMI, cable faults).
+  // Theory: Network partitions are a certainty in industrial environments.
   // Unbounded blocking calls will hang the control loop, violating deterministic execution.
-  //
-  // [FIX #3] Expanded protocol import detection to include JS/TS ecosystems
   // ───────────────────────────────────────────────
   const unsafeConnectionFiles: string[] = [];
   let robustConnectionCount = 0;
@@ -470,23 +481,18 @@ export function auditIIoTRepository(
     const content = fileContents?.[file.path];
     if (!content) continue;
 
-    // [FIX #3] Expanded protocol import detection across languages
-    const hasProtocolImport = 
-      /import.*modbus|from.*modbus/i.test(content) ||           // Python/JS
-      /import.*plc|from.*snap7|from.*pycomm|from.*opcua/i.test(content) ||  // Python
-      /require\s*\(['"](mqtt|serialport|node-opcua|modbus)/i.test(content) ||  // JS
-      /import\s+.*\s+from\s+['"](mqtt|serialport|node-opcua|modbus)/i.test(content) ||  // TS/ES modules
-      /const\s+.*\s*=\s*require\s*\(['"](mqtt|serialport|node-opcua)/i.test(content) ||  // JS CommonJS
-      /import\s+.*mqtt.*|import\s+.*serialport/i.test(content) ||  // General
-      /new\s+mqtt\.Client|mqtt\.connect/i.test(content) ||  // MQTT usage
-      /new\s+SerialPort|serialport\.open/i.test(content);  // Serial usage
+    const hasProtocolImport =
+      /import.*modbus|from.*modbus/i.test(content) ||
+      /import.*plc|from.*snap7|from.*pycomm|from.*opcua/i.test(content) ||
+      /require\s*\(['"](mqtt|serialport|node-opcua|modbus)/i.test(content) ||
+      /import\s+.*\s+from\s+['"](mqtt|serialport|node-opcua|modbus)/i.test(content) ||
+      /const\s+.*\s*=\s*require\s*\(['"](mqtt|serialport|node-opcua)/i.test(content) ||
+      /import\s+.*mqtt.*|import\s+.*serialport/i.test(content) ||
+      /new\s+mqtt\.Client|mqtt\.connect/i.test(content) ||
+      /new\s+SerialPort|serialport\.open/i.test(content);
 
     if (!hasProtocolImport) continue;
 
-    // Heuristic: Look for explicit timeout configurations
-    // Note: This catches `timeout=3`, `timeout: 5000`, or `Timeout = 3000`.
-    // It may miss complex object instantiations, which is an acceptable
-    // trade-off for static regex analysis.
     const hasTimeout = /timeout\s*[=:]\s*\d+/i.test(content);
     const hasRetryLogic = /retry|reconnect|max_attempts|backoff|retries/i.test(content);
     const hasExceptionHandling = /try\s*:|try\s*{|catch\s*\(|\.catch\s*\(/.test(content);
@@ -495,26 +501,31 @@ export function auditIIoTRepository(
       unsafeConnectionFiles.push(file.path);
     } else {
       robustConnectionCount++;
-      if (hasRetryLogic || hasExceptionHandling) robustConnectionCount++; // Bonus points for comprehensive safety
+      if (hasRetryLogic || hasExceptionHandling) robustConnectionCount++;
     }
   }
 
   if (unsafeConnectionFiles.length > 0) {
     checks.push({
+      ruleId: 'iiot-006',
       category: 'fail_safe_networking',
       status: 'warn',
       title: 'Industrial Connections Missing Fail-Safe Timeouts',
       message: `Found ${unsafeConnectionFiles.length} file(s) with protocol imports but no explicit timeout settings. Unbounded connections will hang the application during network partitions.`,
       affectedFiles: unsafeConnectionFiles.slice(0, 5),
-      recommendation: 'Always set explicit timeouts on clients (e.g., `ModbusTcpClient(host, timeout=3)` or `mqtt.connect(url, {connectTimeout: 5000})`). Implement exponential backoff for critical PLC reconnections.',
+      recommendation:
+        'Always set explicit timeouts on clients (e.g., `ModbusTcpClient(host, timeout=3)` or `mqtt.connect(url, {connectTimeout: 5000})`). Implement exponential backoff for critical PLC reconnections.',
     });
   } else if (robustConnectionCount > 0) {
     checks.push({
+      ruleId: 'iiot-006',
       category: 'fail_safe_networking',
       status: 'pass',
       title: 'Robust, Fail-Safe Connection Handling Detected',
-      message: 'Industrial protocol connections include explicit timeouts and error handling, adhering to deterministic execution best practices.',
-      recommendation: 'Document connection failure modes and fallback states in the README so operators understand system behavior during PLC downtime.',
+      message:
+        'Industrial protocol connections include explicit timeouts and error handling, adhering to deterministic execution best practices.',
+      recommendation:
+        'Document connection failure modes and fallback states in the README so operators understand system behavior during PLC downtime.',
     });
   }
 

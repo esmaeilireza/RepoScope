@@ -1,0 +1,156 @@
+# docs/specs/iiot.yaml — Industrial / PLC (IIoT) audit rules
+version: "1.0"
+profile: iiot
+
+rules:
+  - id: iiot-001
+    profile: iiot
+    severity: critical
+    title: "Missing Modbus error handler"
+    rationale: >
+      In OT environments, a Modbus timeout without exception handling can cause
+      silent loss of telemetry and unreliable process decisions. Unlike typical
+      IT systems, an unhandled runtime failure on the plant floor may leave
+      operators trusting a dead data stream.
+    checks:
+      - type: pattern_match
+        pattern: "ModbusIOException|ModbusException"
+        must_exist: false
+        file_glob: "**/*.py"
+        error_when: "pattern_absent"
+        message: "No Modbus exception handling found in Python files"
+      - type: file_exists
+        path_glob: "**/mock/**/*modbus*"
+        error_when: "file_absent"
+        message: "No Modbus mock/simulator found for testing"
+    fix: |
+      Wrap Modbus reads in try/except for ModbusIOException.
+      Use pymodbus.device.ModbusSimulatorServer as the test mock.
+    references:
+      - book: "Industrial Network Security"
+        concept: "fail-safe networking"
+      - book: "PLC Controls with Structured Text"
+        concept: "deterministic execution"
+      - standard: "IEC 62443"
+        concept: "network segmentation"
+
+  - id: iiot-002
+    profile: iiot
+    severity: error
+    title: "Hardcoded PLC IP address"
+    rationale: >
+      A hardcoded private OT address breaks deployment across environments and
+      weakens network segmentation boundaries. PLC hosts should be configuration,
+      not source code.
+    checks:
+      - type: pattern_match
+        pattern: "192\\.168\\.|10\\.0\\.|172\\.1[6-9]\\.|172\\.2[0-9]\\.|172\\.3[0-1]\\."
+        must_exist: false
+        file_glob: "**/*.py"
+        error_when: "pattern_present"
+        message: "Hardcoded private IP found — use an environment variable instead"
+    fix: |
+      Put the address in .env: PLC_HOST=192.168.1.10
+      In code: os.getenv('PLC_HOST', 'localhost')
+    references:
+      - book: "Practical Industrial Data Networks"
+        concept: "network segmentation"
+      - standard: "IEC 62443"
+        concept: "zone and conduit model"
+
+  - id: iiot-003
+    profile: iiot
+    severity: warning
+    title: "No requirements.txt pin"
+    rationale: >
+      Without version pinning, an unintended library upgrade can break
+      compatibility in a high-uptime industrial environment where a driver ABI
+      change can cause extended downtime.
+    checks:
+      - type: file_exists
+        path_glob: "requirements*.txt"
+        error_when: "file_absent"
+        message: "requirements.txt not found"
+      - type: pattern_match
+        pattern: "==\\d"
+        must_exist: true
+        file_glob: "requirements*.txt"
+        error_when: "pattern_absent"
+        message: "Dependencies not pinned with == in requirements.txt"
+    fix: |
+      pip freeze > requirements.txt
+      or pin manually: pymodbus==3.6.3
+    references:
+      - book: "Automating Manufacturing Systems with PLCs"
+        concept: "deterministic execution"
+
+  # ─── NEW: aligns with industrial-network-security.md Rule 5 ───
+  - id: iiot-004
+    profile: iiot
+    severity: critical
+    title: "Inadequate Physical Lockout/Tagout and Operational Safety Culture"
+    rationale: >
+      Operational safety policies requiring physical interlocks, safety culture
+      adherence, and site security procedures cannot be audited from code
+      repositories. This rule exists as a marker that the repo must reference a
+      site-level LOTO procedure outside the codebase.
+    checks:
+      - type: file_exists
+        path_glob: "{docs/safety/**,LOCKOUT*.md,SAFETY.md,docs/loto/**}"
+        error_when: "file_absent"
+        message: "No site-level Lockout/Tagout or safety documentation reference found"
+    fix: |
+      Reference the site LOTO procedure from docs/safety/loto.md and link to the
+      physical interlock inventory maintained outside source control.
+    references:
+      - book: "Industrial Network Security"
+        concept: "safety-controls"
+      - standard: "NFPA 70E"
+        concept: "lockout-tagout"
+
+  - id: iiot-005
+    profile: iiot
+    severity: error
+    title: "OT network segmentation diagram missing"
+    rationale: >
+      IEC 62443 zone-and-conduit compliance requires a documented network
+      topology distinguishing enterprise, DMZ, supervisory, and control
+      enclaves. Without a committed diagram, segmentation drift goes undetected.
+    checks:
+      - type: file_exists
+        path_glob: "{docs/network/**,docs/architecture/network*,**/topology*.{yaml,yml,md,d2}}"
+        error_when: "file_absent"
+        message: "No network topology / zone-conduit diagram found in docs/"
+    fix: |
+      Commit a zone-and-conduit diagram under docs/network/topology.md (or .d2)
+      showing enterprise, DMZ, supervisory, and control enclaves with the
+      firewall rules between them.
+    references:
+      - book: "Industrial Network Security"
+        concept: "functional-enclave"
+      - standard: "IEC 62443"
+        concept: "zones-and-conduits"
+
+  - id: iiot-006
+    profile: iiot
+    severity: warning
+    title: "Undocumented PLC program change"
+    rationale: >
+      Controller logic changes without version control or a change record
+      undermine NERC CIP-003-4 / CIP-007-4 auditability and mask unauthorized
+      modifications.
+    checks:
+      - type: file_exists
+        path_glob: "{plc/**,scada/**,**/*.st,**/*.scl}"
+        error_when: "file_absent"
+        message: "No PLC/SCADA source directory found"
+      - type: file_exists
+        path_glob: "{CHANGELOG*,plc/CHANGELOG*,scada/CHANGELOG*}"
+        error_when: "file_absent"
+        message: "PLC/SCADA sources present but no CHANGELOG recorded"
+    fix: |
+      Track every PLC program change in a CHANGELOG at the plc/ or scada/
+      directory root, and reference the change ticket ID in the commit message.
+    references:
+      - book: "Industrial Network Security"
+        concept: "change-control-and-configuration-management"

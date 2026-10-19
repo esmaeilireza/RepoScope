@@ -1,0 +1,35 @@
+name: "Add a knowledge source"
+description: Propose a book, standard, or paper to ground RepoScope rules in.
+labels: ["knowledge-base"]
+body:
+  - type: input
+    id: title
+    attributes:
+      label: Title
+    validations:
+      required: true
+  - type: input
+    id: author
+    attributes:
+      label: Author(s)
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options: ["iiot", "dataops", "webapp", "cross"]
+    validations:
+      required: true
+  - type: textarea
+    id: concepts
+    attributes:
+      label: Key concepts this source should ground
+      description: Which existing rules/concepts does it strengthen?
+    validations:
+      required: true
+  - type: textarea
+    id: availability
+    attributes:
+      label: Availability
+      description: Official link or publisher page (no pirated copies).

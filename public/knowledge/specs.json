@@ -1,0 +1,1262 @@
+{
+  "cross": {
+    "version": "1.0",
+    "rules": [
+      {
+        "id": "cross-001",
+        "profile": "cross",
+        "severity": "error",
+        "title": "IIoT + DataOps ABI conflict risk",
+        "rationale": "A repository mixing IIoT drivers such as pymodbus with Python data analytics libraries such as pandas can create silent dependency or ABI conflicts. The industrial driver and the data layer often have different stability requirements and should not unnecessarily share one dependency space.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "pymodbus|opcua",
+            "must_exist": false,
+            "file_glob": "**/*.py",
+            "error_when": "pattern_present",
+            "message": "IIoT driver detected — check environment isolation"
+          }
+        ],
+        "fix": "Use separate venv/conda environments for the IIoT drivers and the data\nlayer. Each part should have its own requirements file.\n",
+        "references": [
+          {
+            "book": "Practical DataOps",
+            "concept": "environment parity"
+          },
+          {
+            "book": "Designing Data-Intensive Applications",
+            "concept": "reproducibility"
+          }
+        ],
+        "full_text": "Rule: IIoT + DataOps ABI conflict risk\nID: cross-001\nProfile: cross\nSeverity: error\nWhy it matters: A repository mixing IIoT drivers such as pymodbus with Python data analytics libraries such as pandas can create silent dependency or ABI conflicts. The industrial driver and the data layer often have different stability requirements and should not unnecessarily share one dependency space.\n\nHow to fix: Use separate venv/conda environments for the IIoT drivers and the data\nlayer. Each part should have its own requirements file.\n\nReferences: Practical DataOps, Designing Data-Intensive Applications"
+      },
+      {
+        "id": "cross-002",
+        "profile": "cross",
+        "severity": "warning",
+        "title": "IIoT control plane exposed via web API",
+        "rationale": "When web application and IIoT components coexist, PLC commands must not be reachable through unauthenticated API routes. The IT/OT boundary is a safety boundary, not only a security boundary.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "modbus|plc",
+            "must_exist": false,
+            "file_glob": "app/api/**/*.ts",
+            "error_when": "pattern_present",
+            "message": "Web API route references PLC — verify authentication"
+          }
+        ],
+        "fix": "API routes that reach the PLC must require authentication.\nUse network segmentation (DMZ) between the OT and IT networks.\n",
+        "references": [
+          {
+            "book": "Industrial Network Security",
+            "concept": "network segmentation"
+          },
+          {
+            "standard": "IEC 62443",
+            "concept": "zone and conduit model"
+          }
+        ],
+        "full_text": "Rule: IIoT control plane exposed via web API\nID: cross-002\nProfile: cross\nSeverity: warning\nWhy it matters: When web application and IIoT components coexist, PLC commands must not be reachable through unauthenticated API routes. The IT/OT boundary is a safety boundary, not only a security boundary.\n\nHow to fix: API routes that reach the PLC must require authentication.\nUse network segmentation (DMZ) between the OT and IT networks.\n\nReferences: Industrial Network Security, IEC 62443"
+      }
+    ]
+  },
+  "dataops": {
+    "version": "1.0",
+    "rules": [
+      {
+        "id": "dataops-sec-001",
+        "severity": "critical",
+        "title": "Hardcoded secret in pipeline code",
+        "rationale": "A hardcoded password, token, or API key committed to source control stays exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, never in the codebase. This violates the security undercurrent of the data engineering lifecycle and DataOps governance practices.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "(?i)(password|secret_key|api_key|access_token|private_key)\\s*[:=]\\s*[\"'][^\"']{8,}[\"']",
+            "must_exist": false,
+            "file_glob": "**/*.{py,sql,yaml,yml,sh,json,env}",
+            "error_when": "pattern_present",
+            "message": "Hardcoded secret or credential detected. Use environment variables or a secret store."
+          }
+        ],
+        "fix": "Move the secret to an environment variable or a secret manager.\nAdd the real secret file to .gitignore and rotate the exposed credential.\n",
+        "references": [
+          {
+            "book": "Practical DataOps",
+            "concept": "security governance"
+          },
+          {
+            "book": "Fundamentals of Data Engineering",
+            "concept": "security undercurrent"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: Hardcoded secret in pipeline code\nID: dataops-sec-001\nProfile: dataops\nSeverity: critical\nWhy it matters: A hardcoded password, token, or API key committed to source control stays exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, never in the codebase. This violates the security undercurrent of the data engineering lifecycle and DataOps governance practices.\n\nHow to fix: Move the secret to an environment variable or a secret manager.\nAdd the real secret file to .gitignore and rotate the exposed credential.\n\nReferences: Practical DataOps, Fundamentals of Data Engineering"
+      },
+      {
+        "id": "dataops-sec-002",
+        "severity": "critical",
+        "title": "Database password embedded in connection string",
+        "rationale": "An unencrypted connection URI with an embedded password exposes credentials in code, logs, and version history. Connection secrets must be injected at runtime, not baked into pipeline configuration.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "(?i)(postgres|mysql|snowflake|redshift|bigquery|clickhouse)://[^:]+:[^@]+@",
+            "must_exist": false,
+            "file_glob": "**/*.{py,yaml,yml,json,toml,ini}",
+            "error_when": "pattern_present",
+            "message": "Unencrypted connection string with embedded password detected."
+          }
+        ],
+        "fix": "Replace the embedded password with an environment variable reference, e.g.\npostgres://user:${DB_PASSWORD}@host/db, and load DB_PASSWORD from a secret\nmanager at runtime.\n",
+        "references": [
+          {
+            "book": "Designing Data-Intensive Applications",
+            "concept": "reproducibility and secure configuration"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: Database password embedded in connection string\nID: dataops-sec-002\nProfile: dataops\nSeverity: critical\nWhy it matters: An unencrypted connection URI with an embedded password exposes credentials in code, logs, and version history. Connection secrets must be injected at runtime, not baked into pipeline configuration.\n\nHow to fix: Replace the embedded password with an environment variable reference, e.g.\npostgres://user:${DB_PASSWORD}@host/db, and load DB_PASSWORD from a secret\nmanager at runtime.\n\nReferences: Designing Data-Intensive Applications"
+      },
+      {
+        "id": "dataops-infra-001",
+        "severity": "warning",
+        "title": "No Infrastructure-as-Code definition found",
+        "rationale": "Data platform infrastructure provisioned manually or through click-ops is not reproducible or auditable. The data architecture undercurrent of the data engineering lifecycle requires infrastructure to be declared as version-controlled code.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{terraform/**/*.tf,cloudformation/**/*.yaml,pulumi/**/*.py,k8s/**/*.yaml}",
+            "error_when": "file_absent",
+            "message": "No Infrastructure-as-Code declaration found. Provision data platform infrastructure as version-controlled code."
+          }
+        ],
+        "fix": "Provision storage, compute, and IAM resources with Terraform, CloudFormation,\nPulumi, or Kubernetes manifests, and commit the definitions to the repository.\n",
+        "references": [
+          {
+            "book": "Fundamentals of Data Engineering",
+            "concept": "data architecture undercurrent"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: No Infrastructure-as-Code definition found\nID: dataops-infra-001\nProfile: dataops\nSeverity: warning\nWhy it matters: Data platform infrastructure provisioned manually or through click-ops is not reproducible or auditable. The data architecture undercurrent of the data engineering lifecycle requires infrastructure to be declared as version-controlled code.\n\nHow to fix: Provision storage, compute, and IAM resources with Terraform, CloudFormation,\nPulumi, or Kubernetes manifests, and commit the definitions to the repository.\n\nReferences: Fundamentals of Data Engineering"
+      },
+      {
+        "id": "dataops-dbt-001",
+        "severity": "error",
+        "title": "Hardcoded relation reference in dbt model",
+        "rationale": "Hardcoded database.schema.table paths break environment portability and prevent dbt from building the DAG required for correct execution order and lineage. Models must reference relations through ref() and source().\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "(?i)(from|join)\\s+[a-zA-Z0-9_]+\\.[a-zA-Z0-9_]+\\.[a-zA-Z0-9_]+",
+            "must_exist": false,
+            "file_glob": "models/**/*.sql",
+            "error_when": "pattern_present",
+            "message": "Hardcoded three-part relation reference found in dbt model. Use ref() or source()."
+          }
+        ],
+        "fix": "Replace hardcoded FROM/JOIN targets with dbt Jinja references:\n- internal dbt models: {{ ref('model_name') }}\n- raw source tables: {{ source('source_name', 'table_name') }}\n",
+        "references": [
+          {
+            "book": "Analytics Engineering with SQL and dbt",
+            "concept": "explicit dbt lineage via ref and source"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: Hardcoded relation reference in dbt model\nID: dataops-dbt-001\nProfile: dataops\nSeverity: error\nWhy it matters: Hardcoded database.schema.table paths break environment portability and prevent dbt from building the DAG required for correct execution order and lineage. Models must reference relations through ref() and source().\n\nHow to fix: Replace hardcoded FROM/JOIN targets with dbt Jinja references:\n- internal dbt models: {{ ref('model_name') }}\n- raw source tables: {{ source('source_name', 'table_name') }}\n\nReferences: Analytics Engineering with SQL and dbt"
+      },
+      {
+        "id": "dataops-dbt-002",
+        "severity": "error",
+        "title": "Missing dbt_project.yml root manifest",
+        "rationale": "A repository containing dbt models without dbt_project.yml cannot be parsed or executed by the dbt CLI or CI tooling. The root manifest is the required entry point that identifies a directory as a dbt project.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "dbt_project.yml",
+            "error_when": "file_absent",
+            "message": "dbt_project.yml is missing from the repository root."
+          }
+        ],
+        "fix": "Initialize the dbt project with `dbt init` or ensure dbt_project.yml is\ncommitted at the repository root with name, version, and profile defined.\n",
+        "references": [
+          {
+            "book": "Analytics Engineering with SQL and dbt",
+            "concept": "dbt project structure"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: Missing dbt_project.yml root manifest\nID: dataops-dbt-002\nProfile: dataops\nSeverity: error\nWhy it matters: A repository containing dbt models without dbt_project.yml cannot be parsed or executed by the dbt CLI or CI tooling. The root manifest is the required entry point that identifies a directory as a dbt project.\n\nHow to fix: Initialize the dbt project with `dbt init` or ensure dbt_project.yml is\ncommitted at the repository root with name, version, and profile defined.\n\nReferences: Analytics Engineering with SQL and dbt"
+      },
+      {
+        "id": "dataops-dbt-003",
+        "severity": "error",
+        "title": "Missing models directory in dbt project",
+        "rationale": "A dbt project without a models directory has no transformation logic and cannot build a data pipeline. The models folder is the mandatory home for all SQL transformation models.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "models/",
+            "error_when": "file_absent",
+            "message": "models/ directory is missing from the dbt repository."
+          }
+        ],
+        "fix": "Create the models/ directory at the repository root and organize SQL\ntransformations into staging/, intermediate/, and marts/ subfolders.\n",
+        "references": [
+          {
+            "book": "Analytics Engineering with SQL and dbt",
+            "concept": "modular data modeling"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: Missing models directory in dbt project\nID: dataops-dbt-003\nProfile: dataops\nSeverity: error\nWhy it matters: A dbt project without a models directory has no transformation logic and cannot build a data pipeline. The models folder is the mandatory home for all SQL transformation models.\n\nHow to fix: Create the models/ directory at the repository root and organize SQL\ntransformations into staging/, intermediate/, and marts/ subfolders.\n\nReferences: Analytics Engineering with SQL and dbt"
+      },
+      {
+        "id": "dataops-dbt-004",
+        "severity": "warning",
+        "title": "Missing packages.yml for macros directory",
+        "rationale": "Using custom macros or third-party package macros without a packages.yml manifest causes compilation failures in CI/CD. Package dependencies must be declared explicitly for reproducible macro resolution.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "packages.yml",
+            "error_when": "file_absent",
+            "message": "packages.yml manifest missing while a macros/ directory is present."
+          }
+        ],
+        "fix": "Create a packages.yml file at the project root and declare all required dbt\npackages with explicit version pins, then run `dbt deps`.\n",
+        "references": [
+          {
+            "book": "Analytics Engineering with SQL and dbt",
+            "concept": "dbt packages and macros"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: Missing packages.yml for macros directory\nID: dataops-dbt-004\nProfile: dataops\nSeverity: warning\nWhy it matters: Using custom macros or third-party package macros without a packages.yml manifest causes compilation failures in CI/CD. Package dependencies must be declared explicitly for reproducible macro resolution.\n\nHow to fix: Create a packages.yml file at the project root and declare all required dbt\npackages with explicit version pins, then run `dbt deps`.\n\nReferences: Analytics Engineering with SQL and dbt"
+      },
+      {
+        "id": "dataops-quality-001",
+        "severity": "error",
+        "title": "No automated data quality tests detected",
+        "rationale": "A data pipeline without automated quality assertions can silently pass corrupted data downstream. Data quality must be enforced through version- controlled tests or an assertion framework at every transformation stage.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{models/**/*.yml,great_expectations.yml,soda.yml,tests/**/*.sql}",
+            "error_when": "file_absent",
+            "message": "No data quality test configuration or assertion framework detected."
+          }
+        ],
+        "fix": "Add dbt generic tests (unique, not_null) to schema YAML files, or configure\nGreat Expectations / Soda for pipeline validation.\n",
+        "references": [
+          {
+            "book": "Data Quality Fundamentals",
+            "concept": "automated quality gates"
+          },
+          {
+            "book": "Practical DataOps",
+            "concept": "agile quality assurance"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: No automated data quality tests detected\nID: dataops-quality-001\nProfile: dataops\nSeverity: error\nWhy it matters: A data pipeline without automated quality assertions can silently pass corrupted data downstream. Data quality must be enforced through version- controlled tests or an assertion framework at every transformation stage.\n\nHow to fix: Add dbt generic tests (unique, not_null) to schema YAML files, or configure\nGreat Expectations / Soda for pipeline validation.\n\nReferences: Data Quality Fundamentals, Practical DataOps"
+      },
+      {
+        "id": "dataops-runbook-001",
+        "severity": "info",
+        "title": "No data incident runbook found",
+        "rationale": "Standardized incident response documentation reduces mean time to resolution and removes reliance on tribal knowledge during data outages. Data incident management requires documented response and escalation paths.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{RUNBOOK.md,docs/runbooks/**/*.md,docs/incidents/**/*.md}",
+            "error_when": "file_absent",
+            "message": "Repository lacks a version-controlled incident runbook."
+          }
+        ],
+        "fix": "Create a RUNBOOK.md or docs/runbooks/ directory describing detection,\nresponse, and postmortem workflows for data incidents.\n",
+        "references": [
+          {
+            "book": "Data Quality Fundamentals",
+            "concept": "incident management and triage"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: No data incident runbook found\nID: dataops-runbook-001\nProfile: dataops\nSeverity: info\nWhy it matters: Standardized incident response documentation reduces mean time to resolution and removes reliance on tribal knowledge during data outages. Data incident management requires documented response and escalation paths.\n\nHow to fix: Create a RUNBOOK.md or docs/runbooks/ directory describing detection,\nresponse, and postmortem workflows for data incidents.\n\nReferences: Data Quality Fundamentals"
+      },
+      {
+        "id": "dataops-atwal-002",
+        "severity": "error",
+        "title": "No automated test suite found",
+        "rationale": "Data software without unit or integration tests cannot be validated during CI, so regressions reach production unnoticed. Practical DataOps treats automated testing as a core continuous-integration practice.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{tests/**,test/**,pytest.ini}",
+            "error_when": "file_absent",
+            "message": "Automated testing directory missing. Data software must include version-controlled test suites."
+          }
+        ],
+        "fix": "Add a tests/ directory with pytest unit and integration tests, and wire them\ninto the CI pipeline.\n",
+        "references": [
+          {
+            "book": "Practical DataOps",
+            "concept": "automated testing and CI"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: No automated test suite found\nID: dataops-atwal-002\nProfile: dataops\nSeverity: error\nWhy it matters: Data software without unit or integration tests cannot be validated during CI, so regressions reach production unnoticed. Practical DataOps treats automated testing as a core continuous-integration practice.\n\nHow to fix: Add a tests/ directory with pytest unit and integration tests, and wire them\ninto the CI pipeline.\n\nReferences: Practical DataOps"
+      },
+      {
+        "id": "dataops-fde-001",
+        "severity": "error",
+        "title": "Pipeline orchestration not defined as code",
+        "rationale": "Time-based cron scripts or manual pipeline execution violate the DataOps undercurrent. Orchestration must be declared as version-controlled pipelines-as-code so workflows are reproducible and auditable.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{dags/**/*.py,orchestration/**/*.py,workflows/**/*.yaml,dagster_app/**/*.py}",
+            "error_when": "file_absent",
+            "message": "No pipeline orchestration code found. Declare workflows as code (DAGs)."
+          }
+        ],
+        "fix": "Define data pipelines as code using Apache Airflow (dags/*.py), Dagster, or\nPrefect, and commit them to version control.\n",
+        "references": [
+          {
+            "book": "Fundamentals of Data Engineering",
+            "concept": "pipelines as code"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: Pipeline orchestration not defined as code\nID: dataops-fde-001\nProfile: dataops\nSeverity: error\nWhy it matters: Time-based cron scripts or manual pipeline execution violate the DataOps undercurrent. Orchestration must be declared as version-controlled pipelines-as-code so workflows are reproducible and auditable.\n\nHow to fix: Define data pipelines as code using Apache Airflow (dags/*.py), Dagster, or\nPrefect, and commit them to version control.\n\nReferences: Fundamentals of Data Engineering"
+      },
+      {
+        "id": "dataops-atwal-003",
+        "severity": "warning",
+        "title": "Missing dependency lockfile",
+        "rationale": "Without a lockfile, dependency versions drift between environments, causing silent breakage and non-reproducible pipeline runs. Environment parity is a core DataOps requirement.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{requirements.txt,Pipfile.lock,poetry.lock,environment.yml,conda-lock.yml}",
+            "error_when": "file_absent",
+            "message": "Dependency lockfile missing. Pin package versions for reproducible pipeline execution."
+          }
+        ],
+        "fix": "Generate a lockfile with `poetry lock`, `pip freeze > requirements.txt`, or\n`conda-lock -f environment.yml`, and commit it.\n",
+        "references": [
+          {
+            "book": "Practical DataOps",
+            "concept": "environment parity"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: Missing dependency lockfile\nID: dataops-atwal-003\nProfile: dataops\nSeverity: warning\nWhy it matters: Without a lockfile, dependency versions drift between environments, causing silent breakage and non-reproducible pipeline runs. Environment parity is a core DataOps requirement.\n\nHow to fix: Generate a lockfile with `poetry lock`, `pip freeze > requirements.txt`, or\n`conda-lock -f environment.yml`, and commit it.\n\nReferences: Practical DataOps"
+      },
+      {
+        "id": "dataops-kleppmann-002",
+        "severity": "error",
+        "title": "No schema IDL for streaming events",
+        "rationale": "Streaming pipelines without an explicit schema definition language are vulnerable to unannounced breaking changes. Schema evolution must be managed through versioned IDL files so producers and consumers stay compatible.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{schemas/**/*.proto,schemas/**/*.avsc,schemas/**/*.thrift,events/**/*.proto}",
+            "error_when": "file_absent",
+            "message": "Streaming schema IDL definitions missing. Use explicit schema files (Avro/Protobuf) for event streams."
+          }
+        ],
+        "fix": "Define event schemas with Avro (.avsc) or Protobuf (.proto) in a schemas/\ndirectory and enforce compatibility checks in CI.\n",
+        "references": [
+          {
+            "book": "Designing Data-Intensive Applications",
+            "concept": "schema evolution and encoding"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: No schema IDL for streaming events\nID: dataops-kleppmann-002\nProfile: dataops\nSeverity: error\nWhy it matters: Streaming pipelines without an explicit schema definition language are vulnerable to unannounced breaking changes. Schema evolution must be managed through versioned IDL files so producers and consumers stay compatible.\n\nHow to fix: Define event schemas with Avro (.avsc) or Protobuf (.proto) in a schemas/\ndirectory and enforce compatibility checks in CI.\n\nReferences: Designing Data-Intensive Applications"
+      },
+      {
+        "id": "dataops-kleppmann-003",
+        "severity": "warning",
+        "title": "No database migration tooling detected",
+        "rationale": "Schema changes applied by hand are error-prone and not auditable. Database schema evolution should be managed by version-controlled migration scripts so changes are repeatable and reversible.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{migrations/**,flyway/**,alembic/**,db/migrate/**}",
+            "error_when": "file_absent",
+            "message": "Database schema migration directory missing. Version-control schema DDL evolution."
+          }
+        ],
+        "fix": "Adopt a migration tool such as Alembic or Flyway and store all schema DDL\nchanges under a migrations/ directory.\n",
+        "references": [
+          {
+            "book": "Designing Data-Intensive Applications",
+            "concept": "schema evolution"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: No database migration tooling detected\nID: dataops-kleppmann-003\nProfile: dataops\nSeverity: warning\nWhy it matters: Schema changes applied by hand are error-prone and not auditable. Database schema evolution should be managed by version-controlled migration scripts so changes are repeatable and reversible.\n\nHow to fix: Adopt a migration tool such as Alembic or Flyway and store all schema DDL\nchanges under a migrations/ directory.\n\nReferences: Designing Data-Intensive Applications"
+      },
+      {
+        "id": "dataops-kimball-001",
+        "severity": "error",
+        "title": "Fact model joins on natural key instead of surrogate key",
+        "rationale": "Joining fact models directly on natural operational codes couples the warehouse to source-system keys and breaks when those codes change. Kimball dimensional modeling requires surrogate keys for dimensional joins.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "(?i)join\\s+[a-zA-Z0-9_]+\\s+on\\s+[a-zA-Z0-9_.]+\\.(id|code|natural_key)\\s*=",
+            "must_exist": false,
+            "file_glob": "models/marts/facts/**/*.sql",
+            "error_when": "pattern_present",
+            "message": "Fact table model joins on a natural operational key. Use warehouse surrogate keys (_sk) for dimensional joins."
+          }
+        ],
+        "fix": "Generate surrogate keys for dimensions and join facts to dimensions on the\nsurrogate key column (e.g. customer_sk) instead of the natural key.\n",
+        "references": [
+          {
+            "book": "The Data Warehouse Toolkit",
+            "concept": "surrogate keys"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: Fact model joins on natural key instead of surrogate key\nID: dataops-kimball-001\nProfile: dataops\nSeverity: error\nWhy it matters: Joining fact models directly on natural operational codes couples the warehouse to source-system keys and breaks when those codes change. Kimball dimensional modeling requires surrogate keys for dimensional joins.\n\nHow to fix: Generate surrogate keys for dimensions and join facts to dimensions on the\nsurrogate key column (e.g. customer_sk) instead of the natural key.\n\nReferences: The Data Warehouse Toolkit"
+      },
+      {
+        "id": "dataops-kimball-002",
+        "severity": "error",
+        "title": "SCD Type 2 dimension lacks effective-date tracking",
+        "rationale": "A slowly changing dimension that does not track effective dates cannot preserve history or answer point-in-time queries. SCD Type 2 models require valid-from/valid-to tracking columns.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "(?i)(effective_at|valid_from|dbt_valid_from)\\b",
+            "must_exist": true,
+            "file_glob": "models/marts/dimensions/**/*.sql",
+            "error_when": "pattern_absent",
+            "message": "SCD Type 2 dimension model lacks required effective-date tracking columns."
+          }
+        ],
+        "fix": "Add effective_at / valid_from / valid_to columns to the dimension model to\ntrack historical state, or use dbt snapshot to manage SCD Type 2.\n",
+        "references": [
+          {
+            "book": "The Data Warehouse Toolkit",
+            "concept": "slowly changing dimensions"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: SCD Type 2 dimension lacks effective-date tracking\nID: dataops-kimball-002\nProfile: dataops\nSeverity: error\nWhy it matters: A slowly changing dimension that does not track effective dates cannot preserve history or answer point-in-time queries. SCD Type 2 models require valid-from/valid-to tracking columns.\n\nHow to fix: Add effective_at / valid_from / valid_to columns to the dimension model to\ntrack historical state, or use dbt snapshot to manage SCD Type 2.\n\nReferences: The Data Warehouse Toolkit"
+      },
+      {
+        "id": "dataops-kimball-003",
+        "severity": "warning",
+        "title": "Missing enterprise bus matrix document",
+        "rationale": "Without a bus matrix, teams cannot see which conformed dimensions are shared across business processes, leading to inconsistent and redundant models. The bus matrix is the planning artifact of the dimensional modeling lifecycle.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{docs/bus_matrix.md,docs/architecture/bus_matrix.md,bus_matrix.csv}",
+            "error_when": "file_absent",
+            "message": "Enterprise bus matrix missing. Document shared conformed dimensions across business process facts."
+          }
+        ],
+        "fix": "Author a bus matrix (Markdown or CSV) mapping business processes to conformed\ndimensions and commit it under docs/.\n",
+        "references": [
+          {
+            "book": "The Data Warehouse Toolkit",
+            "concept": "bus matrix"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: Missing enterprise bus matrix document\nID: dataops-kimball-003\nProfile: dataops\nSeverity: warning\nWhy it matters: Without a bus matrix, teams cannot see which conformed dimensions are shared across business processes, leading to inconsistent and redundant models. The bus matrix is the planning artifact of the dimensional modeling lifecycle.\n\nHow to fix: Author a bus matrix (Markdown or CSV) mapping business processes to conformed\ndimensions and commit it under docs/.\n\nReferences: The Data Warehouse Toolkit"
+      },
+      {
+        "id": "dataops-scale-001",
+        "severity": "error",
+        "title": "Missing data product manifest",
+        "rationale": "A data domain without a data product manifest has no declared ownership, SLAs, or contracts, so governance is implicit and fragile. Enterprise-scale data management requires explicit product metadata.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{data-product.yml,data-product.yaml}",
+            "error_when": "file_absent",
+            "message": "data-product.yml specification missing. Define domain product ownership, SLAs, and data contracts."
+          }
+        ],
+        "fix": "Create a data-product.yml defining the product name, owner, SLA, and input/\noutput data contracts for the domain.\n",
+        "references": [
+          {
+            "book": "Data Management at Scale",
+            "concept": "data product manifest"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: Missing data product manifest\nID: dataops-scale-001\nProfile: dataops\nSeverity: error\nWhy it matters: A data domain without a data product manifest has no declared ownership, SLAs, or contracts, so governance is implicit and fragile. Enterprise-scale data management requires explicit product metadata.\n\nHow to fix: Create a data-product.yml defining the product name, owner, SLA, and input/\noutput data contracts for the domain.\n\nReferences: Data Management at Scale"
+      },
+      {
+        "id": "dataops-scale-003",
+        "severity": "warning",
+        "title": "No version-controlled data contracts found",
+        "rationale": "Without explicit data contracts, producers can change interfaces without consumers knowing, causing silent downstream breakage. Contracts make the agreement between domains explicit and testable.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{contracts/**,schemas/contracts/**,docs/contracts/**}",
+            "error_when": "file_absent",
+            "message": "Data contracts directory missing. Define binding interface contracts between domain producers and consumers."
+          }
+        ],
+        "fix": "Create a contracts/ directory with version-controlled schema and semantic\ncontracts for each data product interface.\n",
+        "references": [
+          {
+            "book": "Data Management at Scale",
+            "concept": "data contracts"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: No version-controlled data contracts found\nID: dataops-scale-003\nProfile: dataops\nSeverity: warning\nWhy it matters: Without explicit data contracts, producers can change interfaces without consumers knowing, causing silent downstream breakage. Contracts make the agreement between domains explicit and testable.\n\nHow to fix: Create a contracts/ directory with version-controlled schema and semantic\ncontracts for each data product interface.\n\nReferences: Data Management at Scale"
+      },
+      {
+        "id": "dataops-004",
+        "severity": "warning",
+        "title": "No data lineage manifest found",
+        "rationale": "Pipelines without a committed lineage manifest (source → transform → sink) cannot answer \"which models depend on this table?\" during an incident. Lineage belongs in version control next to the pipeline code.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{lineage/**,docs/lineage*,**/lineage.{json,yaml,yml}}",
+            "error_when": "file_absent",
+            "message": "No data lineage manifest found — commit lineage/ or docs/lineage/ to the repo."
+          }
+        ],
+        "fix": "Generate a lineage manifest from dbt docs (dbt docs generate) or an\nOpenLineage emitter, and commit it under docs/lineage/.\n",
+        "references": [
+          {
+            "book": "Fundamentals of Data Engineering",
+            "concept": "data-lineage"
+          },
+          {
+            "book": "The Data Warehouse Toolkit",
+            "concept": "data-provenance"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: No data lineage manifest found\nID: dataops-004\nProfile: dataops\nSeverity: warning\nWhy it matters: Pipelines without a committed lineage manifest (source → transform → sink) cannot answer \"which models depend on this table?\" during an incident. Lineage belongs in version control next to the pipeline code.\n\nHow to fix: Generate a lineage manifest from dbt docs (dbt docs generate) or an\nOpenLineage emitter, and commit it under docs/lineage/.\n\nReferences: Fundamentals of Data Engineering, The Data Warehouse Toolkit"
+      },
+      {
+        "id": "dataops-005",
+        "severity": "warning",
+        "title": "No data catalog reference found",
+        "rationale": "Without a catalog reference, downstream consumers cannot discover the datasets their pipelines depend on, and governance has no authoritative inventory to enforce retention or access policy.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "datahub|amundsen|atlas|openmetadata|unity-catalog|glue-catalog",
+            "must_exist": true,
+            "file_glob": "**/*.{py,yaml,yml,json,toml}",
+            "error_when": "pattern_absent",
+            "message": "No data catalog integration detected"
+          }
+        ],
+        "fix": "Register datasets with a data catalog (DataHub, Amundsen, OpenMetadata,\nUnity Catalog, or Glue Catalog) and reference the catalog ID in the\ndataset's YAML contract.\n",
+        "references": [
+          {
+            "book": "Data Management at Scale",
+            "concept": "data-catalog"
+          },
+          {
+            "book": "Practical DataOps",
+            "concept": "self-service-discovery"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: No data catalog reference found\nID: dataops-005\nProfile: dataops\nSeverity: warning\nWhy it matters: Without a catalog reference, downstream consumers cannot discover the datasets their pipelines depend on, and governance has no authoritative inventory to enforce retention or access policy.\n\nHow to fix: Register datasets with a data catalog (DataHub, Amundsen, OpenMetadata,\nUnity Catalog, or Glue Catalog) and reference the catalog ID in the\ndataset's YAML contract.\n\nReferences: Data Management at Scale, Practical DataOps"
+      },
+      {
+        "id": "dataops-006",
+        "severity": "error",
+        "title": "PII columns not tagged in dataset schema",
+        "rationale": "Pipelines that touch personally identifiable information without explicit column-level tagging cannot enforce downstream masking, retention, or access controls. GDPR and CCPA compliance depend on this classification being explicit and version-controlled.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "(?i)(email|ssn|phone|dob|address|passport|national_id)",
+            "must_exist": true,
+            "file_glob": "**/*.{sql,yml,yaml}",
+            "error_when": "pattern_absent",
+            "message": "No PII column detection — verify schemas declare PII tags where applicable"
+          },
+          {
+            "type": "file_exists",
+            "path_glob": "{pii/**,docs/pii*,**/pii-tags.{yml,yaml,json}}",
+            "error_when": "file_absent",
+            "message": "No PII tag registry found — add pii-tags.yml with column classification"
+          }
+        ],
+        "fix": "Create a pii-tags.yml registry classifying every column by sensitivity\n(public / internal / confidential / PII) and reference it from each\ndataset contract. Wire masking policies into the warehouse so tagged\ncolumns are automatically redacted for non-privileged roles.\n",
+        "references": [
+          {
+            "book": "Data Management at Scale",
+            "concept": "data-governance"
+          },
+          {
+            "book": "Designing Data-Intensive Applications",
+            "concept": "privacy-and-security"
+          }
+        ],
+        "profile": "dataops",
+        "full_text": "Rule: PII columns not tagged in dataset schema\nID: dataops-006\nProfile: dataops\nSeverity: error\nWhy it matters: Pipelines that touch personally identifiable information without explicit column-level tagging cannot enforce downstream masking, retention, or access controls. GDPR and CCPA compliance depend on this classification being explicit and version-controlled.\n\nHow to fix: Create a pii-tags.yml registry classifying every column by sensitivity\n(public / internal / confidential / PII) and reference it from each\ndataset contract. Wire masking policies into the warehouse so tagged\ncolumns are automatically redacted for non-privileged roles.\n\nReferences: Data Management at Scale, Designing Data-Intensive Applications"
+      }
+    ]
+  },
+  "webapp": {
+    "version": "1.0",
+    "rules": [
+      {
+        "id": "general-api-001",
+        "profile": "webapp",
+        "severity": "warning",
+        "title": "API route without input validation",
+        "rationale": "API routes that accept unvalidated input expose downstream services to injection, SSRF, and abuse. Validate and type-check at the boundary.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "zod|joi|yup|class-validator|pydantic",
+            "must_exist": true,
+            "file_glob": "**/api/**/*.{ts,tsx,js,jsx}",
+            "error_when": "pattern_absent",
+            "message": "No input validation library detected in API routes"
+          }
+        ],
+        "fix": "Add schema validation at the API boundary (zod, joi, yup, or equivalent).\n",
+        "references": [
+          {
+            "book": "Web Application Security",
+            "concept": "input-validation"
+          },
+          {
+            "standard": "OWASP Top 10",
+            "concept": "injection"
+          }
+        ],
+        "full_text": "Rule: API route without input validation\nID: general-api-001\nProfile: webapp\nSeverity: warning\nWhy it matters: API routes that accept unvalidated input expose downstream services to injection, SSRF, and abuse. Validate and type-check at the boundary.\n\nHow to fix: Add schema validation at the API boundary (zod, joi, yup, or equivalent).\n\nReferences: Web Application Security, OWASP Top 10"
+      },
+      {
+        "id": "general-cicd-001",
+        "profile": "webapp",
+        "severity": "warning",
+        "title": "Missing CI/CD pipeline",
+        "rationale": "Repositories without automated delivery pipelines cannot reliably support continuous delivery principles.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": ".github/workflows/*.{yml,yaml}",
+            "error_when": "file_absent",
+            "message": "No GitHub Actions workflow found"
+          }
+        ],
+        "fix": "Add a .github/workflows/ci.yml with build and test steps.\n",
+        "references": [
+          {
+            "book": "Continuous Delivery",
+            "concept": "deployment-pipeline"
+          },
+          {
+            "book": "The DevOps Handbook",
+            "concept": "continuous-integration"
+          }
+        ],
+        "full_text": "Rule: Missing CI/CD pipeline\nID: general-cicd-001\nProfile: webapp\nSeverity: warning\nWhy it matters: Repositories without automated delivery pipelines cannot reliably support continuous delivery principles.\n\nHow to fix: Add a .github/workflows/ci.yml with build and test steps.\n\nReferences: Continuous Delivery, The DevOps Handbook"
+      },
+      {
+        "id": "general-config-001",
+        "profile": "webapp",
+        "severity": "warning",
+        "title": "Missing .env.example",
+        "rationale": "Without .env.example, new contributors do not know which variables are required and may commit real credentials.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": ".env.example",
+            "error_when": "file_absent",
+            "message": ".env.example not found in repository root"
+          },
+          {
+            "type": "file_absent",
+            "path_glob": ".env",
+            "error_when": "file_present",
+            "message": ".env file committed — add to .gitignore"
+          }
+        ],
+        "fix": "Create .env.example with placeholder values, and add .env to .gitignore.\n",
+        "references": [
+          {
+            "book": "The DevOps Handbook",
+            "concept": "configuration-management"
+          }
+        ],
+        "full_text": "Rule: Missing .env.example\nID: general-config-001\nProfile: webapp\nSeverity: warning\nWhy it matters: Without .env.example, new contributors do not know which variables are required and may commit real credentials.\n\nHow to fix: Create .env.example with placeholder values, and add .env to .gitignore.\n\nReferences: The DevOps Handbook"
+      },
+      {
+        "id": "general-deps-001",
+        "profile": "webapp",
+        "severity": "warning",
+        "title": "Unpinned dependency versions",
+        "rationale": "Unpinned dependencies cause non-reproducible builds and unexpected breakage when a transitive dependency releases a new version.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "package.json",
+            "error_when": "file_absent",
+            "message": "No package.json found"
+          }
+        ],
+        "fix": "Pin dependency versions exactly and use the pnpm lockfile.\n",
+        "references": [
+          {
+            "book": "Continuous Delivery",
+            "concept": "reproducible-builds"
+          }
+        ],
+        "full_text": "Rule: Unpinned dependency versions\nID: general-deps-001\nProfile: webapp\nSeverity: warning\nWhy it matters: Unpinned dependencies cause non-reproducible builds and unexpected breakage when a transitive dependency releases a new version.\n\nHow to fix: Pin dependency versions exactly and use the pnpm lockfile.\n\nReferences: Continuous Delivery"
+      },
+      {
+        "id": "general-docs-001",
+        "profile": "webapp",
+        "severity": "info",
+        "title": "Missing README",
+        "rationale": "A repository without a README cannot be onboarded by a new contributor without talking to the original author.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "README*",
+            "error_when": "file_absent",
+            "message": "No README found"
+          }
+        ],
+        "fix": "Add a README.md with setup, run, and test instructions.\n",
+        "references": [
+          {
+            "book": "The DevOps Handbook",
+            "concept": "documentation"
+          }
+        ],
+        "full_text": "Rule: Missing README\nID: general-docs-001\nProfile: webapp\nSeverity: info\nWhy it matters: A repository without a README cannot be onboarded by a new contributor without talking to the original author.\n\nHow to fix: Add a README.md with setup, run, and test instructions.\n\nReferences: The DevOps Handbook"
+      },
+      {
+        "id": "general-docs-002",
+        "profile": "webapp",
+        "severity": "info",
+        "title": "Missing LICENSE",
+        "rationale": "Absence of a license file leaves the legal status of the codebase undefined and blocks downstream usage.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "LICENSE*",
+            "error_when": "file_absent",
+            "message": "No LICENSE file found"
+          }
+        ],
+        "fix": "Add a LICENSE file (MIT, Apache-2.0, or proprietary notice).\n",
+        "references": [
+          {
+            "book": "The DevOps Handbook",
+            "concept": "open-source-hygiene"
+          }
+        ],
+        "full_text": "Rule: Missing LICENSE\nID: general-docs-002\nProfile: webapp\nSeverity: info\nWhy it matters: Absence of a license file leaves the legal status of the codebase undefined and blocks downstream usage.\n\nHow to fix: Add a LICENSE file (MIT, Apache-2.0, or proprietary notice).\n\nReferences: The DevOps Handbook"
+      },
+      {
+        "id": "general-docs-003",
+        "profile": "webapp",
+        "severity": "info",
+        "title": "Missing CONTRIBUTING guide",
+        "rationale": "Without a CONTRIBUTING guide, external PRs frequently violate project conventions.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "CONTRIBUTING*",
+            "error_when": "file_absent",
+            "message": "No CONTRIBUTING file found"
+          }
+        ],
+        "fix": "Add CONTRIBUTING.md with branch, commit, and PR conventions.\n",
+        "references": [
+          {
+            "book": "The DevOps Handbook",
+            "concept": "collaboration"
+          }
+        ],
+        "full_text": "Rule: Missing CONTRIBUTING guide\nID: general-docs-003\nProfile: webapp\nSeverity: info\nWhy it matters: Without a CONTRIBUTING guide, external PRs frequently violate project conventions.\n\nHow to fix: Add CONTRIBUTING.md with branch, commit, and PR conventions.\n\nReferences: The DevOps Handbook"
+      },
+      {
+        "id": "general-docs-004",
+        "profile": "webapp",
+        "severity": "info",
+        "title": "Missing CHANGELOG",
+        "rationale": "Without a CHANGELOG, downstream consumers cannot assess the impact of a version upgrade.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "CHANGELOG*",
+            "error_when": "file_absent",
+            "message": "No CHANGELOG file found"
+          }
+        ],
+        "fix": "Add CHANGELOG.md following keepachangelog.com conventions.\n",
+        "references": [
+          {
+            "book": "Continuous Delivery",
+            "concept": "release-notes"
+          }
+        ],
+        "full_text": "Rule: Missing CHANGELOG\nID: general-docs-004\nProfile: webapp\nSeverity: info\nWhy it matters: Without a CHANGELOG, downstream consumers cannot assess the impact of a version upgrade.\n\nHow to fix: Add CHANGELOG.md following keepachangelog.com conventions.\n\nReferences: Continuous Delivery"
+      },
+      {
+        "id": "general-legal-001",
+        "profile": "webapp",
+        "severity": "warning",
+        "title": "Missing SECURITY.md",
+        "rationale": "Without a SECURITY.md, security researchers cannot report vulnerabilities responsibly.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "SECURITY*",
+            "error_when": "file_absent",
+            "message": "No SECURITY file found"
+          }
+        ],
+        "fix": "Add SECURITY.md with a private disclosure channel.\n",
+        "references": [
+          {
+            "book": "Web Application Security",
+            "concept": "responsible-disclosure"
+          }
+        ],
+        "full_text": "Rule: Missing SECURITY.md\nID: general-legal-001\nProfile: webapp\nSeverity: warning\nWhy it matters: Without a SECURITY.md, security researchers cannot report vulnerabilities responsibly.\n\nHow to fix: Add SECURITY.md with a private disclosure channel.\n\nReferences: Web Application Security"
+      },
+      {
+        "id": "general-legal-002",
+        "profile": "webapp",
+        "severity": "warning",
+        "title": "Missing privacy policy or data handling doc",
+        "rationale": "Applications that collect user data without a documented privacy policy risk compliance violations (GDPR, CCPA).\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "privacy|gdpr|ccpa|data-processing",
+            "must_exist": true,
+            "file_glob": "**/*.{md,mdx}",
+            "error_when": "pattern_absent",
+            "message": "No privacy or data-handling documentation found"
+          }
+        ],
+        "fix": "Add a privacy policy and document data retention and deletion procedures.\n",
+        "references": [
+          {
+            "book": "Web Application Security",
+            "concept": "compliance"
+          }
+        ],
+        "full_text": "Rule: Missing privacy policy or data handling doc\nID: general-legal-002\nProfile: webapp\nSeverity: warning\nWhy it matters: Applications that collect user data without a documented privacy policy risk compliance violations (GDPR, CCPA).\n\nHow to fix: Add a privacy policy and document data retention and deletion procedures.\n\nReferences: Web Application Security"
+      },
+      {
+        "id": "general-links-001",
+        "profile": "webapp",
+        "severity": "info",
+        "title": "Documentation link integrity",
+        "rationale": "Broken links in README and docs erode trust and waste reader time.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "https?://",
+            "must_exist": true,
+            "file_glob": "README*",
+            "error_when": "pattern_absent",
+            "message": "No links found in README — verify link integrity manually"
+          }
+        ],
+        "fix": "Run a link checker (e.g., lychee) in CI.\n",
+        "references": [
+          {
+            "book": "The DevOps Handbook",
+            "concept": "documentation"
+          }
+        ],
+        "full_text": "Rule: Documentation link integrity\nID: general-links-001\nProfile: webapp\nSeverity: info\nWhy it matters: Broken links in README and docs erode trust and waste reader time.\n\nHow to fix: Run a link checker (e.g., lychee) in CI.\n\nReferences: The DevOps Handbook"
+      },
+      {
+        "id": "general-maint-001",
+        "profile": "webapp",
+        "severity": "warning",
+        "title": "Missing dependency-update automation",
+        "rationale": "Without automated dependency updates, security patches are delayed and the codebase drifts behind upstream fixes.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": ".github/dependabot.{yml,yaml}",
+            "error_when": "file_absent",
+            "message": "No dependabot config found"
+          }
+        ],
+        "fix": "Add .github/dependabot.yml with weekly update schedules.\n",
+        "references": [
+          {
+            "book": "Continuous Delivery",
+            "concept": "dependency-management"
+          }
+        ],
+        "full_text": "Rule: Missing dependency-update automation\nID: general-maint-001\nProfile: webapp\nSeverity: warning\nWhy it matters: Without automated dependency updates, security patches are delayed and the codebase drifts behind upstream fixes.\n\nHow to fix: Add .github/dependabot.yml with weekly update schedules.\n\nReferences: Continuous Delivery"
+      },
+      {
+        "id": "general-quality-001",
+        "profile": "webapp",
+        "severity": "warning",
+        "title": "Missing linter configuration",
+        "rationale": "Without a linter, style and correctness regressions slip through code review and accumulate as technical debt.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": ".eslintrc*",
+            "error_when": "file_absent",
+            "message": "No ESLint config found"
+          }
+        ],
+        "fix": "Add ESLint with next/core-web-vitals or equivalent ruleset.\n",
+        "references": [
+          {
+            "book": "Clean Architecture",
+            "concept": "code-quality"
+          }
+        ],
+        "full_text": "Rule: Missing linter configuration\nID: general-quality-001\nProfile: webapp\nSeverity: warning\nWhy it matters: Without a linter, style and correctness regressions slip through code review and accumulate as technical debt.\n\nHow to fix: Add ESLint with next/core-web-vitals or equivalent ruleset.\n\nReferences: Clean Architecture"
+      },
+      {
+        "id": "general-security-001",
+        "profile": "webapp",
+        "severity": "critical",
+        "title": "Potential hardcoded secret",
+        "rationale": "A hardcoded credential in source control remains exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, not in the codebase.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "(password|api_key|secret)\\s*=\\s*[\"'][^\"']{6,}",
+            "must_exist": false,
+            "file_glob": "**/*",
+            "error_when": "pattern_present",
+            "message": "Possible hardcoded credential found"
+          }
+        ],
+        "fix": "Move the secret to an environment variable and rotate the exposed key.\n",
+        "references": [
+          {
+            "book": "Web Application Security",
+            "concept": "secrets-management"
+          }
+        ],
+        "full_text": "Rule: Potential hardcoded secret\nID: general-security-001\nProfile: webapp\nSeverity: critical\nWhy it matters: A hardcoded credential in source control remains exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, not in the codebase.\n\nHow to fix: Move the secret to an environment variable and rotate the exposed key.\n\nReferences: Web Application Security"
+      },
+      {
+        "id": "iiot-hw-001",
+        "profile": "iiot",
+        "severity": "warning",
+        "title": "Missing OT hardware specification document",
+        "rationale": "Industrial deployments depend on deterministic compute characteristics (PLC scan time, controller memory headroom, watchdog intervals). Without a version-controlled hardware spec, capacity drift goes unnoticed until a scan-cycle overrun trips the controller mid-shift.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{docs/hardware/**,HARDWARE.md,docs/hardware-spec*}",
+            "error_when": "file_absent",
+            "message": "No OT hardware specification found — document controller model, RAM, scan-time budget, and watchdog config"
+          }
+        ],
+        "fix": "Add docs/hardware/ot-spec.md documenting the controller model,\navailable memory, expected scan time, and watchdog interval.\n",
+        "references": [
+          {
+            "book": "Automating Manufacturing Systems with PLCs",
+            "concept": "deterministic-execution"
+          },
+          {
+            "standard": "IEC 61131-3",
+            "concept": "program-organization-units"
+          }
+        ],
+        "full_text": "Rule: Missing OT hardware specification document\nID: iiot-hw-001\nProfile: iiot\nSeverity: warning\nWhy it matters: Industrial deployments depend on deterministic compute characteristics (PLC scan time, controller memory headroom, watchdog intervals). Without a version-controlled hardware spec, capacity drift goes unnoticed until a scan-cycle overrun trips the controller mid-shift.\n\nHow to fix: Add docs/hardware/ot-spec.md documenting the controller model,\navailable memory, expected scan time, and watchdog interval.\n\nReferences: Automating Manufacturing Systems with PLCs, IEC 61131-3"
+      },
+      {
+        "id": "webapp-001",
+        "profile": "webapp",
+        "severity": "critical",
+        "title": "No rate limiting on API routes",
+        "rationale": "An API without rate limiting is exposed to abuse and denial-of-service pressure. On serverless platforms it can also create direct cost risk. In reliability engineering terms, there is no protection for the shared error budget.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "rateLimit|rate-limit|upstash|redis|kv",
+            "must_exist": false,
+            "file_glob": "**/*.{ts,tsx,js,jsx}",
+            "error_when": "pattern_absent",
+            "message": "No rate limiting pattern found in application source files"
+          }
+        ],
+        "fix": "Use @upstash/ratelimit with Vercel KV or middleware rate limiting.\n",
+        "references": [
+          {
+            "book": "Site Reliability Engineering",
+            "concept": "error-budgets"
+          },
+          {
+            "standard": "OWASP Top 10",
+            "concept": "api-abuse"
+          }
+        ],
+        "full_text": "Rule: No rate limiting on API routes\nID: webapp-001\nProfile: webapp\nSeverity: critical\nWhy it matters: An API without rate limiting is exposed to abuse and denial-of-service pressure. On serverless platforms it can also create direct cost risk. In reliability engineering terms, there is no protection for the shared error budget.\n\nHow to fix: Use @upstash/ratelimit with Vercel KV or middleware rate limiting.\n\nReferences: Site Reliability Engineering, OWASP Top 10"
+      },
+      {
+        "id": "webapp-002",
+        "profile": "webapp",
+        "severity": "error",
+        "title": "Missing Content Security Policy",
+        "rationale": "Without CSP, injected JavaScript has a larger attack surface. Hardening headers are a relatively cheap deployment-time control because they can be applied centrally without changing every application code path.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "Content-Security-Policy|contentSecurityPolicy",
+            "must_exist": false,
+            "file_glob": "**/*.{ts,tsx,js,jsx,json}",
+            "error_when": "pattern_absent",
+            "message": "No CSP header configuration found"
+          }
+        ],
+        "fix": "Add the Content-Security-Policy header in next.config.js or server header configuration.\n",
+        "references": [
+          {
+            "book": "Web Application Security",
+            "concept": "output-encoding"
+          },
+          {
+            "book": "Continuous Delivery",
+            "concept": "deployment-pipeline"
+          }
+        ],
+        "full_text": "Rule: Missing Content Security Policy\nID: webapp-002\nProfile: webapp\nSeverity: error\nWhy it matters: Without CSP, injected JavaScript has a larger attack surface. Hardening headers are a relatively cheap deployment-time control because they can be applied centrally without changing every application code path.\n\nHow to fix: Add the Content-Security-Policy header in next.config.js or server header configuration.\n\nReferences: Web Application Security, Continuous Delivery"
+      },
+      {
+        "id": "general-security-001",
+        "profile": "webapp",
+        "severity": "critical",
+        "title": "Potential hardcoded secret",
+        "rationale": "A hardcoded credential in source control remains exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, not in the codebase.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "(password|api_key|secret)\\s*=\\s*[\"'][^\"']{6,}",
+            "must_exist": false,
+            "file_glob": "**/*",
+            "error_when": "pattern_present",
+            "message": "Possible hardcoded credential found"
+          }
+        ],
+        "fix": "Move the secret to an environment variable and rotate the exposed key.\n",
+        "references": [
+          {
+            "book": "Web Application Security",
+            "concept": "secrets-management"
+          }
+        ],
+        "full_text": "Rule: Potential hardcoded secret\nID: general-security-001\nProfile: webapp\nSeverity: critical\nWhy it matters: A hardcoded credential in source control remains exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, not in the codebase.\n\nHow to fix: Move the secret to an environment variable and rotate the exposed key.\n\nReferences: Web Application Security"
+      }
+    ]
+  },
+  "iiot": {
+    "version": "1.0",
+    "rules": [
+      {
+        "id": "iiot-001",
+        "profile": "iiot",
+        "severity": "critical",
+        "title": "Missing Modbus error handler",
+        "rationale": "In OT environments, a Modbus timeout without exception handling can cause silent loss of telemetry and unreliable process decisions. Unlike typical IT systems, an unhandled runtime failure on the plant floor may leave operators trusting a dead data stream.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "ModbusIOException|ModbusException",
+            "must_exist": false,
+            "file_glob": "**/*.py",
+            "error_when": "pattern_absent",
+            "message": "No Modbus exception handling found in Python files"
+          },
+          {
+            "type": "file_exists",
+            "path_glob": "**/mock/**/*modbus*",
+            "error_when": "file_absent",
+            "message": "No Modbus mock/simulator found for testing"
+          }
+        ],
+        "fix": "Wrap Modbus reads in try/except for ModbusIOException.\nUse pymodbus.device.ModbusSimulatorServer as the test mock.\n",
+        "references": [
+          {
+            "book": "Industrial Network Security",
+            "concept": "fail-safe networking"
+          },
+          {
+            "book": "PLC Controls with Structured Text",
+            "concept": "deterministic execution"
+          },
+          {
+            "standard": "IEC 62443",
+            "concept": "network segmentation"
+          }
+        ],
+        "full_text": "Rule: Missing Modbus error handler\nID: iiot-001\nProfile: iiot\nSeverity: critical\nWhy it matters: In OT environments, a Modbus timeout without exception handling can cause silent loss of telemetry and unreliable process decisions. Unlike typical IT systems, an unhandled runtime failure on the plant floor may leave operators trusting a dead data stream.\n\nHow to fix: Wrap Modbus reads in try/except for ModbusIOException.\nUse pymodbus.device.ModbusSimulatorServer as the test mock.\n\nReferences: Industrial Network Security, PLC Controls with Structured Text, IEC 62443"
+      },
+      {
+        "id": "iiot-002",
+        "profile": "iiot",
+        "severity": "error",
+        "title": "Hardcoded PLC IP address",
+        "rationale": "A hardcoded private OT address breaks deployment across environments and weakens network segmentation boundaries. PLC hosts should be configuration, not source code.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "192\\.168\\.|10\\.0\\.|172\\.1[6-9]\\.|172\\.2[0-9]\\.|172\\.3[0-1]\\.",
+            "must_exist": false,
+            "file_glob": "**/*.py",
+            "error_when": "pattern_present",
+            "message": "Hardcoded private IP found — use an environment variable instead"
+          }
+        ],
+        "fix": "Put the address in .env: PLC_HOST=192.168.1.10\nIn code: os.getenv('PLC_HOST', 'localhost')\n",
+        "references": [
+          {
+            "book": "Practical Industrial Data Networks",
+            "concept": "network segmentation"
+          },
+          {
+            "standard": "IEC 62443",
+            "concept": "zone and conduit model"
+          }
+        ],
+        "full_text": "Rule: Hardcoded PLC IP address\nID: iiot-002\nProfile: iiot\nSeverity: error\nWhy it matters: A hardcoded private OT address breaks deployment across environments and weakens network segmentation boundaries. PLC hosts should be configuration, not source code.\n\nHow to fix: Put the address in .env: PLC_HOST=192.168.1.10\nIn code: os.getenv('PLC_HOST', 'localhost')\n\nReferences: Practical Industrial Data Networks, IEC 62443"
+      },
+      {
+        "id": "iiot-003",
+        "profile": "iiot",
+        "severity": "warning",
+        "title": "No requirements.txt pin",
+        "rationale": "Without version pinning, an unintended library upgrade can break compatibility in a high-uptime industrial environment where a driver ABI change can cause extended downtime.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "requirements*.txt",
+            "error_when": "file_absent",
+            "message": "requirements.txt not found"
+          },
+          {
+            "type": "pattern_match",
+            "pattern": "==\\d",
+            "must_exist": true,
+            "file_glob": "requirements*.txt",
+            "error_when": "pattern_absent",
+            "message": "Dependencies not pinned with == in requirements.txt"
+          }
+        ],
+        "fix": "pip freeze > requirements.txt\nor pin manually: pymodbus==3.6.3\n",
+        "references": [
+          {
+            "book": "Automating Manufacturing Systems with PLCs",
+            "concept": "deterministic execution"
+          }
+        ],
+        "full_text": "Rule: No requirements.txt pin\nID: iiot-003\nProfile: iiot\nSeverity: warning\nWhy it matters: Without version pinning, an unintended library upgrade can break compatibility in a high-uptime industrial environment where a driver ABI change can cause extended downtime.\n\nHow to fix: pip freeze > requirements.txt\nor pin manually: pymodbus==3.6.3\n\nReferences: Automating Manufacturing Systems with PLCs"
+      },
+      {
+        "id": "iiot-004",
+        "profile": "iiot",
+        "severity": "critical",
+        "title": "Inadequate Physical Lockout/Tagout and Operational Safety Culture",
+        "rationale": "Operational safety policies requiring physical interlocks, safety culture adherence, and site security procedures cannot be audited from code repositories. This rule exists as a marker that the repo must reference a site-level LOTO procedure outside the codebase.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{docs/safety/**,LOCKOUT*.md,SAFETY.md,docs/loto/**}",
+            "error_when": "file_absent",
+            "message": "No site-level Lockout/Tagout or safety documentation reference found"
+          }
+        ],
+        "fix": "Reference the site LOTO procedure from docs/safety/loto.md and link to the\nphysical interlock inventory maintained outside source control.\n",
+        "references": [
+          {
+            "book": "Industrial Network Security",
+            "concept": "safety-controls"
+          },
+          {
+            "standard": "NFPA 70E",
+            "concept": "lockout-tagout"
+          }
+        ],
+        "full_text": "Rule: Inadequate Physical Lockout/Tagout and Operational Safety Culture\nID: iiot-004\nProfile: iiot\nSeverity: critical\nWhy it matters: Operational safety policies requiring physical interlocks, safety culture adherence, and site security procedures cannot be audited from code repositories. This rule exists as a marker that the repo must reference a site-level LOTO procedure outside the codebase.\n\nHow to fix: Reference the site LOTO procedure from docs/safety/loto.md and link to the\nphysical interlock inventory maintained outside source control.\n\nReferences: Industrial Network Security, NFPA 70E"
+      },
+      {
+        "id": "iiot-005",
+        "profile": "iiot",
+        "severity": "error",
+        "title": "OT network segmentation diagram missing",
+        "rationale": "IEC 62443 zone-and-conduit compliance requires a documented network topology distinguishing enterprise, DMZ, supervisory, and control enclaves. Without a committed diagram, segmentation drift goes undetected.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{docs/network/**,docs/architecture/network*,**/topology*.{yaml,yml,md,d2}}",
+            "error_when": "file_absent",
+            "message": "No network topology / zone-conduit diagram found in docs/"
+          }
+        ],
+        "fix": "Commit a zone-and-conduit diagram under docs/network/topology.md (or .d2)\nshowing enterprise, DMZ, supervisory, and control enclaves with the\nfirewall rules between them.\n",
+        "references": [
+          {
+            "book": "Industrial Network Security",
+            "concept": "functional-enclave"
+          },
+          {
+            "standard": "IEC 62443",
+            "concept": "zones-and-conduits"
+          }
+        ],
+        "full_text": "Rule: OT network segmentation diagram missing\nID: iiot-005\nProfile: iiot\nSeverity: error\nWhy it matters: IEC 62443 zone-and-conduit compliance requires a documented network topology distinguishing enterprise, DMZ, supervisory, and control enclaves. Without a committed diagram, segmentation drift goes undetected.\n\nHow to fix: Commit a zone-and-conduit diagram under docs/network/topology.md (or .d2)\nshowing enterprise, DMZ, supervisory, and control enclaves with the\nfirewall rules between them.\n\nReferences: Industrial Network Security, IEC 62443"
+      },
+      {
+        "id": "iiot-006",
+        "profile": "iiot",
+        "severity": "warning",
+        "title": "Undocumented PLC program change",
+        "rationale": "Controller logic changes without version control or a change record undermine NERC CIP-003-4 / CIP-007-4 auditability and mask unauthorized modifications.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{plc/**,scada/**,**/*.st,**/*.scl}",
+            "error_when": "file_absent",
+            "message": "No PLC/SCADA source directory found"
+          },
+          {
+            "type": "file_exists",
+            "path_glob": "{CHANGELOG*,plc/CHANGELOG*,scada/CHANGELOG*}",
+            "error_when": "file_absent",
+            "message": "PLC/SCADA sources present but no CHANGELOG recorded"
+          }
+        ],
+        "fix": "Track every PLC program change in a CHANGELOG at the plc/ or scada/\ndirectory root, and reference the change ticket ID in the commit message.\n",
+        "references": [
+          {
+            "book": "Industrial Network Security",
+            "concept": "change-control-and-configuration-management"
+          }
+        ],
+        "full_text": "Rule: Undocumented PLC program change\nID: iiot-006\nProfile: iiot\nSeverity: warning\nWhy it matters: Controller logic changes without version control or a change record undermine NERC CIP-003-4 / CIP-007-4 auditability and mask unauthorized modifications.\n\nHow to fix: Track every PLC program change in a CHANGELOG at the plc/ or scada/\ndirectory root, and reference the change ticket ID in the commit message.\n\nReferences: Industrial Network Security"
+      }
+    ]
+  }
+}
