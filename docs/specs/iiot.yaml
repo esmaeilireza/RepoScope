@@ -4,6 +4,7 @@ profile: iiot
 
 rules:
   - id: iiot-001
+    status: draft
     profile: iiot
     severity: critical
     title: "Missing Modbus error handler"
@@ -59,6 +60,7 @@ rules:
         concept: "zone and conduit model"
 
   - id: iiot-003
+    status: draft
     profile: iiot
     severity: warning
     title: "No requirements.txt pin"
@@ -84,7 +86,7 @@ rules:
       - book: "Automating Manufacturing Systems with PLCs"
         concept: "deterministic execution"
 
-  # ─── NEW: aligns with industrial-network-security.md Rule 5 ───
+  # ─── IMPLEMENTED: iiot-004 is live in lib/iiot-audit.ts ───
   - id: iiot-004
     profile: iiot
     severity: critical
@@ -108,6 +110,7 @@ rules:
       - standard: "NFPA 70E"
         concept: "lockout-tagout"
 
+  # ─── IMPLEMENTED: iiot-005 is live in lib/iiot-audit.ts ───
   - id: iiot-005
     profile: iiot
     severity: error
@@ -131,6 +134,7 @@ rules:
       - standard: "IEC 62443"
         concept: "zones-and-conduits"
 
+  # ─── IMPLEMENTED: iiot-006 is live in lib/iiot-audit.ts ───
   - id: iiot-006
     profile: iiot
     severity: warning

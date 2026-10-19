@@ -16,6 +16,7 @@ rules:
   # SECTION 1 — Security, Secrets & Infrastructure Governance
   # ══════════════════════════════════════════════════════════════
   - id: dataops-sec-001
+    status: draft
     severity: critical
     title: "Hardcoded secret in pipeline code"
     rationale: >
@@ -41,6 +42,7 @@ rules:
         concept: "security undercurrent"
 
   - id: dataops-sec-002
+    status: draft
     severity: critical
     title: "Database password embedded in connection string"
     rationale: >
@@ -63,6 +65,7 @@ rules:
         concept: "reproducibility and secure configuration"
 
   - id: dataops-infra-001
+    status: draft
     severity: warning
     title: "No Infrastructure-as-Code definition found"
     rationale: >
@@ -86,6 +89,7 @@ rules:
   # SECTION 2 — Transformation & dbt Modularity
   # ══════════════════════════════════════════════════════════════
   - id: dataops-dbt-001
+    status: draft
     severity: error
     title: "Hardcoded relation reference in dbt model"
     rationale: >
@@ -108,6 +112,7 @@ rules:
         concept: "explicit dbt lineage via ref and source"
 
   - id: dataops-dbt-002
+    status: draft
     severity: error
     title: "Missing dbt_project.yml root manifest"
     rationale: >
@@ -127,6 +132,7 @@ rules:
         concept: "dbt project structure"
 
   - id: dataops-dbt-003
+    status: draft
     severity: error
     title: "Missing models directory in dbt project"
     rationale: >
@@ -146,6 +152,7 @@ rules:
         concept: "modular data modeling"
 
   - id: dataops-dbt-004
+    status: draft
     severity: warning
     title: "Missing packages.yml for macros directory"
     rationale: >
@@ -168,6 +175,7 @@ rules:
   # SECTION 3 — Data Quality, Testing & Observability
   # ══════════════════════════════════════════════════════════════
   - id: dataops-quality-001
+    status: draft
     severity: error
     title: "No automated data quality tests detected"
     rationale: >
@@ -189,6 +197,7 @@ rules:
         concept: "agile quality assurance"
 
   - id: dataops-runbook-001
+    status: draft
     severity: info
     title: "No data incident runbook found"
     rationale: >
@@ -208,6 +217,7 @@ rules:
         concept: "incident management and triage"
 
   - id: dataops-atwal-002
+    status: draft
     severity: error
     title: "No automated test suite found"
     rationale: >
@@ -230,6 +240,7 @@ rules:
   # SECTION 4 — Orchestration, Dependencies & Schema Evolution
   # ══════════════════════════════════════════════════════════════
   - id: dataops-fde-001
+    status: draft
     severity: error
     title: "Pipeline orchestration not defined as code"
     rationale: >
@@ -249,6 +260,7 @@ rules:
         concept: "pipelines as code"
 
   - id: dataops-atwal-003
+    status: draft
     severity: warning
     title: "Missing dependency lockfile"
     rationale: >
@@ -267,6 +279,7 @@ rules:
       - book: "Practical DataOps"
         concept: "environment parity"
 
+  # ─── IMPLEMENTED: dataops-kleppmann-002 is live in lib/dataops-audit.ts ───
   - id: dataops-kleppmann-002
     severity: error
     title: "No schema IDL for streaming events"
@@ -286,6 +299,7 @@ rules:
       - book: "Designing Data-Intensive Applications"
         concept: "schema evolution and encoding"
 
+  # ─── IMPLEMENTED: dataops-kleppmann-003 is live in lib/dataops-audit.ts ───
   - id: dataops-kleppmann-003
     severity: warning
     title: "No database migration tooling detected"
@@ -309,6 +323,7 @@ rules:
   # SECTION 5 — Dimensional Modeling & Domain Data Products
   # ══════════════════════════════════════════════════════════════
   - id: dataops-kimball-001
+    status: draft
     severity: error
     title: "Fact model joins on natural key instead of surrogate key"
     rationale: >
@@ -330,6 +345,7 @@ rules:
         concept: "surrogate keys"
 
   - id: dataops-kimball-002
+    status: draft
     severity: error
     title: "SCD Type 2 dimension lacks effective-date tracking"
     rationale: >
@@ -351,6 +367,7 @@ rules:
         concept: "slowly changing dimensions"
 
   - id: dataops-kimball-003
+    status: draft
     severity: warning
     title: "Missing enterprise bus matrix document"
     rationale: >
@@ -370,6 +387,7 @@ rules:
         concept: "bus matrix"
 
   - id: dataops-scale-001
+    status: draft
     severity: error
     title: "Missing data product manifest"
     rationale: >
@@ -389,6 +407,7 @@ rules:
         concept: "data product manifest"
 
   - id: dataops-scale-003
+    status: draft
     severity: warning
     title: "No version-controlled data contracts found"
     rationale: >
@@ -406,6 +425,7 @@ rules:
     references:
       - book: "Data Management at Scale"
         concept: "data contracts"
+
   # ══════════════════════════════════════════════════════════════
   # SECTION 6 — Data lineage, catalog, and PII governance
   # ══════════════════════════════════════════════════════════════

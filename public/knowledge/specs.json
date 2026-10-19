@@ -67,6 +67,7 @@
     "rules": [
       {
         "id": "dataops-sec-001",
+        "status": "draft",
         "severity": "critical",
         "title": "Hardcoded secret in pipeline code",
         "rationale": "A hardcoded password, token, or API key committed to source control stays exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, never in the codebase. This violates the security undercurrent of the data engineering lifecycle and DataOps governance practices.\n",
@@ -96,6 +97,7 @@
       },
       {
         "id": "dataops-sec-002",
+        "status": "draft",
         "severity": "critical",
         "title": "Database password embedded in connection string",
         "rationale": "An unencrypted connection URI with an embedded password exposes credentials in code, logs, and version history. Connection secrets must be injected at runtime, not baked into pipeline configuration.\n",
@@ -121,6 +123,7 @@
       },
       {
         "id": "dataops-infra-001",
+        "status": "draft",
         "severity": "warning",
         "title": "No Infrastructure-as-Code definition found",
         "rationale": "Data platform infrastructure provisioned manually or through click-ops is not reproducible or auditable. The data architecture undercurrent of the data engineering lifecycle requires infrastructure to be declared as version-controlled code.\n",
@@ -144,6 +147,7 @@
       },
       {
         "id": "dataops-dbt-001",
+        "status": "draft",
         "severity": "error",
         "title": "Hardcoded relation reference in dbt model",
         "rationale": "Hardcoded database.schema.table paths break environment portability and prevent dbt from building the DAG required for correct execution order and lineage. Models must reference relations through ref() and source().\n",
@@ -169,6 +173,7 @@
       },
       {
         "id": "dataops-dbt-002",
+        "status": "draft",
         "severity": "error",
         "title": "Missing dbt_project.yml root manifest",
         "rationale": "A repository containing dbt models without dbt_project.yml cannot be parsed or executed by the dbt CLI or CI tooling. The root manifest is the required entry point that identifies a directory as a dbt project.\n",
@@ -192,6 +197,7 @@
       },
       {
         "id": "dataops-dbt-003",
+        "status": "draft",
         "severity": "error",
         "title": "Missing models directory in dbt project",
         "rationale": "A dbt project without a models directory has no transformation logic and cannot build a data pipeline. The models folder is the mandatory home for all SQL transformation models.\n",
@@ -215,6 +221,7 @@
       },
       {
         "id": "dataops-dbt-004",
+        "status": "draft",
         "severity": "warning",
         "title": "Missing packages.yml for macros directory",
         "rationale": "Using custom macros or third-party package macros without a packages.yml manifest causes compilation failures in CI/CD. Package dependencies must be declared explicitly for reproducible macro resolution.\n",
@@ -238,6 +245,7 @@
       },
       {
         "id": "dataops-quality-001",
+        "status": "draft",
         "severity": "error",
         "title": "No automated data quality tests detected",
         "rationale": "A data pipeline without automated quality assertions can silently pass corrupted data downstream. Data quality must be enforced through version- controlled tests or an assertion framework at every transformation stage.\n",
@@ -265,6 +273,7 @@
       },
       {
         "id": "dataops-runbook-001",
+        "status": "draft",
         "severity": "info",
         "title": "No data incident runbook found",
         "rationale": "Standardized incident response documentation reduces mean time to resolution and removes reliance on tribal knowledge during data outages. Data incident management requires documented response and escalation paths.\n",
@@ -288,6 +297,7 @@
       },
       {
         "id": "dataops-atwal-002",
+        "status": "draft",
         "severity": "error",
         "title": "No automated test suite found",
         "rationale": "Data software without unit or integration tests cannot be validated during CI, so regressions reach production unnoticed. Practical DataOps treats automated testing as a core continuous-integration practice.\n",
@@ -311,6 +321,7 @@
       },
       {
         "id": "dataops-fde-001",
+        "status": "draft",
         "severity": "error",
         "title": "Pipeline orchestration not defined as code",
         "rationale": "Time-based cron scripts or manual pipeline execution violate the DataOps undercurrent. Orchestration must be declared as version-controlled pipelines-as-code so workflows are reproducible and auditable.\n",
@@ -334,6 +345,7 @@
       },
       {
         "id": "dataops-atwal-003",
+        "status": "draft",
         "severity": "warning",
         "title": "Missing dependency lockfile",
         "rationale": "Without a lockfile, dependency versions drift between environments, causing silent breakage and non-reproducible pipeline runs. Environment parity is a core DataOps requirement.\n",
@@ -403,6 +415,7 @@
       },
       {
         "id": "dataops-kimball-001",
+        "status": "draft",
         "severity": "error",
         "title": "Fact model joins on natural key instead of surrogate key",
         "rationale": "Joining fact models directly on natural operational codes couples the warehouse to source-system keys and breaks when those codes change. Kimball dimensional modeling requires surrogate keys for dimensional joins.\n",
@@ -428,6 +441,7 @@
       },
       {
         "id": "dataops-kimball-002",
+        "status": "draft",
         "severity": "error",
         "title": "SCD Type 2 dimension lacks effective-date tracking",
         "rationale": "A slowly changing dimension that does not track effective dates cannot preserve history or answer point-in-time queries. SCD Type 2 models require valid-from/valid-to tracking columns.\n",
@@ -453,6 +467,7 @@
       },
       {
         "id": "dataops-kimball-003",
+        "status": "draft",
         "severity": "warning",
         "title": "Missing enterprise bus matrix document",
         "rationale": "Without a bus matrix, teams cannot see which conformed dimensions are shared across business processes, leading to inconsistent and redundant models. The bus matrix is the planning artifact of the dimensional modeling lifecycle.\n",
@@ -476,6 +491,7 @@
       },
       {
         "id": "dataops-scale-001",
+        "status": "draft",
         "severity": "error",
         "title": "Missing data product manifest",
         "rationale": "A data domain without a data product manifest has no declared ownership, SLAs, or contracts, so governance is implicit and fragile. Enterprise-scale data management requires explicit product metadata.\n",
@@ -499,6 +515,7 @@
       },
       {
         "id": "dataops-scale-003",
+        "status": "draft",
         "severity": "warning",
         "title": "No version-controlled data contracts found",
         "rationale": "Without explicit data contracts, producers can change interfaces without consumers knowing, causing silent downstream breakage. Contracts make the agreement between domains explicit and testable.\n",
@@ -1044,31 +1061,6 @@
           }
         ],
         "full_text": "Rule: Missing Content Security Policy\nID: webapp-002\nProfile: webapp\nSeverity: error\nWhy it matters: Without CSP, injected JavaScript has a larger attack surface. Hardening headers are a relatively cheap deployment-time control because they can be applied centrally without changing every application code path.\n\nHow to fix: Add the Content-Security-Policy header in next.config.js or server header configuration.\n\nReferences: Web Application Security, Continuous Delivery"
-      },
-      {
-        "id": "general-security-001",
-        "profile": "webapp",
-        "severity": "critical",
-        "title": "Potential hardcoded secret",
-        "rationale": "A hardcoded credential in source control remains exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, not in the codebase.\n",
-        "checks": [
-          {
-            "type": "pattern_match",
-            "pattern": "(password|api_key|secret)\\s*=\\s*[\"'][^\"']{6,}",
-            "must_exist": false,
-            "file_glob": "**/*",
-            "error_when": "pattern_present",
-            "message": "Possible hardcoded credential found"
-          }
-        ],
-        "fix": "Move the secret to an environment variable and rotate the exposed key.\n",
-        "references": [
-          {
-            "book": "Web Application Security",
-            "concept": "secrets-management"
-          }
-        ],
-        "full_text": "Rule: Potential hardcoded secret\nID: general-security-001\nProfile: webapp\nSeverity: critical\nWhy it matters: A hardcoded credential in source control remains exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, not in the codebase.\n\nHow to fix: Move the secret to an environment variable and rotate the exposed key.\n\nReferences: Web Application Security"
       }
     ]
   },
@@ -1077,6 +1069,7 @@
     "rules": [
       {
         "id": "iiot-001",
+        "status": "draft",
         "profile": "iiot",
         "severity": "critical",
         "title": "Missing Modbus error handler",
@@ -1145,6 +1138,7 @@
       },
       {
         "id": "iiot-003",
+        "status": "draft",
         "profile": "iiot",
         "severity": "warning",
         "title": "No requirements.txt pin",

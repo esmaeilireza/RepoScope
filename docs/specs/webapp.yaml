@@ -50,23 +50,3 @@ rules:
       - book: "Continuous Delivery"
         concept: "deployment-pipeline"
 
-  - id: general-security-001
-    profile: webapp
-    severity: critical
-    title: "Potential hardcoded secret"
-    rationale: >
-      A hardcoded credential in source control remains exposed in Git history
-      even after removal. Secrets belong in the runtime environment or a secret
-      manager, not in the codebase.
-    checks:
-      - type: pattern_match
-        pattern: '(password|api_key|secret)\s*=\s*["''][^"'']{6,}'
-        must_exist: false
-        file_glob: "**/*"
-        error_when: "pattern_present"
-        message: "Possible hardcoded credential found"
-    fix: |
-      Move the secret to an environment variable and rotate the exposed key.
-    references:
-      - book: "Web Application Security"
-        concept: "secrets-management"

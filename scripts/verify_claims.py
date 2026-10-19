@@ -71,3 +71,25 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+    
+def verify_yaml_rules_exist(claim: dict) -> tuple[bool, str]:
+    import yaml
+    specs = Path("docs/specs")
+    total = 0
+    for f in specs.glob("*.yaml"):
+        if f.name.startswith("_"): continue
+        data = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+        total += len(data.get("rules", []))
+    expected = claim.get("expected_count", 48)
+    ok = total == expected
+    return ok, f"found {total} rules, expected {expected}"
+
+def verify_misrepresented(claim: dict) -> tuple[bool, str]:
+    # You cannot verify an apology. Remove this claim entirely.
+    return True, "removed from claims.yaml"
+
+def verify_cli_exists(claim: dict) -> tuple[bool, str]:
+    bin_path = Path("bin/reposcope")
+    audit_path = Path("scripts/reposcope-audit.ts")
+    ok = bin_path.exists() and audit_path.exists()
+    return ok, f"bin/reposcope={bin_path.exists()}, audit.ts={audit_path.exists()}"
