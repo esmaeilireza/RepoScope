@@ -374,3 +374,8 @@ Section 9 does not smuggle non-static advice into the automated list.
 Section 3 has all 10 fields filled.
 Section 10 has at least 3 rules (or explicit justification).
 Every candidate rule has a readiness label with a reason if not ready.
+
+
+## References
+
+<!-- ref: TODO -->

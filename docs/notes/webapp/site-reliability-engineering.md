@@ -223,3 +223,8 @@ rules:
 - [x] Formatted Section 10 as a table with Rule ID, Name, Target, and Readiness status (`ready`, `needs-review`, `blocked`).
 - [x] Emitted valid YAML in Section 11 containing ONLY `ready` rules using supported check types (`pattern_match`, `file_exists`, `file_absent`).
 - [x] Verified zero page numbers, zero paragraph locators, and zero verbatim quotes longer than 15 words.
+
+
+## References
+
+<!-- ref: TODO -->

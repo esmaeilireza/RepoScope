@@ -272,3 +272,8 @@ rules:
 | **Spirit Card Completeness** | Pass | All 10 mandatory fields populated with domain-accurate stances. |
 | **Static Check Boundary Enforcement**| Pass | Broad architectural choices placed in Human Review; automated rules restricted to `file_exists`, `file_absent`, and `pattern_match`. |
 | **YAML Rule Validity** | Pass | Valid syntax, unique IDs, supported check types, and `ready` status filtering applied. |
+
+
+## References
+
+<!-- ref: TODO -->

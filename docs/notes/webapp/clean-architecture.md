@@ -300,3 +300,8 @@ rules:
 * [x] **Static-Checkability Boundary Respected**: Subjective recommendations (e.g., Screaming Architecture, Humble Controllers) are placed under Human Review / Blocked, while verifiable properties (file presence, disallowed pattern matches) are formulated as candidate rules.
 * [x] **Valid YAML Rules**: Evaluated rule readiness and included only ready rules utilizing permitted check types (file_exists, pattern_match) in Section 11.
 * [x] **Complete Audit Coverage**: Synthesized SOLID principles, component cohesion/coupling, concentric circle boundaries, and framework isolation into deterministic, actionable audit guidelines.
+
+
+## References
+
+<!-- ref: TODO -->

@@ -14,6 +14,7 @@ required_fields:
   - references  # list of {book | standard, concept} — MUST cite real sources only
 
 optional_fields:
+  - status
   - file_hint   # typical file where the pattern lives
 
 check_types:

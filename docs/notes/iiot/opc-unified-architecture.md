@@ -371,3 +371,8 @@ HANDOFF CHECKLIST
 
 ---
 *The RepoScope Knowledge Note for Wolfgang Mahnke et al.'s "OPC Unified Architecture" is complete and ready for deployment.*
+
+
+## References
+
+<!-- ref: TODO -->

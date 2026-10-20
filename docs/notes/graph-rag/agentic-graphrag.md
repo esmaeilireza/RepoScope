@@ -270,3 +270,8 @@ No rules ready for emission under current validator contract.
 - [x] Section 10 has at least 3 rules (or explicit justification).
 
 ---
+
+
+## References
+
+<!-- ref: TODO -->

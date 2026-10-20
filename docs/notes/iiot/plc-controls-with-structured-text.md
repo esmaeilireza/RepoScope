@@ -370,3 +370,8 @@ HANDOFF CHECKLIST
 
 ---
 *The RepoScope Knowledge Note for Tom Mejer Antonsen's "PLC Controls with Structured Text (ST)" is complete and ready for deployment.*
+
+
+## References
+
+<!-- ref: TODO -->

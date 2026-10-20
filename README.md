@@ -44,7 +44,7 @@ It doesn't just give you a score—it explains exactly **why** the health score 
 | Cross-Domain | 0 | 2 |
 | WebApp | 0 | 2 |
 
-**The CLI Gate:** `npx --no-install reposcope --repo <path> [--strict]` exits non-zero on violations. This is the "gate" — a deterministic rule set that returns a signal your CI can act on, replacing manual markdown checklists with executable YAML manifests.
+**The CLI Gate:** `npx --no-install reposcope --repo <path> [--strict]` exits non-zero on violations. This is the "gate" — a deterministic rule set that returns a signal your CI can act on, replacing manual audit checklists with executable YAML manifests.
 
 ---
 

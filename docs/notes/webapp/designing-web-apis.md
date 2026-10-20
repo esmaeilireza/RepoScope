@@ -220,3 +220,8 @@ rules:
 * [x] **Concepts, Patterns & Failure Modes**: At least 6 key concepts, 3 practical patterns, and 4 failure modes fully defined.
 * [x] **Audit Translation**: Clearly split into static automated checks and human contextual reviews.
 * [x] **Candidate Rules & YAML**: Rules assigned readiness status, with only `ready` rules emitted into valid YAML using `file_exists`, `file_absent`, or `pattern_match`.
+
+
+## References
+
+<!-- ref: TODO -->

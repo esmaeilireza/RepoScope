@@ -381,3 +381,7 @@ HANDOFF CHECKLIST
 - [x] Section 9 explicitly separates General Graph, GraphRAG, and RepoScope deterministic practices.
 - [x] Section 3 has all 10 fields filled.
 - [x] Section 10 has at least 3 rules (3 provided, all correctly blocked/needs-review).
+
+## References
+
+<!-- ref: TODO -->

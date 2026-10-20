@@ -231,3 +231,8 @@ rules:
 - [x] All emitted YAML rules use valid check types (`file_exists`, `file_absent`, `pattern_match`).
 - [x] No page numbers, paragraph locators, or verbatim quotes $> 15$ words included (IP safe).
 - [x] File copied to `/workspace/out/reposcope-note-continuous-delivery.md`.
+
+
+## References
+
+<!-- ref: TODO -->

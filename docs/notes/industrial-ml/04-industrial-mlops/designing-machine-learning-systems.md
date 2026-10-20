@@ -281,3 +281,8 @@ rules:
 | **3. IP & Citation Safety** | Direct quotes do not exceed 15 words; no page/line numbers used. | ✅ Verified |
 | **4. Readiness Taxonomy** | Every candidate rule carries an explicit readiness label (`ready`, `needs-review`, `blocked`). | ✅ Verified |
 | **5. Domain & Profile Neutrality** | Rules focus strictly on framework-neutral MLOps, pipeline governance, and data leakage boundaries. | ✅ Verified |
+
+
+## References
+
+<!-- ref: TODO -->

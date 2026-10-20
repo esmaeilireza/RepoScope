@@ -200,3 +200,7 @@ rules:
 * [x] **Static-Checkability Boundary enforced**: Candidate rules separated cleanly into static checks and human review.
 * [x] **Readiness Taxonomy applied**: Rules assigned `ready`, `needs-review`, or `blocked` statuses.
 * [x] **Valid YAML Fragment**: YAML contains only `ready` rules using supported check types (`file_exists`, `file_absent`, `pattern_match`).
+
+## References
+
+<!-- ref: TODO -->

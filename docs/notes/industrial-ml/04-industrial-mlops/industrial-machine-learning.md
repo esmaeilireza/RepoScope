@@ -187,3 +187,8 @@ To mitigate model risk, systems must enforce:
 - [x] Candidate rules categorized with `ready`, `needs-review`, or `blocked` labels.
 - [x] Suggested YAML fragment validates against allowed check types (`pattern_match`, `file_absent`, `file_exists`).
 - [x] Intellectual property and citation safety standards verified.
+
+
+## References
+
+<!-- ref: TODO -->

@@ -283,3 +283,8 @@ rules:
 - [x] Section 9 explicitly separates general, domain-specific, and RepoScope deterministic practices.
 - [x] Section 3 has all 10 fields filled.
 - [x] Section 10 has at least 3 rules.
+
+
+## References
+
+<!-- ref: TODO -->

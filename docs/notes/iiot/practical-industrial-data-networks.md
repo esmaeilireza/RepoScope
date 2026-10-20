@@ -373,3 +373,8 @@ HANDOFF CHECKLIST
 
 ---
 *The RepoScope Knowledge Note for Steve Mackay & Edwin Wright's "Practical Industrial Data Networks" is complete and ready for deployment.* 🛠️
+
+
+## References
+
+<!-- ref: TODO -->
