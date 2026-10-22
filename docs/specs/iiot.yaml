@@ -11,13 +11,17 @@ rules:
       in production PLC-connected systems. IEC 62443 requires explicit fault
       containment at every protocol boundary.
     checks:
-      - pattern: "ModbusIOException|ModbusException"
-        in: "**/*.py"
-        mode: must_exist
+      - type: pattern_match
+        pattern: "ModbusIOException|ModbusException"
+        file_glob: "**/*.py"
+        must_exist: true
+        error_when: "pattern_absent"
         message: "No Modbus exception handling found in Python sources."
-      - pattern: "mock.*modbus|modbus.*mock|ModbusSimulatorServer"
-        in: "**/mock/**/*modbus*"
-        mode: must_exist
+      - type: pattern_match
+        pattern: "mock.*modbus|modbus.*mock|ModbusSimulatorServer"
+        file_glob: "**/mock/**/*modbus*"
+        must_exist: true
+        error_when: "pattern_absent"
         message: "No Modbus simulator/mock found for offline testing."
     fix: |
       Wrap every Modbus call in try/except ModbusIOException and provide a
@@ -32,13 +36,15 @@ rules:
             raise
     references:
       - book: "Industrial Network Security"
-        section: "Chapter 4 – Protocol-level fault containment"
+        concept: "Chapter 4 – Protocol-level fault containment"
       - book: "PLC Controls with Structured Text"
-        section: "Chapter 7 – Exception handling in cyclic tasks"
+        concept: "Chapter 7 – Exception handling in cyclic tasks"
       - standard: "IEC 62443-3-3 SR 3.5"
+        concept: "fault containment at protocol boundaries"
 
   - id: iiot-002
     profile: iiot
+    status: implemented
     severity: error
     title: "Hardcoded PLC IP address detected"
     rationale: >
@@ -46,9 +52,11 @@ rules:
       segment and expose internal topology in version control. IEC 62443
       requires network-segment isolation and configuration externalisation.
     checks:
-      - pattern: "192\\.168\\.|10\\.0\\.|172\\.(1[6-9]|2[0-9]|3[01])\\."
-        in: "**/*.py"
-        mode: must_not_exist
+      - type: pattern_match
+        pattern: "192\\.168\\.|10\\.0\\.|172\\.(1[6-9]|2[0-9]|3[01])\\."
+        file_glob: "**/*.py"
+        must_exist: false
+        error_when: "pattern_present"
         message: "Hardcoded private IP found – move PLC_HOST to environment variable."
     fix: |
       Replace the literal IP with an environment variable:
@@ -57,8 +65,9 @@ rules:
       Store the real value in .env (git-ignored) and document it in .env.example.
     references:
       - book: "Practical Industrial Data Networks"
-        section: "Chapter 2 – Configuration management for field devices"
+        concept: "Chapter 2 – Configuration management for field devices"
       - standard: "IEC 62443-2-1 SP.03.02"
+        concept: "configuration externalisation"
 
   - id: iiot-003
     status: draft
@@ -69,13 +78,15 @@ rules:
       Unpinned dependencies allow silent upgrades that can break fieldbus
       driver behaviour between deployments.
     checks:
-      - pattern: "requirements.*\\.txt"
-        in: "."
-        mode: must_exist
+      - type: file_exists
+        path_glob: "requirements*.txt"
+        error_when: "file_absent"
         message: "No requirements*.txt found."
-      - pattern: "==\\d"
-        in: "requirements*.txt"
-        mode: must_exist
+      - type: pattern_match
+        pattern: "==\\d"
+        file_glob: "requirements*.txt"
+        must_exist: true
+        error_when: "pattern_absent"
         message: "Dependencies appear unpinned – use == specifiers."
     fix: |
       Pin every runtime dependency:
@@ -85,10 +96,11 @@ rules:
         opcua==0.98.13
     references:
       - book: "Automating Manufacturing Systems with PLCs"
-        section: "Appendix B – Reproducible Python environments"
+        concept: "Appendix B – Reproducible Python environments"
 
   - id: iiot-004
     profile: iiot
+    status: implemented
     severity: critical
     title: "LOTO / safety-procedure documentation missing"
     rationale: >
@@ -96,20 +108,24 @@ rules:
       documentation alongside the code so maintenance teams can safely
       de-energise equipment before any software change is applied.
     checks:
-      - pattern: "loto|lockout|LOTO|LOCKOUT"
-        in: "docs/safety/**,LOCKOUT*.md,SAFETY.md,docs/loto/**"
-        mode: must_exist
+      - type: pattern_match
+        pattern: "loto|lockout|LOTO|LOCKOUT"
+        file_glob: "{docs/safety/**,LOCKOUT*.md,SAFETY.md,docs/loto/**}"
+        must_exist: true
+        error_when: "pattern_absent"
         message: "No LOTO / lockout-tagout documentation found."
     fix: |
       Create docs/safety/loto.md referencing your site-level LOTO procedure
       and link it from README.md under a Safety section.
     references:
       - book: "Industrial Network Security"
-        section: "Chapter 9 – Physical security and maintenance windows"
+        concept: "Chapter 9 – Physical security and maintenance windows"
       - standard: "NFPA 70E Article 120"
+        concept: "lockout-tagout procedure"
 
   - id: iiot-005
     profile: iiot
+    status: implemented
     severity: error
     title: "Network topology / zone diagram missing"
     rationale: >
@@ -117,9 +133,11 @@ rules:
       so that security assessments and incident response can correctly scope
       the industrial network.
     checks:
-      - pattern: "topology|network"
-        in: "docs/network/**,docs/architecture/network*,**/*topology*.yaml,**/*topology*.yml,**/*topology*.md,**/*topology*.d2"
-        mode: must_exist
+      - type: pattern_match
+        pattern: "topology|network"
+        file_glob: "{docs/network/**,docs/architecture/network*,**/*topology*.yaml,**/*topology*.yml,**/*topology*.md,**/*topology*.d2}"
+        must_exist: true
+        error_when: "pattern_absent"
         message: "No network topology diagram or document found."
     fix: |
       Add docs/network/topology.md (or topology.d2) documenting:
@@ -129,11 +147,13 @@ rules:
         - Conduits and allowed protocols between zones
     references:
       - book: "Industrial Network Security"
-        section: "Chapter 6 – Zone and conduit modelling"
+        concept: "Chapter 6 – Zone and conduit modelling"
       - standard: "IEC 62443-3-2 ZCR 1"
+        concept: "zone and conduit model"
 
   - id: iiot-006
     profile: iiot
+    status: implemented
     severity: warning
     title: "PLC/SCADA source changes not tracked in CHANGELOG"
     rationale: >
@@ -141,70 +161,79 @@ rules:
       traceable to a ticket and a deployment window to satisfy change-management
       requirements in regulated industries.
     checks:
-      - pattern: "\\.(st|scl|lad|fbd|sfc)$"
-        in: "plc/**,scada/**"
-        mode: must_exist
+      - type: file_exists
+        path_glob: "{plc,scada}/**/*.{st,scl,lad,fbd,sfc}"
+        error_when: "file_absent"
         message: "No PLC/SCADA source files found under plc/ or scada/."
-      - pattern: "CHANGELOG"
-        in: "CHANGELOG*,docs/CHANGELOG*"
-        mode: must_exist
+      - type: file_exists
+        path_glob: "{CHANGELOG*,docs/CHANGELOG*}"
+        error_when: "file_absent"
         message: "No CHANGELOG found for PLC/SCADA change tracking."
     fix: |
       1. Store structured text / ladder sources under plc/ or scada/.
       2. Add a CHANGELOG.md entry for every release, referencing the ticket ID.
     references:
       - book: "Industrial Network Security"
-        section: "Chapter 11 – Change and patch management"
+        concept: "Chapter 11 – Change and patch management"
 
   - id: iiot-007
     profile: iiot
+    status: implemented
     severity: error
     title: "Hardcoded serial port or Modbus TCP port"
     rationale: >
       Hardcoded COM ports and :502 addresses prevent multi-environment
       deployments and leak hardware topology into version control.
     checks:
-      - pattern: "COM[1-9]|/dev/ttyUSB|/dev/ttyACM|:502"
-        in: "**/*.py"
-        mode: must_not_exist
+      - type: pattern_match
+        pattern: "COM[1-9]|/dev/ttyUSB|/dev/ttyACM|:502"
+        file_glob: "**/*.py"
+        must_exist: false
+        error_when: "pattern_present"
         message: "Hardcoded serial/TCP port found – move to PLC_PORT env var."
     fix: |
       Replace literal ports with an environment variable:
         PLC_PORT = int(os.environ.get("PLC_PORT", "502"))
     references:
       - book: "Practical Industrial Data Networks"
-        section: "Chapter 3 – Serial and TCP transport configuration"
+        concept: "Chapter 3 – Serial and TCP transport configuration"
 
   - id: iiot-008
     profile: iiot
+    status: implemented
     severity: warning
     title: "No Modbus / fieldbus mock infrastructure"
     rationale: >
       Tests that require live hardware are not runnable in CI. A mock or
       simulator layer decouples logic tests from physical device availability.
     checks:
-      - pattern: "modbus|Modbus"
-        in: "tests/**/*modbus*,__mocks__/**,conftest.py,mock_server.py"
-        mode: must_exist
+      - type: pattern_match
+        pattern: "modbus|Modbus"
+        file_glob: "{tests/**/*modbus*,__mocks__/**,conftest.py,mock_server.py}"
+        must_exist: true
+        error_when: "pattern_absent"
         message: "No Modbus mock or simulator infrastructure found."
     fix: |
       Add a conftest.py fixture using pymodbus SimulatorServer or a manual
       mock that returns realistic register maps for your device profile.
     references:
       - book: "Automating Manufacturing Systems with PLCs"
-        section: "Chapter 12 – Software-in-the-loop testing"
+        concept: "Chapter 12 – Software-in-the-loop testing"
 
   - id: iiot-009
     profile: iiot
+    status: implemented
     severity: warning
     title: "Protocol client timeout not set"
     rationale: >
       Without explicit timeouts, a stalled PLC or network partition causes
       the application to block indefinitely, preventing watchdog recovery.
     checks:
-      - pattern: "timeout\\s*[=:]"
-        in: "**/*.py"
-        mode: must_exist
+      - type: pattern_match
+        pattern: "timeout\\s*[=:]"
+        file_glob: "**/*.py"
+        must_exist: true
+        error_when: "pattern_absent"
         message: "No explicit timeout found in Python sources."
     fix: |
       Pass a timeout to every protocol client:
@@ -212,7 +241,7 @@ rules:
         asyncio.wait_for(coro, timeout=5.0)
     references:
       - book: "Industrial Network Security"
-        section: "Chapter 5 – Resilience and watchdog patterns"
+        concept: "Chapter 5 – Resilience and watchdog patterns"
 
   - id: iiot-hw-001
     status: spec-only
@@ -224,14 +253,17 @@ rules:
       or emulated hardware target before production deployment. Without it,
       integration defects surface only on the factory floor.
     checks:
-      - pattern: "hil|hardware.in.the.loop|HIL"
-        in: "docs/**,tests/**,README*"
-        mode: must_exist
+      - type: pattern_match
+        pattern: "hil|hardware.in.the.loop|HIL"
+        file_glob: "{docs/**,tests/**,README*}"
+        must_exist: true
+        error_when: "pattern_absent"
         message: "No HIL test harness documentation or test suite found."
     fix: |
       Document your HIL setup in docs/testing/hil.md and add a test suite
       or CI job that targets the emulated hardware target. Link from README.md.
     references:
       - book: "Automating Manufacturing Systems with PLCs"
-        section: "Chapter 13 – Hardware-in-the-loop validation"
+        concept: "Chapter 13 – Hardware-in-the-loop validation"
       - standard: "IEC 61508-6 Annex B"
+        concept: "hardware-in-the-loop validation"

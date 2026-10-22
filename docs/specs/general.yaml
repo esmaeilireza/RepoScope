@@ -1,6 +1,6 @@
 # docs/specs/general.yaml — cross-profile general audit rules
 version: "1.0"
-profile: webapp
+profile: general
 
 rules:
   - id: general-api-001

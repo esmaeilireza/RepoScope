@@ -30,7 +30,7 @@
   "dependencies": {
     "@cyclonedx/cyclonedx-library": "^10.2.0",
     "lucide-react": "^1.39.0",
-    "next": "16.3.8",
+    "next": "16.4.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -54,20 +54,26 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "roots": ["<rootDir>/__tests__"],
+    "roots": [
+      "<rootDir>/__tests__"
+    ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/$1"
     },
     "transform": {
       "^.+\\.tsx?$": [
         "ts-jest",
-        { "tsconfig": "tsconfig.json" }
+        {
+          "tsconfig": "tsconfig.json"
+        }
       ]
     }
   },
   "pnpm": {
     "auditConfig": {
-      "ignoreGhsas": ["GHSA-vfj7-8cjw-p6xm"]
+      "ignoreGhsas": [
+        "GHSA-vfj7-8cjw-p6xm"
+      ]
     },
     "overrides": {
       "braces": ">=3.0.3",
