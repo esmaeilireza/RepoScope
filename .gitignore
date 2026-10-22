@@ -172,3 +172,9 @@ neo4j/conf/
 # ============================================================================
 public/pwa-icons/codebase.md
 codebase.md
+
+# ============================================================================
+# Cleanup additions (backups, empty locks, local typo files)
+# ============================================================================
+docs/specs/backup/
+requirements.lock
