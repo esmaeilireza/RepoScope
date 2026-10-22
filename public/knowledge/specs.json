@@ -68,6 +68,7 @@
       {
         "id": "dataops-sec-001",
         "status": "draft",
+        "profile": "dataops",
         "severity": "critical",
         "title": "Hardcoded secret in pipeline code",
         "rationale": "A hardcoded password, token, or API key committed to source control stays exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, never in the codebase. This violates the security undercurrent of the data engineering lifecycle and DataOps governance practices.\n",
@@ -92,12 +93,12 @@
             "concept": "security undercurrent"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: Hardcoded secret in pipeline code\nID: dataops-sec-001\nProfile: dataops\nSeverity: critical\nWhy it matters: A hardcoded password, token, or API key committed to source control stays exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, never in the codebase. This violates the security undercurrent of the data engineering lifecycle and DataOps governance practices.\n\nHow to fix: Move the secret to an environment variable or a secret manager.\nAdd the real secret file to .gitignore and rotate the exposed credential.\n\nReferences: Practical DataOps, Fundamentals of Data Engineering"
       },
       {
         "id": "dataops-sec-002",
         "status": "draft",
+        "profile": "dataops",
         "severity": "critical",
         "title": "Database password embedded in connection string",
         "rationale": "An unencrypted connection URI with an embedded password exposes credentials in code, logs, and version history. Connection secrets must be injected at runtime, not baked into pipeline configuration.\n",
@@ -118,12 +119,12 @@
             "concept": "reproducibility and secure configuration"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: Database password embedded in connection string\nID: dataops-sec-002\nProfile: dataops\nSeverity: critical\nWhy it matters: An unencrypted connection URI with an embedded password exposes credentials in code, logs, and version history. Connection secrets must be injected at runtime, not baked into pipeline configuration.\n\nHow to fix: Replace the embedded password with an environment variable reference, e.g.\npostgres://user:${DB_PASSWORD}@host/db, and load DB_PASSWORD from a secret\nmanager at runtime.\n\nReferences: Designing Data-Intensive Applications"
       },
       {
         "id": "dataops-infra-001",
         "status": "draft",
+        "profile": "dataops",
         "severity": "warning",
         "title": "No Infrastructure-as-Code definition found",
         "rationale": "Data platform infrastructure provisioned manually or through click-ops is not reproducible or auditable. The data architecture undercurrent of the data engineering lifecycle requires infrastructure to be declared as version-controlled code.\n",
@@ -142,12 +143,12 @@
             "concept": "data architecture undercurrent"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: No Infrastructure-as-Code definition found\nID: dataops-infra-001\nProfile: dataops\nSeverity: warning\nWhy it matters: Data platform infrastructure provisioned manually or through click-ops is not reproducible or auditable. The data architecture undercurrent of the data engineering lifecycle requires infrastructure to be declared as version-controlled code.\n\nHow to fix: Provision storage, compute, and IAM resources with Terraform, CloudFormation,\nPulumi, or Kubernetes manifests, and commit the definitions to the repository.\n\nReferences: Fundamentals of Data Engineering"
       },
       {
         "id": "dataops-dbt-001",
         "status": "draft",
+        "profile": "dataops",
         "severity": "error",
         "title": "Hardcoded relation reference in dbt model",
         "rationale": "Hardcoded database.schema.table paths break environment portability and prevent dbt from building the DAG required for correct execution order and lineage. Models must reference relations through ref() and source().\n",
@@ -168,12 +169,12 @@
             "concept": "explicit dbt lineage via ref and source"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: Hardcoded relation reference in dbt model\nID: dataops-dbt-001\nProfile: dataops\nSeverity: error\nWhy it matters: Hardcoded database.schema.table paths break environment portability and prevent dbt from building the DAG required for correct execution order and lineage. Models must reference relations through ref() and source().\n\nHow to fix: Replace hardcoded FROM/JOIN targets with dbt Jinja references:\n- internal dbt models: {{ ref('model_name') }}\n- raw source tables: {{ source('source_name', 'table_name') }}\n\nReferences: Analytics Engineering with SQL and dbt"
       },
       {
         "id": "dataops-dbt-002",
         "status": "draft",
+        "profile": "dataops",
         "severity": "error",
         "title": "Missing dbt_project.yml root manifest",
         "rationale": "A repository containing dbt models without dbt_project.yml cannot be parsed or executed by the dbt CLI or CI tooling. The root manifest is the required entry point that identifies a directory as a dbt project.\n",
@@ -192,12 +193,12 @@
             "concept": "dbt project structure"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: Missing dbt_project.yml root manifest\nID: dataops-dbt-002\nProfile: dataops\nSeverity: error\nWhy it matters: A repository containing dbt models without dbt_project.yml cannot be parsed or executed by the dbt CLI or CI tooling. The root manifest is the required entry point that identifies a directory as a dbt project.\n\nHow to fix: Initialize the dbt project with `dbt init` or ensure dbt_project.yml is\ncommitted at the repository root with name, version, and profile defined.\n\nReferences: Analytics Engineering with SQL and dbt"
       },
       {
         "id": "dataops-dbt-003",
         "status": "draft",
+        "profile": "dataops",
         "severity": "error",
         "title": "Missing models directory in dbt project",
         "rationale": "A dbt project without a models directory has no transformation logic and cannot build a data pipeline. The models folder is the mandatory home for all SQL transformation models.\n",
@@ -216,12 +217,12 @@
             "concept": "modular data modeling"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: Missing models directory in dbt project\nID: dataops-dbt-003\nProfile: dataops\nSeverity: error\nWhy it matters: A dbt project without a models directory has no transformation logic and cannot build a data pipeline. The models folder is the mandatory home for all SQL transformation models.\n\nHow to fix: Create the models/ directory at the repository root and organize SQL\ntransformations into staging/, intermediate/, and marts/ subfolders.\n\nReferences: Analytics Engineering with SQL and dbt"
       },
       {
         "id": "dataops-dbt-004",
         "status": "draft",
+        "profile": "dataops",
         "severity": "warning",
         "title": "Missing packages.yml for macros directory",
         "rationale": "Using custom macros or third-party package macros without a packages.yml manifest causes compilation failures in CI/CD. Package dependencies must be declared explicitly for reproducible macro resolution.\n",
@@ -240,12 +241,12 @@
             "concept": "dbt packages and macros"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: Missing packages.yml for macros directory\nID: dataops-dbt-004\nProfile: dataops\nSeverity: warning\nWhy it matters: Using custom macros or third-party package macros without a packages.yml manifest causes compilation failures in CI/CD. Package dependencies must be declared explicitly for reproducible macro resolution.\n\nHow to fix: Create a packages.yml file at the project root and declare all required dbt\npackages with explicit version pins, then run `dbt deps`.\n\nReferences: Analytics Engineering with SQL and dbt"
       },
       {
         "id": "dataops-quality-001",
         "status": "draft",
+        "profile": "dataops",
         "severity": "error",
         "title": "No automated data quality tests detected",
         "rationale": "A data pipeline without automated quality assertions can silently pass corrupted data downstream. Data quality must be enforced through version- controlled tests or an assertion framework at every transformation stage.\n",
@@ -268,12 +269,12 @@
             "concept": "agile quality assurance"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: No automated data quality tests detected\nID: dataops-quality-001\nProfile: dataops\nSeverity: error\nWhy it matters: A data pipeline without automated quality assertions can silently pass corrupted data downstream. Data quality must be enforced through version- controlled tests or an assertion framework at every transformation stage.\n\nHow to fix: Add dbt generic tests (unique, not_null) to schema YAML files, or configure\nGreat Expectations / Soda for pipeline validation.\n\nReferences: Data Quality Fundamentals, Practical DataOps"
       },
       {
         "id": "dataops-runbook-001",
         "status": "draft",
+        "profile": "dataops",
         "severity": "info",
         "title": "No data incident runbook found",
         "rationale": "Standardized incident response documentation reduces mean time to resolution and removes reliance on tribal knowledge during data outages. Data incident management requires documented response and escalation paths.\n",
@@ -292,12 +293,12 @@
             "concept": "incident management and triage"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: No data incident runbook found\nID: dataops-runbook-001\nProfile: dataops\nSeverity: info\nWhy it matters: Standardized incident response documentation reduces mean time to resolution and removes reliance on tribal knowledge during data outages. Data incident management requires documented response and escalation paths.\n\nHow to fix: Create a RUNBOOK.md or docs/runbooks/ directory describing detection,\nresponse, and postmortem workflows for data incidents.\n\nReferences: Data Quality Fundamentals"
       },
       {
         "id": "dataops-atwal-002",
         "status": "draft",
+        "profile": "dataops",
         "severity": "error",
         "title": "No automated test suite found",
         "rationale": "Data software without unit or integration tests cannot be validated during CI, so regressions reach production unnoticed. Practical DataOps treats automated testing as a core continuous-integration practice.\n",
@@ -316,12 +317,12 @@
             "concept": "automated testing and CI"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: No automated test suite found\nID: dataops-atwal-002\nProfile: dataops\nSeverity: error\nWhy it matters: Data software without unit or integration tests cannot be validated during CI, so regressions reach production unnoticed. Practical DataOps treats automated testing as a core continuous-integration practice.\n\nHow to fix: Add a tests/ directory with pytest unit and integration tests, and wire them\ninto the CI pipeline.\n\nReferences: Practical DataOps"
       },
       {
         "id": "dataops-fde-001",
         "status": "draft",
+        "profile": "dataops",
         "severity": "error",
         "title": "Pipeline orchestration not defined as code",
         "rationale": "Time-based cron scripts or manual pipeline execution violate the DataOps undercurrent. Orchestration must be declared as version-controlled pipelines-as-code so workflows are reproducible and auditable.\n",
@@ -340,12 +341,12 @@
             "concept": "pipelines as code"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: Pipeline orchestration not defined as code\nID: dataops-fde-001\nProfile: dataops\nSeverity: error\nWhy it matters: Time-based cron scripts or manual pipeline execution violate the DataOps undercurrent. Orchestration must be declared as version-controlled pipelines-as-code so workflows are reproducible and auditable.\n\nHow to fix: Define data pipelines as code using Apache Airflow (dags/*.py), Dagster, or\nPrefect, and commit them to version control.\n\nReferences: Fundamentals of Data Engineering"
       },
       {
         "id": "dataops-atwal-003",
         "status": "draft",
+        "profile": "dataops",
         "severity": "warning",
         "title": "Missing dependency lockfile",
         "rationale": "Without a lockfile, dependency versions drift between environments, causing silent breakage and non-reproducible pipeline runs. Environment parity is a core DataOps requirement.\n",
@@ -364,11 +365,12 @@
             "concept": "environment parity"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: Missing dependency lockfile\nID: dataops-atwal-003\nProfile: dataops\nSeverity: warning\nWhy it matters: Without a lockfile, dependency versions drift between environments, causing silent breakage and non-reproducible pipeline runs. Environment parity is a core DataOps requirement.\n\nHow to fix: Generate a lockfile with `poetry lock`, `pip freeze > requirements.txt`, or\n`conda-lock -f environment.yml`, and commit it.\n\nReferences: Practical DataOps"
       },
       {
         "id": "dataops-kleppmann-002",
+        "profile": "dataops",
+        "status": "implemented",
         "severity": "error",
         "title": "No schema IDL for streaming events",
         "rationale": "Streaming pipelines without an explicit schema definition language are vulnerable to unannounced breaking changes. Schema evolution must be managed through versioned IDL files so producers and consumers stay compatible.\n",
@@ -387,11 +389,12 @@
             "concept": "schema evolution and encoding"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: No schema IDL for streaming events\nID: dataops-kleppmann-002\nProfile: dataops\nSeverity: error\nWhy it matters: Streaming pipelines without an explicit schema definition language are vulnerable to unannounced breaking changes. Schema evolution must be managed through versioned IDL files so producers and consumers stay compatible.\n\nHow to fix: Define event schemas with Avro (.avsc) or Protobuf (.proto) in a schemas/\ndirectory and enforce compatibility checks in CI.\n\nReferences: Designing Data-Intensive Applications"
       },
       {
         "id": "dataops-kleppmann-003",
+        "profile": "dataops",
+        "status": "implemented",
         "severity": "warning",
         "title": "No database migration tooling detected",
         "rationale": "Schema changes applied by hand are error-prone and not auditable. Database schema evolution should be managed by version-controlled migration scripts so changes are repeatable and reversible.\n",
@@ -410,12 +413,12 @@
             "concept": "schema evolution"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: No database migration tooling detected\nID: dataops-kleppmann-003\nProfile: dataops\nSeverity: warning\nWhy it matters: Schema changes applied by hand are error-prone and not auditable. Database schema evolution should be managed by version-controlled migration scripts so changes are repeatable and reversible.\n\nHow to fix: Adopt a migration tool such as Alembic or Flyway and store all schema DDL\nchanges under a migrations/ directory.\n\nReferences: Designing Data-Intensive Applications"
       },
       {
         "id": "dataops-kimball-001",
         "status": "draft",
+        "profile": "dataops",
         "severity": "error",
         "title": "Fact model joins on natural key instead of surrogate key",
         "rationale": "Joining fact models directly on natural operational codes couples the warehouse to source-system keys and breaks when those codes change. Kimball dimensional modeling requires surrogate keys for dimensional joins.\n",
@@ -436,12 +439,12 @@
             "concept": "surrogate keys"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: Fact model joins on natural key instead of surrogate key\nID: dataops-kimball-001\nProfile: dataops\nSeverity: error\nWhy it matters: Joining fact models directly on natural operational codes couples the warehouse to source-system keys and breaks when those codes change. Kimball dimensional modeling requires surrogate keys for dimensional joins.\n\nHow to fix: Generate surrogate keys for dimensions and join facts to dimensions on the\nsurrogate key column (e.g. customer_sk) instead of the natural key.\n\nReferences: The Data Warehouse Toolkit"
       },
       {
         "id": "dataops-kimball-002",
         "status": "draft",
+        "profile": "dataops",
         "severity": "error",
         "title": "SCD Type 2 dimension lacks effective-date tracking",
         "rationale": "A slowly changing dimension that does not track effective dates cannot preserve history or answer point-in-time queries. SCD Type 2 models require valid-from/valid-to tracking columns.\n",
@@ -462,12 +465,12 @@
             "concept": "slowly changing dimensions"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: SCD Type 2 dimension lacks effective-date tracking\nID: dataops-kimball-002\nProfile: dataops\nSeverity: error\nWhy it matters: A slowly changing dimension that does not track effective dates cannot preserve history or answer point-in-time queries. SCD Type 2 models require valid-from/valid-to tracking columns.\n\nHow to fix: Add effective_at / valid_from / valid_to columns to the dimension model to\ntrack historical state, or use dbt snapshot to manage SCD Type 2.\n\nReferences: The Data Warehouse Toolkit"
       },
       {
         "id": "dataops-kimball-003",
         "status": "draft",
+        "profile": "dataops",
         "severity": "warning",
         "title": "Missing enterprise bus matrix document",
         "rationale": "Without a bus matrix, teams cannot see which conformed dimensions are shared across business processes, leading to inconsistent and redundant models. The bus matrix is the planning artifact of the dimensional modeling lifecycle.\n",
@@ -486,12 +489,12 @@
             "concept": "bus matrix"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: Missing enterprise bus matrix document\nID: dataops-kimball-003\nProfile: dataops\nSeverity: warning\nWhy it matters: Without a bus matrix, teams cannot see which conformed dimensions are shared across business processes, leading to inconsistent and redundant models. The bus matrix is the planning artifact of the dimensional modeling lifecycle.\n\nHow to fix: Author a bus matrix (Markdown or CSV) mapping business processes to conformed\ndimensions and commit it under docs/.\n\nReferences: The Data Warehouse Toolkit"
       },
       {
         "id": "dataops-scale-001",
         "status": "draft",
+        "profile": "dataops",
         "severity": "error",
         "title": "Missing data product manifest",
         "rationale": "A data domain without a data product manifest has no declared ownership, SLAs, or contracts, so governance is implicit and fragile. Enterprise-scale data management requires explicit product metadata.\n",
@@ -510,12 +513,12 @@
             "concept": "data product manifest"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: Missing data product manifest\nID: dataops-scale-001\nProfile: dataops\nSeverity: error\nWhy it matters: A data domain without a data product manifest has no declared ownership, SLAs, or contracts, so governance is implicit and fragile. Enterprise-scale data management requires explicit product metadata.\n\nHow to fix: Create a data-product.yml defining the product name, owner, SLA, and input/\noutput data contracts for the domain.\n\nReferences: Data Management at Scale"
       },
       {
         "id": "dataops-scale-003",
         "status": "draft",
+        "profile": "dataops",
         "severity": "warning",
         "title": "No version-controlled data contracts found",
         "rationale": "Without explicit data contracts, producers can change interfaces without consumers knowing, causing silent downstream breakage. Contracts make the agreement between domains explicit and testable.\n",
@@ -534,11 +537,12 @@
             "concept": "data contracts"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: No version-controlled data contracts found\nID: dataops-scale-003\nProfile: dataops\nSeverity: warning\nWhy it matters: Without explicit data contracts, producers can change interfaces without consumers knowing, causing silent downstream breakage. Contracts make the agreement between domains explicit and testable.\n\nHow to fix: Create a contracts/ directory with version-controlled schema and semantic\ncontracts for each data product interface.\n\nReferences: Data Management at Scale"
       },
       {
         "id": "dataops-004",
+        "profile": "dataops",
+        "status": "draft",
         "severity": "warning",
         "title": "No data lineage manifest found",
         "rationale": "Pipelines without a committed lineage manifest (source → transform → sink) cannot answer \"which models depend on this table?\" during an incident. Lineage belongs in version control next to the pipeline code.\n",
@@ -561,11 +565,12 @@
             "concept": "data-provenance"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: No data lineage manifest found\nID: dataops-004\nProfile: dataops\nSeverity: warning\nWhy it matters: Pipelines without a committed lineage manifest (source → transform → sink) cannot answer \"which models depend on this table?\" during an incident. Lineage belongs in version control next to the pipeline code.\n\nHow to fix: Generate a lineage manifest from dbt docs (dbt docs generate) or an\nOpenLineage emitter, and commit it under docs/lineage/.\n\nReferences: Fundamentals of Data Engineering, The Data Warehouse Toolkit"
       },
       {
         "id": "dataops-005",
+        "profile": "dataops",
+        "status": "draft",
         "severity": "warning",
         "title": "No data catalog reference found",
         "rationale": "Without a catalog reference, downstream consumers cannot discover the datasets their pipelines depend on, and governance has no authoritative inventory to enforce retention or access policy.\n",
@@ -590,11 +595,12 @@
             "concept": "self-service-discovery"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: No data catalog reference found\nID: dataops-005\nProfile: dataops\nSeverity: warning\nWhy it matters: Without a catalog reference, downstream consumers cannot discover the datasets their pipelines depend on, and governance has no authoritative inventory to enforce retention or access policy.\n\nHow to fix: Register datasets with a data catalog (DataHub, Amundsen, OpenMetadata,\nUnity Catalog, or Glue Catalog) and reference the catalog ID in the\ndataset's YAML contract.\n\nReferences: Data Management at Scale, Practical DataOps"
       },
       {
         "id": "dataops-006",
+        "profile": "dataops",
+        "status": "draft",
         "severity": "error",
         "title": "PII columns not tagged in dataset schema",
         "rationale": "Pipelines that touch personally identifiable information without explicit column-level tagging cannot enforce downstream masking, retention, or access controls. GDPR and CCPA compliance depend on this classification being explicit and version-controlled.\n",
@@ -625,358 +631,320 @@
             "concept": "privacy-and-security"
           }
         ],
-        "profile": "dataops",
         "full_text": "Rule: PII columns not tagged in dataset schema\nID: dataops-006\nProfile: dataops\nSeverity: error\nWhy it matters: Pipelines that touch personally identifiable information without explicit column-level tagging cannot enforce downstream masking, retention, or access controls. GDPR and CCPA compliance depend on this classification being explicit and version-controlled.\n\nHow to fix: Create a pii-tags.yml registry classifying every column by sensitivity\n(public / internal / confidential / PII) and reference it from each\ndataset contract. Wire masking policies into the warehouse so tagged\ncolumns are automatically redacted for non-privileged roles.\n\nReferences: Data Management at Scale, Designing Data-Intensive Applications"
+      }
+    ]
+  },
+  "iiot": {
+    "version": "1.0",
+    "rules": [
+      {
+        "id": "iiot-001",
+        "status": "draft",
+        "profile": "iiot",
+        "severity": "critical",
+        "title": "Modbus exception handling missing",
+        "rationale": "Unhandled Modbus exceptions cause silent data loss and unplanned downtime in production PLC-connected systems. IEC 62443 requires explicit fault containment at every protocol boundary.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "ModbusIOException|ModbusException",
+            "file_glob": "**/*.py",
+            "must_exist": true,
+            "error_when": "pattern_absent",
+            "message": "No Modbus exception handling found in Python sources."
+          },
+          {
+            "type": "pattern_match",
+            "pattern": "mock.*modbus|modbus.*mock|ModbusSimulatorServer",
+            "file_glob": "**/mock/**/*modbus*",
+            "must_exist": true,
+            "error_when": "pattern_absent",
+            "message": "No Modbus simulator/mock found for offline testing."
+          }
+        ],
+        "fix": "Wrap every Modbus call in try/except ModbusIOException and provide a\nModbusSimulatorServer fixture for unit tests so CI passes without hardware.\n\nExample:\n  from pymodbus.exceptions import ModbusIOException\n  try:\n      result = client.read_holding_registers(0, 10)\n  except ModbusIOException as exc:\n      logger.error(\"Modbus read failed: %s\", exc)\n      raise\n",
+        "references": [
+          {
+            "book": "Industrial Network Security",
+            "concept": "Chapter 4 – Protocol-level fault containment"
+          },
+          {
+            "book": "PLC Controls with Structured Text",
+            "concept": "Chapter 7 – Exception handling in cyclic tasks"
+          },
+          {
+            "standard": "IEC 62443-3-3 SR 3.5",
+            "concept": "fault containment at protocol boundaries"
+          }
+        ],
+        "full_text": "Rule: Modbus exception handling missing\nID: iiot-001\nProfile: iiot\nSeverity: critical\nWhy it matters: Unhandled Modbus exceptions cause silent data loss and unplanned downtime in production PLC-connected systems. IEC 62443 requires explicit fault containment at every protocol boundary.\n\nHow to fix: Wrap every Modbus call in try/except ModbusIOException and provide a\nModbusSimulatorServer fixture for unit tests so CI passes without hardware.\n\nExample:\n  from pymodbus.exceptions import ModbusIOException\n  try:\n      result = client.read_holding_registers(0, 10)\n  except ModbusIOException as exc:\n      logger.error(\"Modbus read failed: %s\", exc)\n      raise\n\nReferences: Industrial Network Security, PLC Controls with Structured Text, IEC 62443-3-3 SR 3.5"
+      },
+      {
+        "id": "iiot-002",
+        "profile": "iiot",
+        "status": "implemented",
+        "severity": "error",
+        "title": "Hardcoded PLC IP address detected",
+        "rationale": "Hardcoded private IP addresses couple code to a single physical network segment and expose internal topology in version control. IEC 62443 requires network-segment isolation and configuration externalisation.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "192\\.168\\.|10\\.0\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.",
+            "file_glob": "**/*.py",
+            "must_exist": false,
+            "error_when": "pattern_present",
+            "message": "Hardcoded private IP found – move PLC_HOST to environment variable."
+          }
+        ],
+        "fix": "Replace the literal IP with an environment variable:\n  import os\n  PLC_HOST = os.environ[\"PLC_HOST\"]  # e.g. 192.168.1.10\nStore the real value in .env (git-ignored) and document it in .env.example.\n",
+        "references": [
+          {
+            "book": "Practical Industrial Data Networks",
+            "concept": "Chapter 2 – Configuration management for field devices"
+          },
+          {
+            "standard": "IEC 62443-2-1 SP.03.02",
+            "concept": "configuration externalisation"
+          }
+        ],
+        "full_text": "Rule: Hardcoded PLC IP address detected\nID: iiot-002\nProfile: iiot\nSeverity: error\nWhy it matters: Hardcoded private IP addresses couple code to a single physical network segment and expose internal topology in version control. IEC 62443 requires network-segment isolation and configuration externalisation.\n\nHow to fix: Replace the literal IP with an environment variable:\n  import os\n  PLC_HOST = os.environ[\"PLC_HOST\"]  # e.g. 192.168.1.10\nStore the real value in .env (git-ignored) and document it in .env.example.\n\nReferences: Practical Industrial Data Networks, IEC 62443-2-1 SP.03.02"
+      },
+      {
+        "id": "iiot-003",
+        "status": "draft",
+        "profile": "iiot",
+        "severity": "warning",
+        "title": "Python dependencies not pinned",
+        "rationale": "Unpinned dependencies allow silent upgrades that can break fieldbus driver behaviour between deployments.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "requirements*.txt",
+            "error_when": "file_absent",
+            "message": "No requirements*.txt found."
+          },
+          {
+            "type": "pattern_match",
+            "pattern": "==\\d",
+            "file_glob": "requirements*.txt",
+            "must_exist": true,
+            "error_when": "pattern_absent",
+            "message": "Dependencies appear unpinned – use == specifiers."
+          }
+        ],
+        "fix": "Pin every runtime dependency:\n  pip freeze > requirements.txt\nor manually:\n  pymodbus==3.6.3\n  opcua==0.98.13\n",
+        "references": [
+          {
+            "book": "Automating Manufacturing Systems with PLCs",
+            "concept": "Appendix B – Reproducible Python environments"
+          }
+        ],
+        "full_text": "Rule: Python dependencies not pinned\nID: iiot-003\nProfile: iiot\nSeverity: warning\nWhy it matters: Unpinned dependencies allow silent upgrades that can break fieldbus driver behaviour between deployments.\n\nHow to fix: Pin every runtime dependency:\n  pip freeze > requirements.txt\nor manually:\n  pymodbus==3.6.3\n  opcua==0.98.13\n\nReferences: Automating Manufacturing Systems with PLCs"
+      },
+      {
+        "id": "iiot-004",
+        "profile": "iiot",
+        "status": "implemented",
+        "severity": "critical",
+        "title": "LOTO / safety-procedure documentation missing",
+        "rationale": "Repositories controlling physical machinery must ship lockout–tagout documentation alongside the code so maintenance teams can safely de-energise equipment before any software change is applied.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "loto|lockout|LOTO|LOCKOUT",
+            "file_glob": "{docs/safety/**,LOCKOUT*.md,SAFETY.md,docs/loto/**}",
+            "must_exist": true,
+            "error_when": "pattern_absent",
+            "message": "No LOTO / lockout-tagout documentation found."
+          }
+        ],
+        "fix": "Create docs/safety/loto.md referencing your site-level LOTO procedure\nand link it from README.md under a Safety section.\n",
+        "references": [
+          {
+            "book": "Industrial Network Security",
+            "concept": "Chapter 9 – Physical security and maintenance windows"
+          },
+          {
+            "standard": "NFPA 70E Article 120",
+            "concept": "lockout-tagout procedure"
+          }
+        ],
+        "full_text": "Rule: LOTO / safety-procedure documentation missing\nID: iiot-004\nProfile: iiot\nSeverity: critical\nWhy it matters: Repositories controlling physical machinery must ship lockout–tagout documentation alongside the code so maintenance teams can safely de-energise equipment before any software change is applied.\n\nHow to fix: Create docs/safety/loto.md referencing your site-level LOTO procedure\nand link it from README.md under a Safety section.\n\nReferences: Industrial Network Security, NFPA 70E Article 120"
+      },
+      {
+        "id": "iiot-005",
+        "profile": "iiot",
+        "status": "implemented",
+        "severity": "error",
+        "title": "Network topology / zone diagram missing",
+        "rationale": "IEC 62443 zone-and-conduit models require an up-to-date topology diagram so that security assessments and incident response can correctly scope the industrial network.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "topology|network",
+            "file_glob": "{docs/network/**,docs/architecture/network*,**/*topology*.yaml,**/*topology*.yml,**/*topology*.md,**/*topology*.d2}",
+            "must_exist": true,
+            "error_when": "pattern_absent",
+            "message": "No network topology diagram or document found."
+          }
+        ],
+        "fix": "Add docs/network/topology.md (or topology.d2) documenting:\n  - Control network segment (PLC subnet)\n  - SCADA / HMI segment\n  - DMZ / historian segment\n  - Conduits and allowed protocols between zones\n",
+        "references": [
+          {
+            "book": "Industrial Network Security",
+            "concept": "Chapter 6 – Zone and conduit modelling"
+          },
+          {
+            "standard": "IEC 62443-3-2 ZCR 1",
+            "concept": "zone and conduit model"
+          }
+        ],
+        "full_text": "Rule: Network topology / zone diagram missing\nID: iiot-005\nProfile: iiot\nSeverity: error\nWhy it matters: IEC 62443 zone-and-conduit models require an up-to-date topology diagram so that security assessments and incident response can correctly scope the industrial network.\n\nHow to fix: Add docs/network/topology.md (or topology.d2) documenting:\n  - Control network segment (PLC subnet)\n  - SCADA / HMI segment\n  - DMZ / historian segment\n  - Conduits and allowed protocols between zones\n\nReferences: Industrial Network Security, IEC 62443-3-2 ZCR 1"
+      },
+      {
+        "id": "iiot-006",
+        "profile": "iiot",
+        "status": "implemented",
+        "severity": "warning",
+        "title": "PLC/SCADA source changes not tracked in CHANGELOG",
+        "rationale": "Changes to ladder logic, structured text, or SCADA screens must be traceable to a ticket and a deployment window to satisfy change-management requirements in regulated industries.\n",
+        "checks": [
+          {
+            "type": "file_exists",
+            "path_glob": "{plc,scada}/**/*.{st,scl,lad,fbd,sfc}",
+            "error_when": "file_absent",
+            "message": "No PLC/SCADA source files found under plc/ or scada/."
+          },
+          {
+            "type": "file_exists",
+            "path_glob": "{CHANGELOG*,docs/CHANGELOG*}",
+            "error_when": "file_absent",
+            "message": "No CHANGELOG found for PLC/SCADA change tracking."
+          }
+        ],
+        "fix": "1. Store structured text / ladder sources under plc/ or scada/.\n2. Add a CHANGELOG.md entry for every release, referencing the ticket ID.\n",
+        "references": [
+          {
+            "book": "Industrial Network Security",
+            "concept": "Chapter 11 – Change and patch management"
+          }
+        ],
+        "full_text": "Rule: PLC/SCADA source changes not tracked in CHANGELOG\nID: iiot-006\nProfile: iiot\nSeverity: warning\nWhy it matters: Changes to ladder logic, structured text, or SCADA screens must be traceable to a ticket and a deployment window to satisfy change-management requirements in regulated industries.\n\nHow to fix: 1. Store structured text / ladder sources under plc/ or scada/.\n2. Add a CHANGELOG.md entry for every release, referencing the ticket ID.\n\nReferences: Industrial Network Security"
+      },
+      {
+        "id": "iiot-007",
+        "profile": "iiot",
+        "status": "implemented",
+        "severity": "error",
+        "title": "Hardcoded serial port or Modbus TCP port",
+        "rationale": "Hardcoded COM ports and :502 addresses prevent multi-environment deployments and leak hardware topology into version control.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "COM[1-9]|/dev/ttyUSB|/dev/ttyACM|:502",
+            "file_glob": "**/*.py",
+            "must_exist": false,
+            "error_when": "pattern_present",
+            "message": "Hardcoded serial/TCP port found – move to PLC_PORT env var."
+          }
+        ],
+        "fix": "Replace literal ports with an environment variable:\n  PLC_PORT = int(os.environ.get(\"PLC_PORT\", \"502\"))\n",
+        "references": [
+          {
+            "book": "Practical Industrial Data Networks",
+            "concept": "Chapter 3 – Serial and TCP transport configuration"
+          }
+        ],
+        "full_text": "Rule: Hardcoded serial port or Modbus TCP port\nID: iiot-007\nProfile: iiot\nSeverity: error\nWhy it matters: Hardcoded COM ports and :502 addresses prevent multi-environment deployments and leak hardware topology into version control.\n\nHow to fix: Replace literal ports with an environment variable:\n  PLC_PORT = int(os.environ.get(\"PLC_PORT\", \"502\"))\n\nReferences: Practical Industrial Data Networks"
+      },
+      {
+        "id": "iiot-008",
+        "profile": "iiot",
+        "status": "implemented",
+        "severity": "warning",
+        "title": "No Modbus / fieldbus mock infrastructure",
+        "rationale": "Tests that require live hardware are not runnable in CI. A mock or simulator layer decouples logic tests from physical device availability.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "modbus|Modbus",
+            "file_glob": "{tests/**/*modbus*,__mocks__/**,conftest.py,mock_server.py}",
+            "must_exist": true,
+            "error_when": "pattern_absent",
+            "message": "No Modbus mock or simulator infrastructure found."
+          }
+        ],
+        "fix": "Add a conftest.py fixture using pymodbus SimulatorServer or a manual\nmock that returns realistic register maps for your device profile.\n",
+        "references": [
+          {
+            "book": "Automating Manufacturing Systems with PLCs",
+            "concept": "Chapter 12 – Software-in-the-loop testing"
+          }
+        ],
+        "full_text": "Rule: No Modbus / fieldbus mock infrastructure\nID: iiot-008\nProfile: iiot\nSeverity: warning\nWhy it matters: Tests that require live hardware are not runnable in CI. A mock or simulator layer decouples logic tests from physical device availability.\n\nHow to fix: Add a conftest.py fixture using pymodbus SimulatorServer or a manual\nmock that returns realistic register maps for your device profile.\n\nReferences: Automating Manufacturing Systems with PLCs"
+      },
+      {
+        "id": "iiot-009",
+        "profile": "iiot",
+        "status": "implemented",
+        "severity": "warning",
+        "title": "Protocol client timeout not set",
+        "rationale": "Without explicit timeouts, a stalled PLC or network partition causes the application to block indefinitely, preventing watchdog recovery.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "timeout\\s*[=:]",
+            "file_glob": "**/*.py",
+            "must_exist": true,
+            "error_when": "pattern_absent",
+            "message": "No explicit timeout found in Python sources."
+          }
+        ],
+        "fix": "Pass a timeout to every protocol client:\n  ModbusTcpClient(host, timeout=3)\n  asyncio.wait_for(coro, timeout=5.0)\n",
+        "references": [
+          {
+            "book": "Industrial Network Security",
+            "concept": "Chapter 5 – Resilience and watchdog patterns"
+          }
+        ],
+        "full_text": "Rule: Protocol client timeout not set\nID: iiot-009\nProfile: iiot\nSeverity: warning\nWhy it matters: Without explicit timeouts, a stalled PLC or network partition causes the application to block indefinitely, preventing watchdog recovery.\n\nHow to fix: Pass a timeout to every protocol client:\n  ModbusTcpClient(host, timeout=3)\n  asyncio.wait_for(coro, timeout=5.0)\n\nReferences: Industrial Network Security"
+      },
+      {
+        "id": "iiot-hw-001",
+        "status": "spec-only",
+        "profile": "iiot",
+        "severity": "warning",
+        "title": "Hardware-in-the-loop test harness absent",
+        "rationale": "HIL testing validates firmware and driver behaviour against a physical or emulated hardware target before production deployment. Without it, integration defects surface only on the factory floor.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "hil|hardware.in.the.loop|HIL",
+            "file_glob": "{docs/**,tests/**,README*}",
+            "must_exist": true,
+            "error_when": "pattern_absent",
+            "message": "No HIL test harness documentation or test suite found."
+          }
+        ],
+        "fix": "Document your HIL setup in docs/testing/hil.md and add a test suite\nor CI job that targets the emulated hardware target. Link from README.md.\n",
+        "references": [
+          {
+            "book": "Automating Manufacturing Systems with PLCs",
+            "concept": "Chapter 13 – Hardware-in-the-loop validation"
+          },
+          {
+            "standard": "IEC 61508-6 Annex B",
+            "concept": "hardware-in-the-loop validation"
+          }
+        ],
+        "full_text": "Rule: Hardware-in-the-loop test harness absent\nID: iiot-hw-001\nProfile: iiot\nSeverity: warning\nWhy it matters: HIL testing validates firmware and driver behaviour against a physical or emulated hardware target before production deployment. Without it, integration defects surface only on the factory floor.\n\nHow to fix: Document your HIL setup in docs/testing/hil.md and add a test suite\nor CI job that targets the emulated hardware target. Link from README.md.\n\nReferences: Automating Manufacturing Systems with PLCs, IEC 61508-6 Annex B"
       }
     ]
   },
   "webapp": {
     "version": "1.0",
     "rules": [
-      {
-        "id": "general-api-001",
-        "profile": "webapp",
-        "severity": "warning",
-        "title": "API route without input validation",
-        "rationale": "API routes that accept unvalidated input expose downstream services to injection, SSRF, and abuse. Validate and type-check at the boundary.\n",
-        "checks": [
-          {
-            "type": "pattern_match",
-            "pattern": "zod|joi|yup|class-validator|pydantic",
-            "must_exist": true,
-            "file_glob": "**/api/**/*.{ts,tsx,js,jsx}",
-            "error_when": "pattern_absent",
-            "message": "No input validation library detected in API routes"
-          }
-        ],
-        "fix": "Add schema validation at the API boundary (zod, joi, yup, or equivalent).\n",
-        "references": [
-          {
-            "book": "Web Application Security",
-            "concept": "input-validation"
-          },
-          {
-            "standard": "OWASP Top 10",
-            "concept": "injection"
-          }
-        ],
-        "full_text": "Rule: API route without input validation\nID: general-api-001\nProfile: webapp\nSeverity: warning\nWhy it matters: API routes that accept unvalidated input expose downstream services to injection, SSRF, and abuse. Validate and type-check at the boundary.\n\nHow to fix: Add schema validation at the API boundary (zod, joi, yup, or equivalent).\n\nReferences: Web Application Security, OWASP Top 10"
-      },
-      {
-        "id": "general-cicd-001",
-        "profile": "webapp",
-        "severity": "warning",
-        "title": "Missing CI/CD pipeline",
-        "rationale": "Repositories without automated delivery pipelines cannot reliably support continuous delivery principles.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": ".github/workflows/*.{yml,yaml}",
-            "error_when": "file_absent",
-            "message": "No GitHub Actions workflow found"
-          }
-        ],
-        "fix": "Add a .github/workflows/ci.yml with build and test steps.\n",
-        "references": [
-          {
-            "book": "Continuous Delivery",
-            "concept": "deployment-pipeline"
-          },
-          {
-            "book": "The DevOps Handbook",
-            "concept": "continuous-integration"
-          }
-        ],
-        "full_text": "Rule: Missing CI/CD pipeline\nID: general-cicd-001\nProfile: webapp\nSeverity: warning\nWhy it matters: Repositories without automated delivery pipelines cannot reliably support continuous delivery principles.\n\nHow to fix: Add a .github/workflows/ci.yml with build and test steps.\n\nReferences: Continuous Delivery, The DevOps Handbook"
-      },
-      {
-        "id": "general-config-001",
-        "profile": "webapp",
-        "severity": "warning",
-        "title": "Missing .env.example",
-        "rationale": "Without .env.example, new contributors do not know which variables are required and may commit real credentials.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": ".env.example",
-            "error_when": "file_absent",
-            "message": ".env.example not found in repository root"
-          },
-          {
-            "type": "file_absent",
-            "path_glob": ".env",
-            "error_when": "file_present",
-            "message": ".env file committed — add to .gitignore"
-          }
-        ],
-        "fix": "Create .env.example with placeholder values, and add .env to .gitignore.\n",
-        "references": [
-          {
-            "book": "The DevOps Handbook",
-            "concept": "configuration-management"
-          }
-        ],
-        "full_text": "Rule: Missing .env.example\nID: general-config-001\nProfile: webapp\nSeverity: warning\nWhy it matters: Without .env.example, new contributors do not know which variables are required and may commit real credentials.\n\nHow to fix: Create .env.example with placeholder values, and add .env to .gitignore.\n\nReferences: The DevOps Handbook"
-      },
-      {
-        "id": "general-deps-001",
-        "profile": "webapp",
-        "severity": "warning",
-        "title": "Unpinned dependency versions",
-        "rationale": "Unpinned dependencies cause non-reproducible builds and unexpected breakage when a transitive dependency releases a new version.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "package.json",
-            "error_when": "file_absent",
-            "message": "No package.json found"
-          }
-        ],
-        "fix": "Pin dependency versions exactly and use the pnpm lockfile.\n",
-        "references": [
-          {
-            "book": "Continuous Delivery",
-            "concept": "reproducible-builds"
-          }
-        ],
-        "full_text": "Rule: Unpinned dependency versions\nID: general-deps-001\nProfile: webapp\nSeverity: warning\nWhy it matters: Unpinned dependencies cause non-reproducible builds and unexpected breakage when a transitive dependency releases a new version.\n\nHow to fix: Pin dependency versions exactly and use the pnpm lockfile.\n\nReferences: Continuous Delivery"
-      },
-      {
-        "id": "general-docs-001",
-        "profile": "webapp",
-        "severity": "info",
-        "title": "Missing README",
-        "rationale": "A repository without a README cannot be onboarded by a new contributor without talking to the original author.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "README*",
-            "error_when": "file_absent",
-            "message": "No README found"
-          }
-        ],
-        "fix": "Add a README.md with setup, run, and test instructions.\n",
-        "references": [
-          {
-            "book": "The DevOps Handbook",
-            "concept": "documentation"
-          }
-        ],
-        "full_text": "Rule: Missing README\nID: general-docs-001\nProfile: webapp\nSeverity: info\nWhy it matters: A repository without a README cannot be onboarded by a new contributor without talking to the original author.\n\nHow to fix: Add a README.md with setup, run, and test instructions.\n\nReferences: The DevOps Handbook"
-      },
-      {
-        "id": "general-docs-002",
-        "profile": "webapp",
-        "severity": "info",
-        "title": "Missing LICENSE",
-        "rationale": "Absence of a license file leaves the legal status of the codebase undefined and blocks downstream usage.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "LICENSE*",
-            "error_when": "file_absent",
-            "message": "No LICENSE file found"
-          }
-        ],
-        "fix": "Add a LICENSE file (MIT, Apache-2.0, or proprietary notice).\n",
-        "references": [
-          {
-            "book": "The DevOps Handbook",
-            "concept": "open-source-hygiene"
-          }
-        ],
-        "full_text": "Rule: Missing LICENSE\nID: general-docs-002\nProfile: webapp\nSeverity: info\nWhy it matters: Absence of a license file leaves the legal status of the codebase undefined and blocks downstream usage.\n\nHow to fix: Add a LICENSE file (MIT, Apache-2.0, or proprietary notice).\n\nReferences: The DevOps Handbook"
-      },
-      {
-        "id": "general-docs-003",
-        "profile": "webapp",
-        "severity": "info",
-        "title": "Missing CONTRIBUTING guide",
-        "rationale": "Without a CONTRIBUTING guide, external PRs frequently violate project conventions.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "CONTRIBUTING*",
-            "error_when": "file_absent",
-            "message": "No CONTRIBUTING file found"
-          }
-        ],
-        "fix": "Add CONTRIBUTING.md with branch, commit, and PR conventions.\n",
-        "references": [
-          {
-            "book": "The DevOps Handbook",
-            "concept": "collaboration"
-          }
-        ],
-        "full_text": "Rule: Missing CONTRIBUTING guide\nID: general-docs-003\nProfile: webapp\nSeverity: info\nWhy it matters: Without a CONTRIBUTING guide, external PRs frequently violate project conventions.\n\nHow to fix: Add CONTRIBUTING.md with branch, commit, and PR conventions.\n\nReferences: The DevOps Handbook"
-      },
-      {
-        "id": "general-docs-004",
-        "profile": "webapp",
-        "severity": "info",
-        "title": "Missing CHANGELOG",
-        "rationale": "Without a CHANGELOG, downstream consumers cannot assess the impact of a version upgrade.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "CHANGELOG*",
-            "error_when": "file_absent",
-            "message": "No CHANGELOG file found"
-          }
-        ],
-        "fix": "Add CHANGELOG.md following keepachangelog.com conventions.\n",
-        "references": [
-          {
-            "book": "Continuous Delivery",
-            "concept": "release-notes"
-          }
-        ],
-        "full_text": "Rule: Missing CHANGELOG\nID: general-docs-004\nProfile: webapp\nSeverity: info\nWhy it matters: Without a CHANGELOG, downstream consumers cannot assess the impact of a version upgrade.\n\nHow to fix: Add CHANGELOG.md following keepachangelog.com conventions.\n\nReferences: Continuous Delivery"
-      },
-      {
-        "id": "general-legal-001",
-        "profile": "webapp",
-        "severity": "warning",
-        "title": "Missing SECURITY.md",
-        "rationale": "Without a SECURITY.md, security researchers cannot report vulnerabilities responsibly.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "SECURITY*",
-            "error_when": "file_absent",
-            "message": "No SECURITY file found"
-          }
-        ],
-        "fix": "Add SECURITY.md with a private disclosure channel.\n",
-        "references": [
-          {
-            "book": "Web Application Security",
-            "concept": "responsible-disclosure"
-          }
-        ],
-        "full_text": "Rule: Missing SECURITY.md\nID: general-legal-001\nProfile: webapp\nSeverity: warning\nWhy it matters: Without a SECURITY.md, security researchers cannot report vulnerabilities responsibly.\n\nHow to fix: Add SECURITY.md with a private disclosure channel.\n\nReferences: Web Application Security"
-      },
-      {
-        "id": "general-legal-002",
-        "profile": "webapp",
-        "severity": "warning",
-        "title": "Missing privacy policy or data handling doc",
-        "rationale": "Applications that collect user data without a documented privacy policy risk compliance violations (GDPR, CCPA).\n",
-        "checks": [
-          {
-            "type": "pattern_match",
-            "pattern": "privacy|gdpr|ccpa|data-processing",
-            "must_exist": true,
-            "file_glob": "**/*.{md,mdx}",
-            "error_when": "pattern_absent",
-            "message": "No privacy or data-handling documentation found"
-          }
-        ],
-        "fix": "Add a privacy policy and document data retention and deletion procedures.\n",
-        "references": [
-          {
-            "book": "Web Application Security",
-            "concept": "compliance"
-          }
-        ],
-        "full_text": "Rule: Missing privacy policy or data handling doc\nID: general-legal-002\nProfile: webapp\nSeverity: warning\nWhy it matters: Applications that collect user data without a documented privacy policy risk compliance violations (GDPR, CCPA).\n\nHow to fix: Add a privacy policy and document data retention and deletion procedures.\n\nReferences: Web Application Security"
-      },
-      {
-        "id": "general-links-001",
-        "profile": "webapp",
-        "severity": "info",
-        "title": "Documentation link integrity",
-        "rationale": "Broken links in README and docs erode trust and waste reader time.\n",
-        "checks": [
-          {
-            "type": "pattern_match",
-            "pattern": "https?://",
-            "must_exist": true,
-            "file_glob": "README*",
-            "error_when": "pattern_absent",
-            "message": "No links found in README — verify link integrity manually"
-          }
-        ],
-        "fix": "Run a link checker (e.g., lychee) in CI.\n",
-        "references": [
-          {
-            "book": "The DevOps Handbook",
-            "concept": "documentation"
-          }
-        ],
-        "full_text": "Rule: Documentation link integrity\nID: general-links-001\nProfile: webapp\nSeverity: info\nWhy it matters: Broken links in README and docs erode trust and waste reader time.\n\nHow to fix: Run a link checker (e.g., lychee) in CI.\n\nReferences: The DevOps Handbook"
-      },
-      {
-        "id": "general-maint-001",
-        "profile": "webapp",
-        "severity": "warning",
-        "title": "Missing dependency-update automation",
-        "rationale": "Without automated dependency updates, security patches are delayed and the codebase drifts behind upstream fixes.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": ".github/dependabot.{yml,yaml}",
-            "error_when": "file_absent",
-            "message": "No dependabot config found"
-          }
-        ],
-        "fix": "Add .github/dependabot.yml with weekly update schedules.\n",
-        "references": [
-          {
-            "book": "Continuous Delivery",
-            "concept": "dependency-management"
-          }
-        ],
-        "full_text": "Rule: Missing dependency-update automation\nID: general-maint-001\nProfile: webapp\nSeverity: warning\nWhy it matters: Without automated dependency updates, security patches are delayed and the codebase drifts behind upstream fixes.\n\nHow to fix: Add .github/dependabot.yml with weekly update schedules.\n\nReferences: Continuous Delivery"
-      },
-      {
-        "id": "general-quality-001",
-        "profile": "webapp",
-        "severity": "warning",
-        "title": "Missing linter configuration",
-        "rationale": "Without a linter, style and correctness regressions slip through code review and accumulate as technical debt.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": ".eslintrc*",
-            "error_when": "file_absent",
-            "message": "No ESLint config found"
-          }
-        ],
-        "fix": "Add ESLint with next/core-web-vitals or equivalent ruleset.\n",
-        "references": [
-          {
-            "book": "Clean Architecture",
-            "concept": "code-quality"
-          }
-        ],
-        "full_text": "Rule: Missing linter configuration\nID: general-quality-001\nProfile: webapp\nSeverity: warning\nWhy it matters: Without a linter, style and correctness regressions slip through code review and accumulate as technical debt.\n\nHow to fix: Add ESLint with next/core-web-vitals or equivalent ruleset.\n\nReferences: Clean Architecture"
-      },
-      {
-        "id": "general-security-001",
-        "profile": "webapp",
-        "severity": "critical",
-        "title": "Potential hardcoded secret",
-        "rationale": "A hardcoded credential in source control remains exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, not in the codebase.\n",
-        "checks": [
-          {
-            "type": "pattern_match",
-            "pattern": "(password|api_key|secret)\\s*=\\s*[\"'][^\"']{6,}",
-            "must_exist": false,
-            "file_glob": "**/*",
-            "error_when": "pattern_present",
-            "message": "Possible hardcoded credential found"
-          }
-        ],
-        "fix": "Move the secret to an environment variable and rotate the exposed key.\n",
-        "references": [
-          {
-            "book": "Web Application Security",
-            "concept": "secrets-management"
-          }
-        ],
-        "full_text": "Rule: Potential hardcoded secret\nID: general-security-001\nProfile: webapp\nSeverity: critical\nWhy it matters: A hardcoded credential in source control remains exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, not in the codebase.\n\nHow to fix: Move the secret to an environment variable and rotate the exposed key.\n\nReferences: Web Application Security"
-      },
       {
         "id": "webapp-001",
         "profile": "webapp",
@@ -1034,281 +1002,6 @@
           }
         ],
         "full_text": "Rule: Missing Content Security Policy\nID: webapp-002\nProfile: webapp\nSeverity: error\nWhy it matters: Without CSP, injected JavaScript has a larger attack surface. Hardening headers are a relatively cheap deployment-time control because they can be applied centrally without changing every application code path.\n\nHow to fix: Add the Content-Security-Policy header in next.config.js or server header configuration.\n\nReferences: Web Application Security, Continuous Delivery"
-      }
-    ]
-  },
-  "iiot": {
-    "version": "1.0",
-    "rules": [
-      {
-        "id": "iiot-001",
-        "status": "draft",
-        "profile": "iiot",
-        "severity": "critical",
-        "title": "Modbus exception handling missing",
-        "rationale": "Unhandled Modbus exceptions cause silent data loss and unplanned downtime in production PLC-connected systems. IEC 62443 requires explicit fault containment at every protocol boundary.\n",
-        "checks": [
-          {
-            "pattern": "ModbusIOException|ModbusException",
-            "in": "**/*.py",
-            "mode": "must_exist",
-            "message": "No Modbus exception handling found in Python sources."
-          },
-          {
-            "pattern": "mock.*modbus|modbus.*mock|ModbusSimulatorServer",
-            "in": "**/mock/**/*modbus*",
-            "mode": "must_exist",
-            "message": "No Modbus simulator/mock found for offline testing."
-          }
-        ],
-        "fix": "Wrap every Modbus call in try/except ModbusIOException and provide a\nModbusSimulatorServer fixture for unit tests so CI passes without hardware.\n\nExample:\n  from pymodbus.exceptions import ModbusIOException\n  try:\n      result = client.read_holding_registers(0, 10)\n  except ModbusIOException as exc:\n      logger.error(\"Modbus read failed: %s\", exc)\n      raise\n",
-        "references": [
-          {
-            "book": "Industrial Network Security",
-            "section": "Chapter 4 – Protocol-level fault containment"
-          },
-          {
-            "book": "PLC Controls with Structured Text",
-            "section": "Chapter 7 – Exception handling in cyclic tasks"
-          },
-          {
-            "standard": "IEC 62443-3-3 SR 3.5"
-          }
-        ],
-        "full_text": "Rule: Modbus exception handling missing\nID: iiot-001\nProfile: iiot\nSeverity: critical\nWhy it matters: Unhandled Modbus exceptions cause silent data loss and unplanned downtime in production PLC-connected systems. IEC 62443 requires explicit fault containment at every protocol boundary.\n\nHow to fix: Wrap every Modbus call in try/except ModbusIOException and provide a\nModbusSimulatorServer fixture for unit tests so CI passes without hardware.\n\nExample:\n  from pymodbus.exceptions import ModbusIOException\n  try:\n      result = client.read_holding_registers(0, 10)\n  except ModbusIOException as exc:\n      logger.error(\"Modbus read failed: %s\", exc)\n      raise\n\nReferences: Industrial Network Security, PLC Controls with Structured Text, IEC 62443-3-3 SR 3.5"
-      },
-      {
-        "id": "iiot-002",
-        "profile": "iiot",
-        "severity": "error",
-        "title": "Hardcoded PLC IP address detected",
-        "rationale": "Hardcoded private IP addresses couple code to a single physical network segment and expose internal topology in version control. IEC 62443 requires network-segment isolation and configuration externalisation.\n",
-        "checks": [
-          {
-            "pattern": "192\\.168\\.|10\\.0\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.",
-            "in": "**/*.py",
-            "mode": "must_not_exist",
-            "message": "Hardcoded private IP found – move PLC_HOST to environment variable."
-          }
-        ],
-        "fix": "Replace the literal IP with an environment variable:\n  import os\n  PLC_HOST = os.environ[\"PLC_HOST\"]  # e.g. 192.168.1.10\nStore the real value in .env (git-ignored) and document it in .env.example.\n",
-        "references": [
-          {
-            "book": "Practical Industrial Data Networks",
-            "section": "Chapter 2 – Configuration management for field devices"
-          },
-          {
-            "standard": "IEC 62443-2-1 SP.03.02"
-          }
-        ],
-        "full_text": "Rule: Hardcoded PLC IP address detected\nID: iiot-002\nProfile: iiot\nSeverity: error\nWhy it matters: Hardcoded private IP addresses couple code to a single physical network segment and expose internal topology in version control. IEC 62443 requires network-segment isolation and configuration externalisation.\n\nHow to fix: Replace the literal IP with an environment variable:\n  import os\n  PLC_HOST = os.environ[\"PLC_HOST\"]  # e.g. 192.168.1.10\nStore the real value in .env (git-ignored) and document it in .env.example.\n\nReferences: Practical Industrial Data Networks, IEC 62443-2-1 SP.03.02"
-      },
-      {
-        "id": "iiot-003",
-        "status": "draft",
-        "profile": "iiot",
-        "severity": "warning",
-        "title": "Python dependencies not pinned",
-        "rationale": "Unpinned dependencies allow silent upgrades that can break fieldbus driver behaviour between deployments.\n",
-        "checks": [
-          {
-            "pattern": "requirements.*\\.txt",
-            "in": ".",
-            "mode": "must_exist",
-            "message": "No requirements*.txt found."
-          },
-          {
-            "pattern": "==\\d",
-            "in": "requirements*.txt",
-            "mode": "must_exist",
-            "message": "Dependencies appear unpinned – use == specifiers."
-          }
-        ],
-        "fix": "Pin every runtime dependency:\n  pip freeze > requirements.txt\nor manually:\n  pymodbus==3.6.3\n  opcua==0.98.13\n",
-        "references": [
-          {
-            "book": "Automating Manufacturing Systems with PLCs",
-            "section": "Appendix B – Reproducible Python environments"
-          }
-        ],
-        "full_text": "Rule: Python dependencies not pinned\nID: iiot-003\nProfile: iiot\nSeverity: warning\nWhy it matters: Unpinned dependencies allow silent upgrades that can break fieldbus driver behaviour between deployments.\n\nHow to fix: Pin every runtime dependency:\n  pip freeze > requirements.txt\nor manually:\n  pymodbus==3.6.3\n  opcua==0.98.13\n\nReferences: Automating Manufacturing Systems with PLCs"
-      },
-      {
-        "id": "iiot-004",
-        "profile": "iiot",
-        "severity": "critical",
-        "title": "LOTO / safety-procedure documentation missing",
-        "rationale": "Repositories controlling physical machinery must ship lockout–tagout documentation alongside the code so maintenance teams can safely de-energise equipment before any software change is applied.\n",
-        "checks": [
-          {
-            "pattern": "loto|lockout|LOTO|LOCKOUT",
-            "in": "docs/safety/**,LOCKOUT*.md,SAFETY.md,docs/loto/**",
-            "mode": "must_exist",
-            "message": "No LOTO / lockout-tagout documentation found."
-          }
-        ],
-        "fix": "Create docs/safety/loto.md referencing your site-level LOTO procedure\nand link it from README.md under a Safety section.\n",
-        "references": [
-          {
-            "book": "Industrial Network Security",
-            "section": "Chapter 9 – Physical security and maintenance windows"
-          },
-          {
-            "standard": "NFPA 70E Article 120"
-          }
-        ],
-        "full_text": "Rule: LOTO / safety-procedure documentation missing\nID: iiot-004\nProfile: iiot\nSeverity: critical\nWhy it matters: Repositories controlling physical machinery must ship lockout–tagout documentation alongside the code so maintenance teams can safely de-energise equipment before any software change is applied.\n\nHow to fix: Create docs/safety/loto.md referencing your site-level LOTO procedure\nand link it from README.md under a Safety section.\n\nReferences: Industrial Network Security, NFPA 70E Article 120"
-      },
-      {
-        "id": "iiot-005",
-        "profile": "iiot",
-        "severity": "error",
-        "title": "Network topology / zone diagram missing",
-        "rationale": "IEC 62443 zone-and-conduit models require an up-to-date topology diagram so that security assessments and incident response can correctly scope the industrial network.\n",
-        "checks": [
-          {
-            "pattern": "topology|network",
-            "in": "docs/network/**,docs/architecture/network*,**/*topology*.yaml,**/*topology*.yml,**/*topology*.md,**/*topology*.d2",
-            "mode": "must_exist",
-            "message": "No network topology diagram or document found."
-          }
-        ],
-        "fix": "Add docs/network/topology.md (or topology.d2) documenting:\n  - Control network segment (PLC subnet)\n  - SCADA / HMI segment\n  - DMZ / historian segment\n  - Conduits and allowed protocols between zones\n",
-        "references": [
-          {
-            "book": "Industrial Network Security",
-            "section": "Chapter 6 – Zone and conduit modelling"
-          },
-          {
-            "standard": "IEC 62443-3-2 ZCR 1"
-          }
-        ],
-        "full_text": "Rule: Network topology / zone diagram missing\nID: iiot-005\nProfile: iiot\nSeverity: error\nWhy it matters: IEC 62443 zone-and-conduit models require an up-to-date topology diagram so that security assessments and incident response can correctly scope the industrial network.\n\nHow to fix: Add docs/network/topology.md (or topology.d2) documenting:\n  - Control network segment (PLC subnet)\n  - SCADA / HMI segment\n  - DMZ / historian segment\n  - Conduits and allowed protocols between zones\n\nReferences: Industrial Network Security, IEC 62443-3-2 ZCR 1"
-      },
-      {
-        "id": "iiot-006",
-        "profile": "iiot",
-        "severity": "warning",
-        "title": "PLC/SCADA source changes not tracked in CHANGELOG",
-        "rationale": "Changes to ladder logic, structured text, or SCADA screens must be traceable to a ticket and a deployment window to satisfy change-management requirements in regulated industries.\n",
-        "checks": [
-          {
-            "pattern": "\\.(st|scl|lad|fbd|sfc)$",
-            "in": "plc/**,scada/**",
-            "mode": "must_exist",
-            "message": "No PLC/SCADA source files found under plc/ or scada/."
-          },
-          {
-            "pattern": "CHANGELOG",
-            "in": "CHANGELOG*,docs/CHANGELOG*",
-            "mode": "must_exist",
-            "message": "No CHANGELOG found for PLC/SCADA change tracking."
-          }
-        ],
-        "fix": "1. Store structured text / ladder sources under plc/ or scada/.\n2. Add a CHANGELOG.md entry for every release, referencing the ticket ID.\n",
-        "references": [
-          {
-            "book": "Industrial Network Security",
-            "section": "Chapter 11 – Change and patch management"
-          }
-        ],
-        "full_text": "Rule: PLC/SCADA source changes not tracked in CHANGELOG\nID: iiot-006\nProfile: iiot\nSeverity: warning\nWhy it matters: Changes to ladder logic, structured text, or SCADA screens must be traceable to a ticket and a deployment window to satisfy change-management requirements in regulated industries.\n\nHow to fix: 1. Store structured text / ladder sources under plc/ or scada/.\n2. Add a CHANGELOG.md entry for every release, referencing the ticket ID.\n\nReferences: Industrial Network Security"
-      },
-      {
-        "id": "iiot-007",
-        "profile": "iiot",
-        "severity": "error",
-        "title": "Hardcoded serial port or Modbus TCP port",
-        "rationale": "Hardcoded COM ports and :502 addresses prevent multi-environment deployments and leak hardware topology into version control.\n",
-        "checks": [
-          {
-            "pattern": "COM[1-9]|/dev/ttyUSB|/dev/ttyACM|:502",
-            "in": "**/*.py",
-            "mode": "must_not_exist",
-            "message": "Hardcoded serial/TCP port found – move to PLC_PORT env var."
-          }
-        ],
-        "fix": "Replace literal ports with an environment variable:\n  PLC_PORT = int(os.environ.get(\"PLC_PORT\", \"502\"))\n",
-        "references": [
-          {
-            "book": "Practical Industrial Data Networks",
-            "section": "Chapter 3 – Serial and TCP transport configuration"
-          }
-        ],
-        "full_text": "Rule: Hardcoded serial port or Modbus TCP port\nID: iiot-007\nProfile: iiot\nSeverity: error\nWhy it matters: Hardcoded COM ports and :502 addresses prevent multi-environment deployments and leak hardware topology into version control.\n\nHow to fix: Replace literal ports with an environment variable:\n  PLC_PORT = int(os.environ.get(\"PLC_PORT\", \"502\"))\n\nReferences: Practical Industrial Data Networks"
-      },
-      {
-        "id": "iiot-008",
-        "profile": "iiot",
-        "severity": "warning",
-        "title": "No Modbus / fieldbus mock infrastructure",
-        "rationale": "Tests that require live hardware are not runnable in CI. A mock or simulator layer decouples logic tests from physical device availability.\n",
-        "checks": [
-          {
-            "pattern": "modbus|Modbus",
-            "in": "tests/**/*modbus*,__mocks__/**,conftest.py,mock_server.py",
-            "mode": "must_exist",
-            "message": "No Modbus mock or simulator infrastructure found."
-          }
-        ],
-        "fix": "Add a conftest.py fixture using pymodbus SimulatorServer or a manual\nmock that returns realistic register maps for your device profile.\n",
-        "references": [
-          {
-            "book": "Automating Manufacturing Systems with PLCs",
-            "section": "Chapter 12 – Software-in-the-loop testing"
-          }
-        ],
-        "full_text": "Rule: No Modbus / fieldbus mock infrastructure\nID: iiot-008\nProfile: iiot\nSeverity: warning\nWhy it matters: Tests that require live hardware are not runnable in CI. A mock or simulator layer decouples logic tests from physical device availability.\n\nHow to fix: Add a conftest.py fixture using pymodbus SimulatorServer or a manual\nmock that returns realistic register maps for your device profile.\n\nReferences: Automating Manufacturing Systems with PLCs"
-      },
-      {
-        "id": "iiot-009",
-        "profile": "iiot",
-        "severity": "warning",
-        "title": "Protocol client timeout not set",
-        "rationale": "Without explicit timeouts, a stalled PLC or network partition causes the application to block indefinitely, preventing watchdog recovery.\n",
-        "checks": [
-          {
-            "pattern": "timeout\\s*[=:]",
-            "in": "**/*.py",
-            "mode": "must_exist",
-            "message": "No explicit timeout found in Python sources."
-          }
-        ],
-        "fix": "Pass a timeout to every protocol client:\n  ModbusTcpClient(host, timeout=3)\n  asyncio.wait_for(coro, timeout=5.0)\n",
-        "references": [
-          {
-            "book": "Industrial Network Security",
-            "section": "Chapter 5 – Resilience and watchdog patterns"
-          }
-        ],
-        "full_text": "Rule: Protocol client timeout not set\nID: iiot-009\nProfile: iiot\nSeverity: warning\nWhy it matters: Without explicit timeouts, a stalled PLC or network partition causes the application to block indefinitely, preventing watchdog recovery.\n\nHow to fix: Pass a timeout to every protocol client:\n  ModbusTcpClient(host, timeout=3)\n  asyncio.wait_for(coro, timeout=5.0)\n\nReferences: Industrial Network Security"
-      },
-      {
-        "id": "iiot-hw-001",
-        "status": "spec-only",
-        "profile": "iiot",
-        "severity": "warning",
-        "title": "Hardware-in-the-loop test harness absent",
-        "rationale": "HIL testing validates firmware and driver behaviour against a physical or emulated hardware target before production deployment. Without it, integration defects surface only on the factory floor.\n",
-        "checks": [
-          {
-            "pattern": "hil|hardware.in.the.loop|HIL",
-            "in": "docs/**,tests/**,README*",
-            "mode": "must_exist",
-            "message": "No HIL test harness documentation or test suite found."
-          }
-        ],
-        "fix": "Document your HIL setup in docs/testing/hil.md and add a test suite\nor CI job that targets the emulated hardware target. Link from README.md.\n",
-        "references": [
-          {
-            "book": "Automating Manufacturing Systems with PLCs",
-            "section": "Chapter 13 – Hardware-in-the-loop validation"
-          },
-          {
-            "standard": "IEC 61508-6 Annex B"
-          }
-        ],
-        "full_text": "Rule: Hardware-in-the-loop test harness absent\nID: iiot-hw-001\nProfile: iiot\nSeverity: warning\nWhy it matters: HIL testing validates firmware and driver behaviour against a physical or emulated hardware target before production deployment. Without it, integration defects surface only on the factory floor.\n\nHow to fix: Document your HIL setup in docs/testing/hil.md and add a test suite\nor CI job that targets the emulated hardware target. Link from README.md.\n\nReferences: Automating Manufacturing Systems with PLCs, IEC 61508-6 Annex B"
       }
     ]
   }

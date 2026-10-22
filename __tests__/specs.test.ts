@@ -25,7 +25,7 @@ describe("spec manifests", () => {
   it("loads at least the three domain profiles + cross", () => {
     const files = loadSpecFiles();
     const profiles = files.map((f) => f.profile).sort();
-    expect(profiles).toEqual(["cross", "dataops", "iiot", "webapp"]);
+    expect(profiles).toEqual(["cross", "dataops", "general", "iiot", "webapp"]);
   });
 
   it("every rule has all required fields", () => {
