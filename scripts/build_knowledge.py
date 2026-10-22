@@ -4,7 +4,7 @@ scripts/build_knowledge.py
 
 YAML specs -> public/knowledge/specs.json
 
-Runs automatically during `pnpm build` via the prebuild hook.
+Runs locally via `pnpm build:knowledge`.
 
 Validation warnings are printed but do not fail the build. This is deliberate:
 you can delete a field, see the warning, and still inspect the generated JSON.
@@ -15,6 +15,7 @@ Canonical profiles:
   - webapp
   - cross
   - graph
+  - general
 
 Rule ID convention:
   iiot-001
@@ -26,6 +27,7 @@ Rule ID convention:
   graph-001
   graph-grounding-001
 """
+
 from __future__ import annotations
 
 import json
@@ -61,9 +63,6 @@ VALID_PROFILES = {
     "iiot",
     "dataops",
     "webapp",
-    "cross",
-    "graph",
-    "general",
 }
 
 VALID_CHECK_TYPES = {
@@ -99,8 +98,7 @@ def validate_rule(yaml_name: str, rule: dict, seen_ids: set[str]) -> list[str]:
 
     if not VALID_ID_RE.match(rule_id):
         warnings.append(
-            f"{yaml_name}/{rule_id}: id does not match convention "
-            "(domain-...-###)"
+            f"{yaml_name}/{rule_id}: id does not match convention " "(domain-...-###)"
         )
 
     if rule_id in seen_ids:
@@ -126,15 +124,12 @@ def validate_rule(yaml_name: str, rule: dict, seen_ids: set[str]) -> list[str]:
 
     for check in _as_list(rule.get("checks")):
         if not isinstance(check, dict):
-            warnings.append(
-                f"{yaml_name}/{rule_id}: check is not a mapping: {check}"
-            )
+            warnings.append(f"{yaml_name}/{rule_id}: check is not a mapping: {check}")
             continue
 
         if check.get("type") not in VALID_CHECK_TYPES:
             warnings.append(
-                f"{yaml_name}/{rule_id}: unknown check type "
-                f"'{check.get('type')}'"
+                f"{yaml_name}/{rule_id}: unknown check type " f"'{check.get('type')}'"
             )
 
         if not check.get("message"):
@@ -230,10 +225,7 @@ def load_specs() -> tuple[dict[str, dict], list[str]]:
 
             bucket["rules"].append(rule)
 
-        print(
-            f"[OK]   {yaml_file.name} -> {len(rules)} rules "
-            f"({profile})"
-        )
+        print(f"[OK]   {yaml_file.name} -> {len(rules)} rules " f"({profile})")
 
     return bundle, all_warnings
 
