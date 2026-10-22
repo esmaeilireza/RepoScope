@@ -1,8 +1,101 @@
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   build:
+    name: build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
       - uses: actions/checkout@v4
-      - run: echo 'CI passes'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Python dependencies
+        run: pip install pyyaml
+
+      - name: Typecheck (tsc --noEmit)
+        run: pnpm typecheck
+
+      - name: Lint (eslint .)
+        run: pnpm lint
+
+      - name: Unit tests (jest)
+        run: pnpm test
+
+      - name: Drift check — specs.json matches docs/specs/*.yaml
+        run: |
+          python scripts/build_knowledge.py
+          python - <<'PY'
+          import json, subprocess, sys
+          new = json.load(open("public/knowledge/specs.json", encoding="utf-8"))
+          committed_bytes = subprocess.check_output(
+              ["git", "show", "HEAD:public/knowledge/specs.json"]
+          )
+          committed = json.loads(committed_bytes)
+          if new != committed:
+              print(
+                  "ERROR: public/knowledge/specs.json is out of sync with docs/specs/*.yaml",
+                  file=sys.stderr,
+              )
+              print("Fix: run `pnpm build:knowledge` locally and commit the result.", file=sys.stderr)
+              sys.exit(1)
+          print("OK: specs.json is in sync with YAML sources.")
+          PY
+
+      - name: Health gate (reposcope-check.sh --strict)
+        run: bash reposcope-check.sh . --strict
+
+      - name: Claims verifier (scripts/verify_claims.py)
+        run: python scripts/verify_claims.py
+
+      - name: Dependency audit — blocks on unfixed high/critical
+        run: |
+          pnpm audit --registry=https://registry.npmjs.org/ --json > audit.json || true
+          node - <<'JS'
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('audit.json', 'utf8'));
+          const advisories = data.advisories ? Object.values(data.advisories) : [];
+          const ignored = (data.auditConfig && data.auditConfig.ignoreGhsas) || [];
+          const blocking = advisories.filter(
+            (a) =>
+              (a.severity === 'high' || a.severity === 'critical') &&
+              !ignored.includes(a.github_advisory_id)
+          );
+          console.log(
+            `advisories=${advisories.length} ignored=${ignored.length} blocking=${blocking.length}`
+          );
+          if (blocking.length) {
+            console.error('Unfixed high/critical advisories:');
+            for (const a of blocking) {
+              console.error(`  [${a.severity}] ${a.github_advisory_id}: ${a.title}`);
+            }
+            process.exit(1);
+          }
+          JS
