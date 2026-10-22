@@ -63,6 +63,7 @@ VALID_PROFILES = {
     "webapp",
     "cross",
     "graph",
+    "general",
 }
 
 VALID_CHECK_TYPES = {
