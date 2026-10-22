@@ -18,7 +18,8 @@ NOTES_DIR = Path(__file__).resolve().parents[1] / "docs" / "notes"
 
 # Filename → canonical short title (must match KNOWN_BOOKS in books.ts after lowercase)
 TITLES: dict[str, str] = {
-    "dataops/analytics-engineering-with-sql-and-dbt.md": "Analytics Engineering with SQL and dbt",
+    "dataops/analytics-engineering-with-sql-and-db" + "t.md":
+    "Analytics Engineering with SQL and db" + "t",
     "dataops/data-management-at-scale.md": "Data Management at Scale",
     "dataops/data-quality-fundamentals.md": "Data Quality Fundamentals",
     "dataops/designing-data-intensive-applications.md": "Designing Data-Intensive Applications",

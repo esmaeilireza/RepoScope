@@ -1,0 +1,505 @@
+# docs/specs/dataops.yaml — DataOps & Analytics Engineering audit rules
+#
+# Synthesizes:
+#   - Practical DataOps (Atwal)          → environment parity, testing, CI
+#   - Fundamentals of Data Engineering   → lifecycle, security undercurrent, orchestration
+#   - Designing Data-Intensive Apps      → schema evolution, reliability
+#   - Analytics Engineering with SQL/dbt → modular modeling, ref/source
+#   - Data Quality Fundamentals          → observability, quality gates, runbooks
+#   - The Data Warehouse Toolkit         → dimensional modeling, surrogate keys, SCD
+#   - Data Management at Scale           → data products, contracts, governance
+version: "1.0"
+profile: dataops
+
+rules:
+  # ══════════════════════════════════════════════════════════════
+  # SECTION 1 — Security, Secrets & Infrastructure Governance
+  # ══════════════════════════════════════════════════════════════
+  - id: dataops-sec-001
+    status: draft
+    severity: critical
+    title: "Hardcoded secret in pipeline code"
+    rationale: >
+      A hardcoded password, token, or API key committed to source control stays
+      exposed in Git history even after removal. Secrets belong in the runtime
+      environment or a secret manager, never in the codebase. This violates the
+      security undercurrent of the data engineering lifecycle and DataOps
+      governance practices.
+    checks:
+      - type: pattern_match
+        pattern: "(?i)(password|secret_key|api_key|access_token|private_key)\\s*[:=]\\s*[\"'][^\"']{8,}[\"']"
+        must_exist: false
+        file_glob: "**/*.{py,sql,yaml,yml,sh,json,env}"
+        error_when: "pattern_present"
+        message: "Hardcoded secret or credential detected. Use environment variables or a secret store."
+    fix: |
+      Move the secret to an environment variable or a secret manager.
+      Add the real secret file to .gitignore and rotate the exposed credential.
+    references:
+      - book: "Practical DataOps"
+        concept: "security governance"
+      - book: "Fundamentals of Data Engineering"
+        concept: "security undercurrent"
+
+  - id: dataops-sec-002
+    status: draft
+    severity: critical
+    title: "Database password embedded in connection string"
+    rationale: >
+      An unencrypted connection URI with an embedded password exposes credentials
+      in code, logs, and version history. Connection secrets must be injected at
+      runtime, not baked into pipeline configuration.
+    checks:
+      - type: pattern_match
+        pattern: "(?i)(postgres|mysql|snowflake|redshift|bigquery|clickhouse)://[^:]+:[^@]+@"
+        must_exist: false
+        file_glob: "**/*.{py,yaml,yml,json,toml,ini}"
+        error_when: "pattern_present"
+        message: "Unencrypted connection string with embedded password detected."
+    fix: |
+      Replace the embedded password with an environment variable reference, e.g.
+      postgres://user:${DB_PASSWORD}@host/db, and load DB_PASSWORD from a secret
+      manager at runtime.
+    references:
+      - book: "Designing Data-Intensive Applications"
+        concept: "reproducibility and secure configuration"
+
+  - id: dataops-infra-001
+    status: draft
+    severity: warning
+    title: "No Infrastructure-as-Code definition found"
+    rationale: >
+      Data platform infrastructure provisioned manually or through click-ops is
+      not reproducible or auditable. The data architecture undercurrent of the
+      data engineering lifecycle requires infrastructure to be declared as
+      version-controlled code.
+    checks:
+      - type: file_exists
+        path_glob: "{terraform/**/*.tf,cloudformation/**/*.yaml,pulumi/**/*.py,k8s/**/*.yaml}"
+        error_when: "file_absent"
+        message: "No Infrastructure-as-Code declaration found. Provision data platform infrastructure as version-controlled code."
+    fix: |
+      Provision storage, compute, and IAM resources with Terraform, CloudFormation,
+      Pulumi, or Kubernetes manifests, and commit the definitions to the repository.
+    references:
+      - book: "Fundamentals of Data Engineering"
+        concept: "data architecture undercurrent"
+
+  # ══════════════════════════════════════════════════════════════
+  # SECTION 2 — Transformation & dbt Modularity
+  # ══════════════════════════════════════════════════════════════
+  - id: dataops-dbt-001
+    status: draft
+    severity: error
+    title: "Hardcoded relation reference in dbt model"
+    rationale: >
+      Hardcoded database.schema.table paths break environment portability and
+      prevent dbt from building the DAG required for correct execution order and
+      lineage. Models must reference relations through ref() and source().
+    checks:
+      - type: pattern_match
+        pattern: "(?i)(from|join)\\s+[a-zA-Z0-9_]+\\.[a-zA-Z0-9_]+\\.[a-zA-Z0-9_]+"
+        must_exist: false
+        file_glob: "models/**/*.sql"
+        error_when: "pattern_present"
+        message: "Hardcoded three-part relation reference found in dbt model. Use ref() or source()."
+    fix: |
+      Replace hardcoded FROM/JOIN targets with dbt Jinja references:
+      - internal dbt models: {{ ref('model_name') }}
+      - raw source tables: {{ source('source_name', 'table_name') }}
+    references:
+      - book: "Analytics Engineering with SQL and dbt"
+        concept: "explicit dbt lineage via ref and source"
+
+  - id: dataops-dbt-002
+    status: draft
+    severity: error
+    title: "Missing dbt_project.yml root manifest"
+    rationale: >
+      A repository containing dbt models without dbt_project.yml cannot be parsed
+      or executed by the dbt CLI or CI tooling. The root manifest is the required
+      entry point that identifies a directory as a dbt project.
+    checks:
+      - type: file_exists
+        path_glob: "dbt_project.yml"
+        error_when: "file_absent"
+        message: "dbt_project.yml is missing from the repository root."
+    fix: |
+      Initialize the dbt project with `dbt init` or ensure dbt_project.yml is
+      committed at the repository root with name, version, and profile defined.
+    references:
+      - book: "Analytics Engineering with SQL and dbt"
+        concept: "dbt project structure"
+
+  - id: dataops-dbt-003
+    status: draft
+    severity: error
+    title: "Missing models directory in dbt project"
+    rationale: >
+      A dbt project without a models directory has no transformation logic and
+      cannot build a data pipeline. The models folder is the mandatory home for
+      all SQL transformation models.
+    checks:
+      - type: file_exists
+        path_glob: "models/"
+        error_when: "file_absent"
+        message: "models/ directory is missing from the dbt repository."
+    fix: |
+      Create the models/ directory at the repository root and organize SQL
+      transformations into staging/, intermediate/, and marts/ subfolders.
+    references:
+      - book: "Analytics Engineering with SQL and dbt"
+        concept: "modular data modeling"
+
+  - id: dataops-dbt-004
+    status: draft
+    severity: warning
+    title: "Missing packages.yml for macros directory"
+    rationale: >
+      Using custom macros or third-party package macros without a packages.yml
+      manifest causes compilation failures in CI/CD. Package dependencies must be
+      declared explicitly for reproducible macro resolution.
+    checks:
+      - type: file_exists
+        path_glob: "packages.yml"
+        error_when: "file_absent"
+        message: "packages.yml manifest missing while a macros/ directory is present."
+    fix: |
+      Create a packages.yml file at the project root and declare all required dbt
+      packages with explicit version pins, then run `dbt deps`.
+    references:
+      - book: "Analytics Engineering with SQL and dbt"
+        concept: "dbt packages and macros"
+
+  # ══════════════════════════════════════════════════════════════
+  # SECTION 3 — Data Quality, Testing & Observability
+  # ══════════════════════════════════════════════════════════════
+  - id: dataops-quality-001
+    status: draft
+    severity: error
+    title: "No automated data quality tests detected"
+    rationale: >
+      A data pipeline without automated quality assertions can silently pass
+      corrupted data downstream. Data quality must be enforced through version-
+      controlled tests or an assertion framework at every transformation stage.
+    checks:
+      - type: file_exists
+        path_glob: "{models/**/*.yml,great_expectations.yml,soda.yml,tests/**/*.sql}"
+        error_when: "file_absent"
+        message: "No data quality test configuration or assertion framework detected."
+    fix: |
+      Add dbt generic tests (unique, not_null) to schema YAML files, or configure
+      Great Expectations / Soda for pipeline validation.
+    references:
+      - book: "Data Quality Fundamentals"
+        concept: "automated quality gates"
+      - book: "Practical DataOps"
+        concept: "agile quality assurance"
+
+  - id: dataops-runbook-001
+    status: draft
+    severity: info
+    title: "No data incident runbook found"
+    rationale: >
+      Standardized incident response documentation reduces mean time to resolution
+      and removes reliance on tribal knowledge during data outages. Data incident
+      management requires documented response and escalation paths.
+    checks:
+      - type: file_exists
+        path_glob: "{RUNBOOK.md,docs/runbooks/**/*.md,docs/incidents/**/*.md}"
+        error_when: "file_absent"
+        message: "Repository lacks a version-controlled incident runbook."
+    fix: |
+      Create a RUNBOOK.md or docs/runbooks/ directory describing detection,
+      response, and postmortem workflows for data incidents.
+    references:
+      - book: "Data Quality Fundamentals"
+        concept: "incident management and triage"
+
+  - id: dataops-atwal-002
+    status: draft
+    severity: error
+    title: "No automated test suite found"
+    rationale: >
+      Data software without unit or integration tests cannot be validated during
+      CI, so regressions reach production unnoticed. Practical DataOps treats
+      automated testing as a core continuous-integration practice.
+    checks:
+      - type: file_exists
+        path_glob: "{tests/**,test/**,pytest.ini}"
+        error_when: "file_absent"
+        message: "Automated testing directory missing. Data software must include version-controlled test suites."
+    fix: |
+      Add a tests/ directory with pytest unit and integration tests, and wire them
+      into the CI pipeline.
+    references:
+      - book: "Practical DataOps"
+        concept: "automated testing and CI"
+
+  # ══════════════════════════════════════════════════════════════
+  # SECTION 4 — Orchestration, Dependencies & Schema Evolution
+  # ══════════════════════════════════════════════════════════════
+  - id: dataops-fde-001
+    status: draft
+    severity: error
+    title: "Pipeline orchestration not defined as code"
+    rationale: >
+      Time-based cron scripts or manual pipeline execution violate the DataOps
+      undercurrent. Orchestration must be declared as version-controlled
+      pipelines-as-code so workflows are reproducible and auditable.
+    checks:
+      - type: file_exists
+        path_glob: "{dags/**/*.py,orchestration/**/*.py,workflows/**/*.yaml,dagster_app/**/*.py}"
+        error_when: "file_absent"
+        message: "No pipeline orchestration code found. Declare workflows as code (DAGs)."
+    fix: |
+      Define data pipelines as code using Apache Airflow (dags/*.py), Dagster, or
+      Prefect, and commit them to version control.
+    references:
+      - book: "Fundamentals of Data Engineering"
+        concept: "pipelines as code"
+
+  - id: dataops-atwal-003
+    status: draft
+    severity: warning
+    title: "Missing dependency lockfile"
+    rationale: >
+      Without a lockfile, dependency versions drift between environments, causing
+      silent breakage and non-reproducible pipeline runs. Environment parity is a
+      core DataOps requirement.
+    checks:
+      - type: file_exists
+        path_glob: "{requirements.txt,Pipfile.lock,poetry.lock,environment.yml,conda-lock.yml}"
+        error_when: "file_absent"
+        message: "Dependency lockfile missing. Pin package versions for reproducible pipeline execution."
+    fix: |
+      Generate a lockfile with `poetry lock`, `pip freeze > requirements.txt`, or
+      `conda-lock -f environment.yml`, and commit it.
+    references:
+      - book: "Practical DataOps"
+        concept: "environment parity"
+
+  # ─── IMPLEMENTED: dataops-kleppmann-002 is live in lib/dataops-audit.ts ───
+  - id: dataops-kleppmann-002
+    severity: error
+    title: "No schema IDL for streaming events"
+    rationale: >
+      Streaming pipelines without an explicit schema definition language are
+      vulnerable to unannounced breaking changes. Schema evolution must be managed
+      through versioned IDL files so producers and consumers stay compatible.
+    checks:
+      - type: file_exists
+        path_glob: "{schemas/**/*.proto,schemas/**/*.avsc,schemas/**/*.thrift,events/**/*.proto}"
+        error_when: "file_absent"
+        message: "Streaming schema IDL definitions missing. Use explicit schema files (Avro/Protobuf) for event streams."
+    fix: |
+      Define event schemas with Avro (.avsc) or Protobuf (.proto) in a schemas/
+      directory and enforce compatibility checks in CI.
+    references:
+      - book: "Designing Data-Intensive Applications"
+        concept: "schema evolution and encoding"
+
+  # ─── IMPLEMENTED: dataops-kleppmann-003 is live in lib/dataops-audit.ts ───
+  - id: dataops-kleppmann-003
+    severity: warning
+    title: "No database migration tooling detected"
+    rationale: >
+      Schema changes applied by hand are error-prone and not auditable. Database
+      schema evolution should be managed by version-controlled migration scripts
+      so changes are repeatable and reversible.
+    checks:
+      - type: file_exists
+        path_glob: "{migrations/**,flyway/**,alembic/**,db/migrate/**}"
+        error_when: "file_absent"
+        message: "Database schema migration directory missing. Version-control schema DDL evolution."
+    fix: |
+      Adopt a migration tool such as Alembic or Flyway and store all schema DDL
+      changes under a migrations/ directory.
+    references:
+      - book: "Designing Data-Intensive Applications"
+        concept: "schema evolution"
+
+  # ══════════════════════════════════════════════════════════════
+  # SECTION 5 — Dimensional Modeling & Domain Data Products
+  # ══════════════════════════════════════════════════════════════
+  - id: dataops-kimball-001
+    status: draft
+    severity: error
+    title: "Fact model joins on natural key instead of surrogate key"
+    rationale: >
+      Joining fact models directly on natural operational codes couples the
+      warehouse to source-system keys and breaks when those codes change. Kimball
+      dimensional modeling requires surrogate keys for dimensional joins.
+    checks:
+      - type: pattern_match
+        pattern: "(?i)join\\s+[a-zA-Z0-9_]+\\s+on\\s+[a-zA-Z0-9_.]+\\.(id|code|natural_key)\\s*="
+        must_exist: false
+        file_glob: "models/marts/facts/**/*.sql"
+        error_when: "pattern_present"
+        message: "Fact table model joins on a natural operational key. Use warehouse surrogate keys (_sk) for dimensional joins."
+    fix: |
+      Generate surrogate keys for dimensions and join facts to dimensions on the
+      surrogate key column (e.g. customer_sk) instead of the natural key.
+    references:
+      - book: "The Data Warehouse Toolkit"
+        concept: "surrogate keys"
+
+  - id: dataops-kimball-002
+    status: draft
+    severity: error
+    title: "SCD Type 2 dimension lacks effective-date tracking"
+    rationale: >
+      A slowly changing dimension that does not track effective dates cannot
+      preserve history or answer point-in-time queries. SCD Type 2 models require
+      valid-from/valid-to tracking columns.
+    checks:
+      - type: pattern_match
+        pattern: "(?i)(effective_at|valid_from|dbt_valid_from)\\b"
+        must_exist: true
+        file_glob: "models/marts/dimensions/**/*.sql"
+        error_when: "pattern_absent"
+        message: "SCD Type 2 dimension model lacks required effective-date tracking columns."
+    fix: |
+      Add effective_at / valid_from / valid_to columns to the dimension model to
+      track historical state, or use dbt snapshot to manage SCD Type 2.
+    references:
+      - book: "The Data Warehouse Toolkit"
+        concept: "slowly changing dimensions"
+
+  - id: dataops-kimball-003
+    status: draft
+    severity: warning
+    title: "Missing enterprise bus matrix document"
+    rationale: >
+      Without a bus matrix, teams cannot see which conformed dimensions are shared
+      across business processes, leading to inconsistent and redundant models. The
+      bus matrix is the planning artifact of the dimensional modeling lifecycle.
+    checks:
+      - type: file_exists
+        path_glob: "{docs/bus_matrix.md,docs/architecture/bus_matrix.md,bus_matrix.csv}"
+        error_when: "file_absent"
+        message: "Enterprise bus matrix missing. Document shared conformed dimensions across business process facts."
+    fix: |
+      Author a bus matrix (Markdown or CSV) mapping business processes to conformed
+      dimensions and commit it under docs/.
+    references:
+      - book: "The Data Warehouse Toolkit"
+        concept: "bus matrix"
+
+  - id: dataops-scale-001
+    status: draft
+    severity: error
+    title: "Missing data product manifest"
+    rationale: >
+      A data domain without a data product manifest has no declared ownership,
+      SLAs, or contracts, so governance is implicit and fragile. Enterprise-scale
+      data management requires explicit product metadata.
+    checks:
+      - type: file_exists
+        path_glob: "{data-product.yml,data-product.yaml}"
+        error_when: "file_absent"
+        message: "data-product.yml specification missing. Define domain product ownership, SLAs, and data contracts."
+    fix: |
+      Create a data-product.yml defining the product name, owner, SLA, and input/
+      output data contracts for the domain.
+    references:
+      - book: "Data Management at Scale"
+        concept: "data product manifest"
+
+  - id: dataops-scale-003
+    status: draft
+    severity: warning
+    title: "No version-controlled data contracts found"
+    rationale: >
+      Without explicit data contracts, producers can change interfaces without
+      consumers knowing, causing silent downstream breakage. Contracts make the
+      agreement between domains explicit and testable.
+    checks:
+      - type: file_exists
+        path_glob: "{contracts/**,schemas/contracts/**,docs/contracts/**}"
+        error_when: "file_absent"
+        message: "Data contracts directory missing. Define binding interface contracts between domain producers and consumers."
+    fix: |
+      Create a contracts/ directory with version-controlled schema and semantic
+      contracts for each data product interface.
+    references:
+      - book: "Data Management at Scale"
+        concept: "data contracts"
+
+  # ══════════════════════════════════════════════════════════════
+  # SECTION 6 — Data lineage, catalog, and PII governance
+  # ══════════════════════════════════════════════════════════════
+  - id: dataops-004
+    severity: warning
+    title: "No data lineage manifest found"
+    rationale: >
+      Pipelines without a committed lineage manifest (source → transform →
+      sink) cannot answer "which models depend on this table?" during an
+      incident. Lineage belongs in version control next to the pipeline code.
+    checks:
+      - type: file_exists
+        path_glob: "{lineage/**,docs/lineage*,**/lineage.{json,yaml,yml}}"
+        error_when: "file_absent"
+        message: "No data lineage manifest found — commit lineage/ or docs/lineage/ to the repo."
+    fix: |
+      Generate a lineage manifest from dbt docs (dbt docs generate) or an
+      OpenLineage emitter, and commit it under docs/lineage/.
+    references:
+      - book: "Fundamentals of Data Engineering"
+        concept: "data-lineage"
+      - book: "The Data Warehouse Toolkit"
+        concept: "data-provenance"
+
+  - id: dataops-005
+    severity: warning
+    title: "No data catalog reference found"
+    rationale: >
+      Without a catalog reference, downstream consumers cannot discover the
+      datasets their pipelines depend on, and governance has no authoritative
+      inventory to enforce retention or access policy.
+    checks:
+      - type: pattern_match
+        pattern: "datahub|amundsen|atlas|openmetadata|unity-catalog|glue-catalog"
+        must_exist: true
+        file_glob: "**/*.{py,yaml,yml,json,toml}"
+        error_when: "pattern_absent"
+        message: "No data catalog integration detected"
+    fix: |
+      Register datasets with a data catalog (DataHub, Amundsen, OpenMetadata,
+      Unity Catalog, or Glue Catalog) and reference the catalog ID in the
+      dataset's YAML contract.
+    references:
+      - book: "Data Management at Scale"
+        concept: "data-catalog"
+      - book: "Practical DataOps"
+        concept: "self-service-discovery"
+
+  - id: dataops-006
+    severity: error
+    title: "PII columns not tagged in dataset schema"
+    rationale: >
+      Pipelines that touch personally identifiable information without explicit
+      column-level tagging cannot enforce downstream masking, retention, or
+      access controls. GDPR and CCPA compliance depend on this classification
+      being explicit and version-controlled.
+    checks:
+      - type: pattern_match
+        pattern: "(?i)(email|ssn|phone|dob|address|passport|national_id)"
+        must_exist: true
+        file_glob: "**/*.{sql,yml,yaml}"
+        error_when: "pattern_absent"
+        message: "No PII column detection — verify schemas declare PII tags where applicable"
+      - type: file_exists
+        path_glob: "{pii/**,docs/pii*,**/pii-tags.{yml,yaml,json}}"
+        error_when: "file_absent"
+        message: "No PII tag registry found — add pii-tags.yml with column classification"
+    fix: |
+      Create a pii-tags.yml registry classifying every column by sensitivity
+      (public / internal / confidential / PII) and reference it from each
+      dataset contract. Wire masking policies into the warehouse so tagged
+      columns are automatically redacted for non-privileged roles.
+    references:
+      - book: "Data Management at Scale"
+        concept: "data-governance"
+      - book: "Designing Data-Intensive Applications"
+        concept: "privacy-and-security"

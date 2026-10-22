@@ -15,6 +15,14 @@ export interface LinkClassification {
   shouldValidate: boolean; // whether it should be reported as a broken link
 }
 
+// Common file extensions (including DataOps & IIoT specific ones)
+const KNOWN_EXTENSIONS = [
+  '.md', '.txt', '.pdf', '.doc', '.docx', '.ipynb', '.csv', '.parquet', '.db', '.pkl',
+  '.py', '.js', '.ts', '.tsx', '.jsx', '.go', '.rs', '.java', '.cpp', '.c', '.h',
+  '.json', '.yaml', '.yml', '.toml', '.ini', '.cfg', '.env', '.sh', '.bash', '.zsh',
+  '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.html', '.css', '.scss', '.sql'
+];
+
 /**
  * Intelligent classification of README links using heuristics and context analysis
  */
@@ -23,22 +31,17 @@ export function classifyLink(
   surroundingContext: string = ''
 ): LinkClassification {
   const normalizedPath = linkPath.trim();
+  const lowerPath = normalizedPath.toLowerCase();
+  
   let score = 0;
   let reasons: string[] = [];
-  let type: LinkType = 'UNKNOWN';
 
   // ─────────────────────────────────────────────
   // Layer 1: Hardware Paths (High Confidence)
   // ─────────────────────────────────────────────
   const hardwarePatterns = [
-    /^\/dev\/tty/i,
-    /^\/dev\/serial/i,
-    /^\/dev\/usb/i,
-    /^COM[1-9]\d*/i,
-    /^\/proc\//i,
-    /^\/sys\//i,
-    /\/dev\/ttyUSB/i,
-    /\/dev\/ttyACM/i,
+    /^\/dev\/tty/i, /^\/dev\/serial/i, /^\/dev\/usb/i, /^COM[1-9]\d*/i,
+    /^\/proc\//i, /^\/sys\//i, /\/dev\/ttyUSB/i, /\/dev\/ttyACM/i,
   ];
 
   for (const pattern of hardwarePatterns) {
@@ -53,15 +56,86 @@ export function classifyLink(
   }
 
   // ─────────────────────────────────────────────
-  // Layer 2: GitHub User/Repo Links
+  // Layer 2: Explicit File Extensions (Highest Priority)
   // ─────────────────────────────────────────────
-  // Links like /esmaeilireza or /user/repo
-  if (/^\/[a-zA-Z0-9_-]+(\/[a-zA-Z0-9_.-]+)?$/.test(normalizedPath)) {
+  // If it ends with a known file extension, it is a FILE PATH. Period.
+  const hasKnownExtension = KNOWN_EXTENSIONS.some(ext => lowerPath.endsWith(ext));
+  
+  if (hasKnownExtension) {
+    return {
+      type: 'FILE_PATH',
+      confidence: 0.95,
+      reason: 'Has known file extension',
+      shouldValidate: true,
+    };
+  }
+
+  // ─────────────────────────────────────────────
+  // Layer 3: Common Directory Structures
+  // ─────────────────────────────────────────────
+  const dirPatterns = [
+    /^\/(docs|src|lib|test|tests|public|assets|images|static|app|components|scripts|\.github)\//i,
+    /^(docs|src|lib|test|tests|public|assets|images|static|app|components|scripts|\.github)\//i,
+  ];
+
+  for (const pattern of dirPatterns) {
+    if (pattern.test(normalizedPath)) {
+      return {
+        type: 'FILE_PATH',
+        confidence: 0.85,
+        reason: 'Matches common directory structure',
+        shouldValidate: true,
+      };
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // Layer 4: API Endpoint Detection
+  // ─────────────────────────────────────────────
+  const apiVerbs = [
+    'predict', 'auth', 'admin', 'health', 'api', 'v[0-9]+',
+    'login', 'logout', 'register', 'verify', 'validate',
+    'check', 'status', 'info', 'metrics', 'monitor',
+    'create', 'update', 'delete', 'list', 'get', 'post'
+  ];
+  
+  const apiVerbPattern = new RegExp(`^/(${apiVerbs.join('|')})`, 'i');
+  if (apiVerbPattern.test(normalizedPath)) {
+    score += 0.6;
+    reasons.push('Starts with API verb');
+  }
+
+  // Context indicates API documentation
+  const contextKeywords = ['endpoint', 'route', 'method', 'api', 'request', 'response', 'http', 'json'];
+  const contextMatchCount = contextKeywords.filter(keyword => surroundingContext.toLowerCase().includes(keyword)).length;
+  if (contextMatchCount >= 2) {
+    score += 0.3;
+    reasons.push(`Context contains ${contextMatchCount} API-related keywords`);
+  }
+
+  // Versioned API paths are highly likely to be endpoints
+  if (/^\/(api|v[0-9]+)\//i.test(normalizedPath)) {
+    score += 0.5;
+    reasons.push('Versioned API path structure');
+  }
+
+  if (score >= 0.7) {
+    return {
+      type: 'API_ENDPOINT',
+      confidence: Math.min(score, 0.95),
+      reason: reasons.join(', '),
+      shouldValidate: false, // API endpoints should not be validated against the file tree
+    };
+  }
+
+  // ─────────────────────────────────────────────
+  // Layer 5: GitHub User/Repo Links (Strict)
+  // ─────────────────────────────────────────────
+  // Only trigger this if it strongly looks like a GitHub reference and has NO extension.
+  if (/^\/[a-zA-Z0-9_-]+(\/[a-zA-Z0-9_-]+)?$/.test(normalizedPath)) {
     const parts = normalizedPath.split('/').filter(p => p);
     
-    // If it's only one part and looks like a username
     if (parts.length === 1 && /^[a-zA-Z0-9_-]+$/.test(parts[0])) {
-      // Check context for GitHub
       if (/github\.com|@|profile|user/i.test(surroundingContext)) {
         return {
           type: 'GITHUB_USER',
@@ -72,7 +146,6 @@ export function classifyLink(
       }
     }
     
-    // If it's two parts and looks like user/repo
     if (parts.length === 2) {
       return {
         type: 'GITHUB_USER',
@@ -84,122 +157,35 @@ export function classifyLink(
   }
 
   // ─────────────────────────────────────────────
-  // Layer 3: API Endpoint Detection (Heuristic)
+  // Layer 6: Anchors & Technical Acronyms
   // ─────────────────────────────────────────────
-  
-  // Pattern 1: Starts with API verbs
-  const apiVerbs = [
-    'predict', 'auth', 'admin', 'health', 'api', 'v[0-9]+',
-    'login', 'logout', 'register', 'verify', 'validate',
-    'check', 'status', 'info', 'metrics', 'monitor',
-    'create', 'update', 'delete', 'list', 'get', 'post',
-  ];
-  
-  const apiVerbPattern = new RegExp(`^/(${apiVerbs.join('|')})`, 'i');
-  if (apiVerbPattern.test(normalizedPath)) {
-    score += 0.6;
-    reasons.push('Starts with API verb');
-  }
-
-  // Pattern 2: No file extension
-  const hasExtension = /\.[a-z0-9]+$/i.test(normalizedPath);
-  if (!hasExtension) {
-    score += 0.2;
-    reasons.push('No file extension');
-  }
-
-  // Pattern 3: Context indicates API documentation
-  const contextKeywords = [
-    'endpoint', 'route', 'method', 'api', 'request', 'response',
-    'post', 'get', 'put', 'delete', 'http', 'json',
-  ];
-  
-  const contextMatchCount = contextKeywords.filter(keyword => 
-    surroundingContext.toLowerCase().includes(keyword)
-  ).length;
-  
-  if (contextMatchCount >= 2) {
-    score += 0.3;
-    reasons.push(`Context contains ${contextMatchCount} API-related keywords`);
-  }
-
-  // Pattern 4: In a table structure (Markdown tables)
-  if (/\|.+\|/.test(surroundingContext)) {
-    score += 0.15;
-    reasons.push('Appears in table context');
-  }
-
-  // Pattern 5: Common API path structures
-  if (/^\/(api|v[0-9]+)\//.test(normalizedPath)) {
-    score += 0.4;
-    reasons.push('Versioned API path structure');
-  }
-
-  // Decision: API Endpoint
-  if (score >= 0.7) {
+  if (normalizedPath.startsWith('#')) {
     return {
-      type: 'API_ENDPOINT',
-      confidence: Math.min(score, 0.95),
-      reason: reasons.join(', '),
-      shouldValidate: false, // API endpoints should not be reported as broken file links
+      type: 'ANCHOR',
+      confidence: 0.95,
+      reason: 'Anchor link',
+      shouldValidate: false,
+    };
+  }
+
+  // If it's a short, single-word path without slashes (e.g., "/LFS", "/CD")
+  if (/^\/[A-Z]{2,8}$/.test(normalizedPath)) {
+    return {
+      type: 'UNKNOWN',
+      confidence: 0.8,
+      reason: 'Technical acronym / protocol name',
+      shouldValidate: false,
     };
   }
 
   // ─────────────────────────────────────────────
-  // Layer 4: File Path Detection
+  // Layer 7: Fallback
   // ─────────────────────────────────────────────
-  
-  // Common file extensions
-  const fileExtensions = [
-    '.md', '.txt', '.pdf', '.doc', '.docx',
-    '.py', '.js', '.ts', '.tsx', '.jsx', '.go', '.rs', '.java', '.cpp', '.c',
-    '.json', '.yaml', '.yml', '.toml', '.ini', '.cfg',
-    '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico',
-    '.html', '.css', '.scss',
-    '.sh', '.bash', '.zsh',
-    '.sql', '.db', '.sqlite',
-  ];
-
-  const hasKnownExtension = fileExtensions.some(ext => 
-    normalizedPath.toLowerCase().endsWith(ext)
-  );
-
-  if (hasKnownExtension) {
-    return {
-      type: 'FILE_PATH',
-      confidence: 0.9,
-      reason: 'Has known file extension',
-      shouldValidate: true,
-    };
-  }
-
-  // Common directory patterns
-  const dirPatterns = [
-    /^\/(docs|src|lib|test|tests|public|assets|images|static)/i,
-    /^(docs|src|lib|test|tests|public|assets|images|static)\//i,
-  ];
-
-  for (const pattern of dirPatterns) {
-    if (pattern.test(normalizedPath)) {
-      return {
-        type: 'FILE_PATH',
-        confidence: 0.8,
-        reason: 'Matches common directory structure',
-        shouldValidate: true,
-      };
-    }
-  }
-
-  // ─────────────────────────────────────────────
-  // Layer 5: Fallback with Low Confidence
-  // ─────────────────────────────────────────────
-  
-  // If no known pattern matched
   return {
     type: 'UNKNOWN',
     confidence: 0.3,
     reason: 'No clear classification pattern detected',
-    shouldValidate: true, // Validate cautiously
+    shouldValidate: false, // Validate cautiously; default to false to prevent false positives
   };
 }
 

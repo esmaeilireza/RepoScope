@@ -270,27 +270,3 @@ rules:
     references:
       - book: "Web Application Security"
         concept: "secrets-management"
-
-  # ─── IIoT hardware rules (test groups iiot-hw-* with general-* IDs) ───
-  - id: iiot-hw-001
-    profile: iiot
-    severity: warning
-    title: "Missing OT hardware specification document"
-    rationale: >
-      Industrial deployments depend on deterministic compute characteristics
-      (PLC scan time, controller memory headroom, watchdog intervals). Without
-      a version-controlled hardware spec, capacity drift goes unnoticed until
-      a scan-cycle overrun trips the controller mid-shift.
-    checks:
-      - type: file_exists
-        path_glob: "{docs/hardware/**,HARDWARE.md,docs/hardware-spec*}"
-        error_when: "file_absent"
-        message: "No OT hardware specification found — document controller model, RAM, scan-time budget, and watchdog config"
-    fix: |
-      Add docs/hardware/ot-spec.md documenting the controller model,
-      available memory, expected scan time, and watchdog interval.
-    references:
-      - book: "Automating Manufacturing Systems with PLCs"
-        concept: "deterministic-execution"
-      - standard: "IEC 61131-3"
-        concept: "program-organization-units"

@@ -978,33 +978,6 @@
         "full_text": "Rule: Potential hardcoded secret\nID: general-security-001\nProfile: webapp\nSeverity: critical\nWhy it matters: A hardcoded credential in source control remains exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, not in the codebase.\n\nHow to fix: Move the secret to an environment variable and rotate the exposed key.\n\nReferences: Web Application Security"
       },
       {
-        "id": "iiot-hw-001",
-        "profile": "iiot",
-        "severity": "warning",
-        "title": "Missing OT hardware specification document",
-        "rationale": "Industrial deployments depend on deterministic compute characteristics (PLC scan time, controller memory headroom, watchdog intervals). Without a version-controlled hardware spec, capacity drift goes unnoticed until a scan-cycle overrun trips the controller mid-shift.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "{docs/hardware/**,HARDWARE.md,docs/hardware-spec*}",
-            "error_when": "file_absent",
-            "message": "No OT hardware specification found — document controller model, RAM, scan-time budget, and watchdog config"
-          }
-        ],
-        "fix": "Add docs/hardware/ot-spec.md documenting the controller model,\navailable memory, expected scan time, and watchdog interval.\n",
-        "references": [
-          {
-            "book": "Automating Manufacturing Systems with PLCs",
-            "concept": "deterministic-execution"
-          },
-          {
-            "standard": "IEC 61131-3",
-            "concept": "program-organization-units"
-          }
-        ],
-        "full_text": "Rule: Missing OT hardware specification document\nID: iiot-hw-001\nProfile: iiot\nSeverity: warning\nWhy it matters: Industrial deployments depend on deterministic compute characteristics (PLC scan time, controller memory headroom, watchdog intervals). Without a version-controlled hardware spec, capacity drift goes unnoticed until a scan-cycle overrun trips the controller mid-shift.\n\nHow to fix: Add docs/hardware/ot-spec.md documenting the controller model,\navailable memory, expected scan time, and watchdog interval.\n\nReferences: Automating Manufacturing Systems with PLCs, IEC 61131-3"
-      },
-      {
         "id": "webapp-001",
         "profile": "webapp",
         "severity": "critical",
@@ -1072,257 +1045,270 @@
         "status": "draft",
         "profile": "iiot",
         "severity": "critical",
-        "title": "Missing Modbus error handler",
-        "rationale": "In OT environments, a Modbus timeout without exception handling can cause silent loss of telemetry and unreliable process decisions. Unlike typical IT systems, an unhandled runtime failure on the plant floor may leave operators trusting a dead data stream.\n",
+        "title": "Modbus exception handling missing",
+        "rationale": "Unhandled Modbus exceptions cause silent data loss and unplanned downtime in production PLC-connected systems. IEC 62443 requires explicit fault containment at every protocol boundary.\n",
         "checks": [
           {
-            "type": "pattern_match",
             "pattern": "ModbusIOException|ModbusException",
-            "must_exist": false,
-            "file_glob": "**/*.py",
-            "error_when": "pattern_absent",
-            "message": "No Modbus exception handling found in Python files"
+            "in": "**/*.py",
+            "mode": "must_exist",
+            "message": "No Modbus exception handling found in Python sources."
           },
           {
-            "type": "file_exists",
-            "path_glob": "**/mock/**/*modbus*",
-            "error_when": "file_absent",
-            "message": "No Modbus mock/simulator found for testing"
+            "pattern": "mock.*modbus|modbus.*mock|ModbusSimulatorServer",
+            "in": "**/mock/**/*modbus*",
+            "mode": "must_exist",
+            "message": "No Modbus simulator/mock found for offline testing."
           }
         ],
-        "fix": "Wrap Modbus reads in try/except for ModbusIOException.\nUse pymodbus.device.ModbusSimulatorServer as the test mock.\n",
+        "fix": "Wrap every Modbus call in try/except ModbusIOException and provide a\nModbusSimulatorServer fixture for unit tests so CI passes without hardware.\n\nExample:\n  from pymodbus.exceptions import ModbusIOException\n  try:\n      result = client.read_holding_registers(0, 10)\n  except ModbusIOException as exc:\n      logger.error(\"Modbus read failed: %s\", exc)\n      raise\n",
         "references": [
           {
             "book": "Industrial Network Security",
-            "concept": "fail-safe networking"
+            "section": "Chapter 4 – Protocol-level fault containment"
           },
           {
             "book": "PLC Controls with Structured Text",
-            "concept": "deterministic execution"
+            "section": "Chapter 7 – Exception handling in cyclic tasks"
           },
           {
-            "standard": "IEC 62443",
-            "concept": "network segmentation"
+            "standard": "IEC 62443-3-3 SR 3.5"
           }
         ],
-        "full_text": "Rule: Missing Modbus error handler\nID: iiot-001\nProfile: iiot\nSeverity: critical\nWhy it matters: In OT environments, a Modbus timeout without exception handling can cause silent loss of telemetry and unreliable process decisions. Unlike typical IT systems, an unhandled runtime failure on the plant floor may leave operators trusting a dead data stream.\n\nHow to fix: Wrap Modbus reads in try/except for ModbusIOException.\nUse pymodbus.device.ModbusSimulatorServer as the test mock.\n\nReferences: Industrial Network Security, PLC Controls with Structured Text, IEC 62443"
+        "full_text": "Rule: Modbus exception handling missing\nID: iiot-001\nProfile: iiot\nSeverity: critical\nWhy it matters: Unhandled Modbus exceptions cause silent data loss and unplanned downtime in production PLC-connected systems. IEC 62443 requires explicit fault containment at every protocol boundary.\n\nHow to fix: Wrap every Modbus call in try/except ModbusIOException and provide a\nModbusSimulatorServer fixture for unit tests so CI passes without hardware.\n\nExample:\n  from pymodbus.exceptions import ModbusIOException\n  try:\n      result = client.read_holding_registers(0, 10)\n  except ModbusIOException as exc:\n      logger.error(\"Modbus read failed: %s\", exc)\n      raise\n\nReferences: Industrial Network Security, PLC Controls with Structured Text, IEC 62443-3-3 SR 3.5"
       },
       {
         "id": "iiot-002",
         "profile": "iiot",
         "severity": "error",
-        "title": "Hardcoded PLC IP address",
-        "rationale": "A hardcoded private OT address breaks deployment across environments and weakens network segmentation boundaries. PLC hosts should be configuration, not source code.\n",
+        "title": "Hardcoded PLC IP address detected",
+        "rationale": "Hardcoded private IP addresses couple code to a single physical network segment and expose internal topology in version control. IEC 62443 requires network-segment isolation and configuration externalisation.\n",
         "checks": [
           {
-            "type": "pattern_match",
-            "pattern": "192\\.168\\.|10\\.0\\.|172\\.1[6-9]\\.|172\\.2[0-9]\\.|172\\.3[0-1]\\.",
-            "must_exist": false,
-            "file_glob": "**/*.py",
-            "error_when": "pattern_present",
-            "message": "Hardcoded private IP found — use an environment variable instead"
+            "pattern": "192\\.168\\.|10\\.0\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.",
+            "in": "**/*.py",
+            "mode": "must_not_exist",
+            "message": "Hardcoded private IP found – move PLC_HOST to environment variable."
           }
         ],
-        "fix": "Put the address in .env: PLC_HOST=192.168.1.10\nIn code: os.getenv('PLC_HOST', 'localhost')\n",
+        "fix": "Replace the literal IP with an environment variable:\n  import os\n  PLC_HOST = os.environ[\"PLC_HOST\"]  # e.g. 192.168.1.10\nStore the real value in .env (git-ignored) and document it in .env.example.\n",
         "references": [
           {
             "book": "Practical Industrial Data Networks",
-            "concept": "network segmentation"
+            "section": "Chapter 2 – Configuration management for field devices"
           },
           {
-            "standard": "IEC 62443",
-            "concept": "zone and conduit model"
+            "standard": "IEC 62443-2-1 SP.03.02"
           }
         ],
-        "full_text": "Rule: Hardcoded PLC IP address\nID: iiot-002\nProfile: iiot\nSeverity: error\nWhy it matters: A hardcoded private OT address breaks deployment across environments and weakens network segmentation boundaries. PLC hosts should be configuration, not source code.\n\nHow to fix: Put the address in .env: PLC_HOST=192.168.1.10\nIn code: os.getenv('PLC_HOST', 'localhost')\n\nReferences: Practical Industrial Data Networks, IEC 62443"
+        "full_text": "Rule: Hardcoded PLC IP address detected\nID: iiot-002\nProfile: iiot\nSeverity: error\nWhy it matters: Hardcoded private IP addresses couple code to a single physical network segment and expose internal topology in version control. IEC 62443 requires network-segment isolation and configuration externalisation.\n\nHow to fix: Replace the literal IP with an environment variable:\n  import os\n  PLC_HOST = os.environ[\"PLC_HOST\"]  # e.g. 192.168.1.10\nStore the real value in .env (git-ignored) and document it in .env.example.\n\nReferences: Practical Industrial Data Networks, IEC 62443-2-1 SP.03.02"
       },
       {
         "id": "iiot-003",
         "status": "draft",
         "profile": "iiot",
         "severity": "warning",
-        "title": "No requirements.txt pin",
-        "rationale": "Without version pinning, an unintended library upgrade can break compatibility in a high-uptime industrial environment where a driver ABI change can cause extended downtime.\n",
+        "title": "Python dependencies not pinned",
+        "rationale": "Unpinned dependencies allow silent upgrades that can break fieldbus driver behaviour between deployments.\n",
         "checks": [
           {
-            "type": "file_exists",
-            "path_glob": "requirements*.txt",
-            "error_when": "file_absent",
-            "message": "requirements.txt not found"
+            "pattern": "requirements.*\\.txt",
+            "in": ".",
+            "mode": "must_exist",
+            "message": "No requirements*.txt found."
           },
           {
-            "type": "pattern_match",
             "pattern": "==\\d",
-            "must_exist": true,
-            "file_glob": "requirements*.txt",
-            "error_when": "pattern_absent",
-            "message": "Dependencies not pinned with == in requirements.txt"
+            "in": "requirements*.txt",
+            "mode": "must_exist",
+            "message": "Dependencies appear unpinned – use == specifiers."
           }
         ],
-        "fix": "pip freeze > requirements.txt\nor pin manually: pymodbus==3.6.3\n",
+        "fix": "Pin every runtime dependency:\n  pip freeze > requirements.txt\nor manually:\n  pymodbus==3.6.3\n  opcua==0.98.13\n",
         "references": [
           {
             "book": "Automating Manufacturing Systems with PLCs",
-            "concept": "deterministic execution"
+            "section": "Appendix B – Reproducible Python environments"
           }
         ],
-        "full_text": "Rule: No requirements.txt pin\nID: iiot-003\nProfile: iiot\nSeverity: warning\nWhy it matters: Without version pinning, an unintended library upgrade can break compatibility in a high-uptime industrial environment where a driver ABI change can cause extended downtime.\n\nHow to fix: pip freeze > requirements.txt\nor pin manually: pymodbus==3.6.3\n\nReferences: Automating Manufacturing Systems with PLCs"
+        "full_text": "Rule: Python dependencies not pinned\nID: iiot-003\nProfile: iiot\nSeverity: warning\nWhy it matters: Unpinned dependencies allow silent upgrades that can break fieldbus driver behaviour between deployments.\n\nHow to fix: Pin every runtime dependency:\n  pip freeze > requirements.txt\nor manually:\n  pymodbus==3.6.3\n  opcua==0.98.13\n\nReferences: Automating Manufacturing Systems with PLCs"
       },
       {
         "id": "iiot-004",
         "profile": "iiot",
         "severity": "critical",
-        "title": "Inadequate Physical Lockout/Tagout and Operational Safety Culture",
-        "rationale": "Operational safety policies requiring physical interlocks, safety culture adherence, and site security procedures cannot be audited from code repositories. This rule exists as a marker that the repo must reference a site-level LOTO procedure outside the codebase.\n",
+        "title": "LOTO / safety-procedure documentation missing",
+        "rationale": "Repositories controlling physical machinery must ship lockout–tagout documentation alongside the code so maintenance teams can safely de-energise equipment before any software change is applied.\n",
         "checks": [
           {
-            "type": "file_exists",
-            "path_glob": "{docs/safety/**,LOCKOUT*.md,SAFETY.md,docs/loto/**}",
-            "error_when": "file_absent",
-            "message": "No site-level Lockout/Tagout or safety documentation reference found"
+            "pattern": "loto|lockout|LOTO|LOCKOUT",
+            "in": "docs/safety/**,LOCKOUT*.md,SAFETY.md,docs/loto/**",
+            "mode": "must_exist",
+            "message": "No LOTO / lockout-tagout documentation found."
           }
         ],
-        "fix": "Reference the site LOTO procedure from docs/safety/loto.md and link to the\nphysical interlock inventory maintained outside source control.\n",
+        "fix": "Create docs/safety/loto.md referencing your site-level LOTO procedure\nand link it from README.md under a Safety section.\n",
         "references": [
           {
             "book": "Industrial Network Security",
-            "concept": "safety-controls"
+            "section": "Chapter 9 – Physical security and maintenance windows"
           },
           {
-            "standard": "NFPA 70E",
-            "concept": "lockout-tagout"
+            "standard": "NFPA 70E Article 120"
           }
         ],
-        "full_text": "Rule: Inadequate Physical Lockout/Tagout and Operational Safety Culture\nID: iiot-004\nProfile: iiot\nSeverity: critical\nWhy it matters: Operational safety policies requiring physical interlocks, safety culture adherence, and site security procedures cannot be audited from code repositories. This rule exists as a marker that the repo must reference a site-level LOTO procedure outside the codebase.\n\nHow to fix: Reference the site LOTO procedure from docs/safety/loto.md and link to the\nphysical interlock inventory maintained outside source control.\n\nReferences: Industrial Network Security, NFPA 70E"
+        "full_text": "Rule: LOTO / safety-procedure documentation missing\nID: iiot-004\nProfile: iiot\nSeverity: critical\nWhy it matters: Repositories controlling physical machinery must ship lockout–tagout documentation alongside the code so maintenance teams can safely de-energise equipment before any software change is applied.\n\nHow to fix: Create docs/safety/loto.md referencing your site-level LOTO procedure\nand link it from README.md under a Safety section.\n\nReferences: Industrial Network Security, NFPA 70E Article 120"
       },
       {
         "id": "iiot-005",
         "profile": "iiot",
         "severity": "error",
-        "title": "OT network segmentation diagram missing",
-        "rationale": "IEC 62443 zone-and-conduit compliance requires a documented network topology distinguishing enterprise, DMZ, supervisory, and control enclaves. Without a committed diagram, segmentation drift goes undetected.\n",
+        "title": "Network topology / zone diagram missing",
+        "rationale": "IEC 62443 zone-and-conduit models require an up-to-date topology diagram so that security assessments and incident response can correctly scope the industrial network.\n",
         "checks": [
           {
-            "type": "file_exists",
-            "path_glob": "{docs/network/**,docs/architecture/network*,**/topology*.{yaml,yml,md,d2}}",
-            "error_when": "file_absent",
-            "message": "No network topology / zone-conduit diagram found in docs/"
+            "pattern": "topology|network",
+            "in": "docs/network/**,docs/architecture/network*,**/*topology*.yaml,**/*topology*.yml,**/*topology*.md,**/*topology*.d2",
+            "mode": "must_exist",
+            "message": "No network topology diagram or document found."
           }
         ],
-        "fix": "Commit a zone-and-conduit diagram under docs/network/topology.md (or .d2)\nshowing enterprise, DMZ, supervisory, and control enclaves with the\nfirewall rules between them.\n",
+        "fix": "Add docs/network/topology.md (or topology.d2) documenting:\n  - Control network segment (PLC subnet)\n  - SCADA / HMI segment\n  - DMZ / historian segment\n  - Conduits and allowed protocols between zones\n",
         "references": [
           {
             "book": "Industrial Network Security",
-            "concept": "functional-enclave"
+            "section": "Chapter 6 – Zone and conduit modelling"
           },
           {
-            "standard": "IEC 62443",
-            "concept": "zones-and-conduits"
+            "standard": "IEC 62443-3-2 ZCR 1"
           }
         ],
-        "full_text": "Rule: OT network segmentation diagram missing\nID: iiot-005\nProfile: iiot\nSeverity: error\nWhy it matters: IEC 62443 zone-and-conduit compliance requires a documented network topology distinguishing enterprise, DMZ, supervisory, and control enclaves. Without a committed diagram, segmentation drift goes undetected.\n\nHow to fix: Commit a zone-and-conduit diagram under docs/network/topology.md (or .d2)\nshowing enterprise, DMZ, supervisory, and control enclaves with the\nfirewall rules between them.\n\nReferences: Industrial Network Security, IEC 62443"
+        "full_text": "Rule: Network topology / zone diagram missing\nID: iiot-005\nProfile: iiot\nSeverity: error\nWhy it matters: IEC 62443 zone-and-conduit models require an up-to-date topology diagram so that security assessments and incident response can correctly scope the industrial network.\n\nHow to fix: Add docs/network/topology.md (or topology.d2) documenting:\n  - Control network segment (PLC subnet)\n  - SCADA / HMI segment\n  - DMZ / historian segment\n  - Conduits and allowed protocols between zones\n\nReferences: Industrial Network Security, IEC 62443-3-2 ZCR 1"
       },
       {
         "id": "iiot-006",
         "profile": "iiot",
         "severity": "warning",
-        "title": "Undocumented PLC program change",
-        "rationale": "Controller logic changes without version control or a change record undermine NERC CIP-003-4 / CIP-007-4 auditability and mask unauthorized modifications.\n",
+        "title": "PLC/SCADA source changes not tracked in CHANGELOG",
+        "rationale": "Changes to ladder logic, structured text, or SCADA screens must be traceable to a ticket and a deployment window to satisfy change-management requirements in regulated industries.\n",
         "checks": [
           {
-            "type": "file_exists",
-            "path_glob": "{plc/**,scada/**,**/*.st,**/*.scl}",
-            "error_when": "file_absent",
-            "message": "No PLC/SCADA source directory found"
+            "pattern": "\\.(st|scl|lad|fbd|sfc)$",
+            "in": "plc/**,scada/**",
+            "mode": "must_exist",
+            "message": "No PLC/SCADA source files found under plc/ or scada/."
           },
           {
-            "type": "file_exists",
-            "path_glob": "{CHANGELOG*,plc/CHANGELOG*,scada/CHANGELOG*}",
-            "error_when": "file_absent",
-            "message": "PLC/SCADA sources present but no CHANGELOG recorded"
+            "pattern": "CHANGELOG",
+            "in": "CHANGELOG*,docs/CHANGELOG*",
+            "mode": "must_exist",
+            "message": "No CHANGELOG found for PLC/SCADA change tracking."
           }
         ],
-        "fix": "Track every PLC program change in a CHANGELOG at the plc/ or scada/\ndirectory root, and reference the change ticket ID in the commit message.\n",
+        "fix": "1. Store structured text / ladder sources under plc/ or scada/.\n2. Add a CHANGELOG.md entry for every release, referencing the ticket ID.\n",
         "references": [
           {
             "book": "Industrial Network Security",
-            "concept": "change-control-and-configuration-management"
+            "section": "Chapter 11 – Change and patch management"
           }
         ],
-        "full_text": "Rule: Undocumented PLC program change\nID: iiot-006\nProfile: iiot\nSeverity: warning\nWhy it matters: Controller logic changes without version control or a change record undermine NERC CIP-003-4 / CIP-007-4 auditability and mask unauthorized modifications.\n\nHow to fix: Track every PLC program change in a CHANGELOG at the plc/ or scada/\ndirectory root, and reference the change ticket ID in the commit message.\n\nReferences: Industrial Network Security"
+        "full_text": "Rule: PLC/SCADA source changes not tracked in CHANGELOG\nID: iiot-006\nProfile: iiot\nSeverity: warning\nWhy it matters: Changes to ladder logic, structured text, or SCADA screens must be traceable to a ticket and a deployment window to satisfy change-management requirements in regulated industries.\n\nHow to fix: 1. Store structured text / ladder sources under plc/ or scada/.\n2. Add a CHANGELOG.md entry for every release, referencing the ticket ID.\n\nReferences: Industrial Network Security"
       },
       {
         "id": "iiot-007",
         "profile": "iiot",
         "severity": "error",
-        "title": "Hardcoded hardware port in production code",
-        "rationale": "A hardcoded serial port (COM3, /dev/ttyUSB0) or Modbus port (502) breaks deployment portability across edge devices and containerized environments.\n",
+        "title": "Hardcoded serial port or Modbus TCP port",
+        "rationale": "Hardcoded COM ports and :502 addresses prevent multi-environment deployments and leak hardware topology into version control.\n",
         "checks": [
           {
-            "type": "pattern_match",
-            "pattern": "COM[1-9]|/dev/tty(USB|ACM)|:502\\b",
-            "must_exist": false,
-            "file_glob": "**/*.py",
-            "error_when": "pattern_present",
-            "message": "Hardcoded hardware port found — use an environment variable"
+            "pattern": "COM[1-9]|/dev/ttyUSB|/dev/ttyACM|:502",
+            "in": "**/*.py",
+            "mode": "must_not_exist",
+            "message": "Hardcoded serial/TCP port found – move to PLC_PORT env var."
           }
         ],
-        "fix": "Move hardware ports to environment variables:\n  os.environ.get(\"PLC_PORT\", \"502\")\n",
+        "fix": "Replace literal ports with an environment variable:\n  PLC_PORT = int(os.environ.get(\"PLC_PORT\", \"502\"))\n",
         "references": [
           {
             "book": "Practical Industrial Data Networks",
-            "concept": "network segmentation"
+            "section": "Chapter 3 – Serial and TCP transport configuration"
           }
         ],
-        "full_text": "Rule: Hardcoded hardware port in production code\nID: iiot-007\nProfile: iiot\nSeverity: error\nWhy it matters: A hardcoded serial port (COM3, /dev/ttyUSB0) or Modbus port (502) breaks deployment portability across edge devices and containerized environments.\n\nHow to fix: Move hardware ports to environment variables:\n  os.environ.get(\"PLC_PORT\", \"502\")\n\nReferences: Practical Industrial Data Networks"
+        "full_text": "Rule: Hardcoded serial port or Modbus TCP port\nID: iiot-007\nProfile: iiot\nSeverity: error\nWhy it matters: Hardcoded COM ports and :502 addresses prevent multi-environment deployments and leak hardware topology into version control.\n\nHow to fix: Replace literal ports with an environment variable:\n  PLC_PORT = int(os.environ.get(\"PLC_PORT\", \"502\"))\n\nReferences: Practical Industrial Data Networks"
       },
       {
         "id": "iiot-008",
         "profile": "iiot",
         "severity": "warning",
-        "title": "No deterministic IIoT mock testing detected",
-        "rationale": "Physical PLCs cannot be provisioned in ephemeral CI runners. Projects that interact with hardware must include protocol mocking libraries to keep tests deterministic.\n",
+        "title": "No Modbus / fieldbus mock infrastructure",
+        "rationale": "Tests that require live hardware are not runnable in CI. A mock or simulator layer decouples logic tests from physical device availability.\n",
         "checks": [
           {
-            "type": "file_exists",
-            "path_glob": "{tests/**/*modbus*,__mocks__/**,conftest.py,mock_server.py}",
-            "error_when": "file_absent",
-            "message": "No IIoT mock testing infrastructure found"
+            "pattern": "modbus|Modbus",
+            "in": "tests/**/*modbus*,__mocks__/**,conftest.py,mock_server.py",
+            "mode": "must_exist",
+            "message": "No Modbus mock or simulator infrastructure found."
           }
         ],
-        "fix": "Add protocol mocks: pymodbus.device.ModbusSimulatorServer (Python),\nsinon + modbus-serial (JS), or mockito + plc4j (Java).\n",
+        "fix": "Add a conftest.py fixture using pymodbus SimulatorServer or a manual\nmock that returns realistic register maps for your device profile.\n",
         "references": [
           {
             "book": "Automating Manufacturing Systems with PLCs",
-            "concept": "deterministic execution"
+            "section": "Chapter 12 – Software-in-the-loop testing"
           }
         ],
-        "full_text": "Rule: No deterministic IIoT mock testing detected\nID: iiot-008\nProfile: iiot\nSeverity: warning\nWhy it matters: Physical PLCs cannot be provisioned in ephemeral CI runners. Projects that interact with hardware must include protocol mocking libraries to keep tests deterministic.\n\nHow to fix: Add protocol mocks: pymodbus.device.ModbusSimulatorServer (Python),\nsinon + modbus-serial (JS), or mockito + plc4j (Java).\n\nReferences: Automating Manufacturing Systems with PLCs"
+        "full_text": "Rule: No Modbus / fieldbus mock infrastructure\nID: iiot-008\nProfile: iiot\nSeverity: warning\nWhy it matters: Tests that require live hardware are not runnable in CI. A mock or simulator layer decouples logic tests from physical device availability.\n\nHow to fix: Add a conftest.py fixture using pymodbus SimulatorServer or a manual\nmock that returns realistic register maps for your device profile.\n\nReferences: Automating Manufacturing Systems with PLCs"
       },
       {
         "id": "iiot-009",
         "profile": "iiot",
         "severity": "warning",
-        "title": "Missing fail-safe timeouts on protocol connections",
-        "rationale": "Unbounded protocol calls hang the control loop on network partitions, violating deterministic execution. Explicit timeouts are mandatory.\n",
+        "title": "Protocol client timeout not set",
+        "rationale": "Without explicit timeouts, a stalled PLC or network partition causes the application to block indefinitely, preventing watchdog recovery.\n",
         "checks": [
           {
-            "type": "pattern_match",
             "pattern": "timeout\\s*[=:]",
-            "must_exist": true,
-            "file_glob": "**/*.py",
-            "error_when": "pattern_absent",
-            "message": "No explicit timeout set on protocol connections"
+            "in": "**/*.py",
+            "mode": "must_exist",
+            "message": "No explicit timeout found in Python sources."
           }
         ],
-        "fix": "Set explicit timeouts on every protocol client:\n  ModbusTcpClient(host, timeout=3)\n  mqtt.connect(url, { connectTimeout: 5000 })\n",
+        "fix": "Pass a timeout to every protocol client:\n  ModbusTcpClient(host, timeout=3)\n  asyncio.wait_for(coro, timeout=5.0)\n",
         "references": [
           {
             "book": "Industrial Network Security",
-            "concept": "fail-safe networking"
+            "section": "Chapter 5 – Resilience and watchdog patterns"
           }
         ],
-        "full_text": "Rule: Missing fail-safe timeouts on protocol connections\nID: iiot-009\nProfile: iiot\nSeverity: warning\nWhy it matters: Unbounded protocol calls hang the control loop on network partitions, violating deterministic execution. Explicit timeouts are mandatory.\n\nHow to fix: Set explicit timeouts on every protocol client:\n  ModbusTcpClient(host, timeout=3)\n  mqtt.connect(url, { connectTimeout: 5000 })\n\nReferences: Industrial Network Security"
+        "full_text": "Rule: Protocol client timeout not set\nID: iiot-009\nProfile: iiot\nSeverity: warning\nWhy it matters: Without explicit timeouts, a stalled PLC or network partition causes the application to block indefinitely, preventing watchdog recovery.\n\nHow to fix: Pass a timeout to every protocol client:\n  ModbusTcpClient(host, timeout=3)\n  asyncio.wait_for(coro, timeout=5.0)\n\nReferences: Industrial Network Security"
+      },
+      {
+        "id": "iiot-hw-001",
+        "status": "spec-only",
+        "profile": "iiot",
+        "severity": "warning",
+        "title": "Hardware-in-the-loop test harness absent",
+        "rationale": "HIL testing validates firmware and driver behaviour against a physical or emulated hardware target before production deployment. Without it, integration defects surface only on the factory floor.\n",
+        "checks": [
+          {
+            "pattern": "hil|hardware.in.the.loop|HIL",
+            "in": "docs/**,tests/**,README*",
+            "mode": "must_exist",
+            "message": "No HIL test harness documentation or test suite found."
+          }
+        ],
+        "fix": "Document your HIL setup in docs/testing/hil.md and add a test suite\nor CI job that targets the emulated hardware target. Link from README.md.\n",
+        "references": [
+          {
+            "book": "Automating Manufacturing Systems with PLCs",
+            "section": "Chapter 13 – Hardware-in-the-loop validation"
+          },
+          {
+            "standard": "IEC 61508-6 Annex B"
+          }
+        ],
+        "full_text": "Rule: Hardware-in-the-loop test harness absent\nID: iiot-hw-001\nProfile: iiot\nSeverity: warning\nWhy it matters: HIL testing validates firmware and driver behaviour against a physical or emulated hardware target before production deployment. Without it, integration defects surface only on the factory floor.\n\nHow to fix: Document your HIL setup in docs/testing/hil.md and add a test suite\nor CI job that targets the emulated hardware target. Link from README.md.\n\nReferences: Automating Manufacturing Systems with PLCs, IEC 61508-6 Annex B"
       }
     ]
   }

@@ -40,7 +40,10 @@ function scanLocalTree(root: string): GitHubTreeItem[] {
     for (const name of readdirSync(dir)) {
       if ([".git", "node_modules", ".next", ".venv", "dist", "build"].includes(name)) continue;
       const full = join(dir, name);
-      const rel = relative(root, full);
+      // FIX: normalize to forward slashes so rule globs match on Windows.
+      // `path.relative` returns "docs\\safety\\loto.md" on Windows, which
+      // never matches `path.startsWith("docs/safety/")`.
+      const rel = relative(root, full).replace(/\\/g, "/");
       const st = statSync(full);
       if (st.isDirectory()) {
         out.push({ path: rel, type: "tree" });

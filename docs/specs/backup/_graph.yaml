@@ -1,0 +1,64 @@
+# docs/specs/graph.yaml — Graph RAG and knowledge-grounding audit rules
+version: "1.0"
+profile: graph
+rules:
+  - id: graph-001
+    severity: error
+    title: "Grounded AI insight lacks a registered source"
+    rationale: >
+      A GraphRAG-style insight that cites no registered book, standard, or
+      verified source cannot be audited. RepoScope must preserve the chain:
+      finding -> rule -> concept -> source.
+    checks:
+      - type: pattern_match
+        pattern: "grounded|source|citation|reference"
+        must_exist: true
+        file_glob: "docs/graphrag/**/*.md"
+        error_when: "pattern_absent"
+        message: "Graph RAG note lacks source/citation language"
+    fix: |
+      Add a Source notes section with book title, author, and chapter/section
+      when available. If no source supports the claim, mark it:
+      "Not established by these sources."
+    references:
+      - book: "Designing Data-Intensive Applications"
+        concept: "reproducibility"
+
+  - id: graph-002
+    severity: warning
+    title: "Graph RAG rule ID missing from YAML spec"
+    rationale: >
+      RepoScope's acceptance tests require every emitted rule ID to have a
+      matching YAML specification. Missing specs silently break grounding.
+    checks:
+      - type: file_exists
+        path_glob: "docs/specs/graph.yaml"
+        error_when: "file_absent"
+        message: "docs/specs/graph.yaml not found"
+    fix: |
+      Add the missing rule ID to docs/specs/graph.yaml and regenerate
+      public/knowledge/specs.json and public/knowledge/graph.json.
+    references:
+      - book: "Fundamentals of Data Engineering"
+        concept: "data quality dimensions"
+
+  - id: graph-003
+    severity: error
+    title: "Property graph schema lacks stable identifiers"
+    rationale: >
+      Graph grounding fails silently when node IDs are unstable. Rule,
+      concept, and source nodes require deterministic IDs so exports,
+      tests, and citations remain traceable.
+    checks:
+      - type: pattern_match
+        pattern: "id:|rule_id:|source_id:|concept_id:"
+        must_exist: true
+        file_glob: "docs/neo4j-schema.md"
+        error_when: "pattern_absent"
+        message: "Neo4j schema documentation lacks stable identifier guidance"
+    fix: |
+      Document stable ID conventions:
+      rule:<rule-id>, concept:<slug>, source:<slug> or book:<slug>.
+    references:
+      - book: "Designing Data-Intensive Applications"
+        concept: "schema evolution"

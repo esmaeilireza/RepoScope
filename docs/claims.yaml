@@ -1,55 +1,57 @@
-# docs/claims.yaml — every technical claim made, and how to verify it
 version: "1.0"
 
 claims:
-  # ── DataOps & Schema Rules ───────────────────────────────────────
   - id: claim-dataops-schema-001
-    description: "RepoScope enforces schema IDL presence (Avro/Protobuf/Thrift)."
-    implementation: "docs/specs/dataops.yaml"
+    description: "Rule dataops-kleppmann-002 (schema IDL enforcement) is present in the DataOps profile."
+    implementation: docs/specs/dataops.yaml
     verification:
-      type: "yaml_rule_present"
-      rule_ids: ["dataops-kleppmann-002"]
+      type: yaml_rule_present
+      rule_ids:
+        - dataops-kleppmann-002
 
   - id: claim-dataops-migrations-001
-    description: "RepoScope checks for database migration tooling."
-    implementation: "docs/specs/dataops.yaml"
+    description: "Rule dataops-kleppmann-003 checks for migration tooling patterns."
+    implementation: docs/specs/dataops.yaml
     verification:
-      type: "rule_checks_pattern"
-      rule_id: "dataops-kleppmann-003"
-      expected_patterns: ["migrations", "alembic", "flyway", "db/migrate"]
+      type: rule_checks_pattern
+      rule_id: dataops-kleppmann-003
+      patterns:
+        - migrations
+        - alembic
+        - flyway
+        - db/migrate
 
   - id: claim-dataops-rules-001
-    description: "RepoScope ships a robust set of DataOps rules."
-    implementation: "docs/specs/dataops.yaml"
+    description: "The DataOps profile contains at least 20 rules."
+    implementation: docs/specs/dataops.yaml
     verification:
-      type: "yaml_rule_count_min"
+      type: yaml_rule_count_min
       min_count: 20
 
-  # ── Architecture & System Rules ──────────────────────────────────
   - id: claim-total-rule-count-001
-    description: "RepoScope ships exactly 47 active and draft YAML rules."
-    implementation: "docs/specs/"
+    description: "Total YAML rules across all non-underscore profiles equals 50."
+    implementation: docs/specs/
     verification:
-      type: "total_yaml_rule_count"
-      expected_count: 47
+      type: total_yaml_rule_count
+      expected_count: 50
 
   - id: claim-checklists-001
-    description: "RepoScope ships Markdown checklists generated from YAML."
-    implementation: "docs/checklists/"
+    description: "All five domain checklist markdown files exist under docs/checklists/."
+    implementation: docs/checklists/
     verification:
-      type: "files_exist"
+      type: files_exist
       paths:
-        - "docs/checklists/cross.md"
-        - "docs/checklists/dataops.md"
-        - "docs/checklists/general.md"
-        - "docs/checklists/iiot.md"
-        - "docs/checklists/webapp.md"
+        - docs/checklists/cross.md
+        - docs/checklists/dataops.md
+        - docs/checklists/general.md
+        - docs/checklists/iiot.md
+        - docs/checklists/webapp.md
 
   - id: claim-cli-001
-    description: "RepoScope ships a CLI to run audits from the terminal."
-    implementation: "bin/reposcope"
+    description: "CLI entry points bin/reposcope and scripts/reposcope-audit.ts are present."
+    implementation: bin/
     verification:
-      type: "files_exist"
+      type: files_exist
       paths:
-        - "bin/reposcope"
-        - "scripts/reposcope-audit.ts"
+        - bin/reposcope
+        - scripts/reposcope-audit.ts
