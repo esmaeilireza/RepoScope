@@ -18,7 +18,8 @@
     "audit:self": "tsx scripts/reposcope-audit.ts --repo . --strict",
     "audit:sec": "pnpm audit --registry=https://registry.npmjs.org/ --audit-level=high",
     "audit:all": "pnpm audit --registry=https://registry.npmjs.org/ --audit-level=high && node scripts/generate-sbom.mjs && eslint . && next build",
-    "prebuild": "python3 scripts/build_knowledge.py || python scripts/build_knowledge.py",
+    "prebuild": "node -e \"process.exit(0)\"",
+    "build:knowledge": "python scripts/build_knowledge.py",
     "kg:extract": "python scripts/kg/extract.py",
     "kg:assemble": "python scripts/kg/assemble_graph.py",
     "kg:validate": "python scripts/kg/validate_graph.py",
@@ -42,7 +43,7 @@
     "@types/react-dom": "^18",
     "autoprefixer": "^10.4.19",
     "eslint": "^9.0.0",
-    "eslint-config-next": "16.3.8",
+    "eslint-config-next": "16.4.1",
     "jest": "^29.7.0",
     "js-yaml": "^4.1.0",
     "postcss": "^8.4.38",
@@ -54,26 +55,15 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "roots": [
-      "<rootDir>/__tests__"
-    ],
-    "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/$1"
-    },
+    "roots": ["<rootDir>/__tests__"],
+    "moduleNameMapper": { "^@/(.*)$": "<rootDir>/$1" },
     "transform": {
-      "^.+\\.tsx?$": [
-        "ts-jest",
-        {
-          "tsconfig": "tsconfig.json"
-        }
-      ]
+      "^.+\\.tsx?$": ["ts-jest", { "tsconfig": "tsconfig.json" }]
     }
   },
   "pnpm": {
     "auditConfig": {
-      "ignoreGhsas": [
-        "GHSA-vfj7-8cjw-p6xm"
-      ]
+      "ignoreGhsas": ["GHSA-vfj7-8cjw-p6xm"]
     },
     "overrides": {
       "braces": ">=3.0.3",
