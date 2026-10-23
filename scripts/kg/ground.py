@@ -20,7 +20,27 @@ def ground(rule_id: str):
     d.close()
     return rows
 
+
+def _ascii_safe(obj):
+    """Replace typographic Unicode with ASCII-safe equivalents so the CLI
+    output renders correctly on any terminal (Windows cp1252, Git Bash, CI logs)."""
+    if isinstance(obj, str):
+        return (
+            obj.replace("\u2013", "-")   # en-dash
+               .replace("\u2014", "-")   # em-dash
+               .replace("\u2018", "'")   # left single quote
+               .replace("\u2019", "'")   # right single quote
+               .replace("\u201c", '"')   # left double quote
+               .replace("\u201d", '"')   # right double quote
+        )
+    if isinstance(obj, dict):
+        return {k: _ascii_safe(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_ascii_safe(v) for v in obj]
+    return obj
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         raise SystemExit("usage: python scripts/kg/ground.py <rule-id>")
-    print(json.dumps(ground(sys.argv[1]), indent=2, ensure_ascii=False))
+    print(json.dumps(_ascii_safe(ground(sys.argv[1])), indent=2, ensure_ascii=False))
