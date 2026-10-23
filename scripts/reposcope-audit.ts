@@ -86,6 +86,16 @@ function routeRepo(repoPath: string): { profiles: string[]; evidence: Record<str
   }
 }
 
+// ── Phase 3: industrial-ML filter ─────────────────────────────────
+function runIndustrialMlFilter(repoPath: string): Record<string, { signals: string[]; notes: string[] }> {
+  try {
+    const raw = execSync(`python scripts/industrial_ml_filter.py "${repoPath}"`, { encoding: "utf-8" });
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
 function main() {
   const { repo, profile, strict } = parseArgs();
   if (!existsSync(repo)) {
@@ -102,6 +112,15 @@ function main() {
   for (const [profileName, evidence] of Object.entries(route.evidence)) {
     if (evidence.length > 0) {
       console.log(`[ROUTE] ${profileName} evidence: ${evidence.join(", ")}`);
+    }
+  }
+
+  // ── Phase 3: industrial-ML filter ────────────────────────────────
+  const iml = runIndustrialMlFilter(repo);
+  if (Object.keys(iml).length > 0) {
+    console.log(`[IML] industrial-ML context active: ${Object.keys(iml).join(", ")}`);
+    for (const [cat, data] of Object.entries(iml)) {
+      console.log(`[IML] ${cat}: signals=${data.signals.join(",")} · notes=${data.notes.length}`);
     }
   }
 
