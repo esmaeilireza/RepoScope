@@ -96,6 +96,16 @@ function runIndustrialMlFilter(repoPath: string): Record<string, { signals: stri
   }
 }
 
+// ── Phase 4: grounded citations via Neo4j ─────────────────────────
+function groundRule(ruleId: string): Array<{ rule: string; concept: string; book: string }> {
+  try {
+    const raw = execSync(`python scripts/kg/ground.py "${ruleId}"`, { encoding: "utf-8" });
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
 function main() {
   const { repo, profile, strict } = parseArgs();
   if (!existsSync(repo)) {
@@ -120,7 +130,7 @@ function main() {
   if (Object.keys(iml).length > 0) {
     console.log(`[IML] industrial-ML context active: ${Object.keys(iml).join(", ")}`);
     for (const [cat, data] of Object.entries(iml)) {
-      console.log(`[IML] ${cat}: signals=${data.signals.join(",")} · notes=${data.notes.length}`);
+      console.log(`[IML] ${cat}: signals=${data.signals.join(",")} | notes=${data.notes.length}`);
     }
   }
 
@@ -192,10 +202,19 @@ function main() {
     process.exit(0);
   }
 
-  for (const f of filtered) console.log(formatFinding(f) + "\n");
+  for (const f of filtered) {
+    console.log(formatFinding(f) + "\n");
+    // Phase 4: ground this finding in Neo4j (skip general-* legacy rules)
+    if (!f.ruleId.startsWith("general-")) {
+      const grounding = groundRule(f.ruleId);
+      for (const g of grounding) {
+        console.log(`   Grounded in: ${g.book} - concept: ${g.concept}\n`);
+      }
+    }
+  }
 
   const score = scoreAndExplain(filtered);
-  console.log(`[SUMMARY] ${filtered.length} finding(s) · score ${score.score}/100`);
+  console.log(`[SUMMARY] ${filtered.length} finding(s) | score ${score.score}/100`);
   console.log(`          critical=${score.critical} error=${score.errors} warning=${score.warnings} info=${score.infos}`);
 
   process.exit(strict && filtered.length > 0 ? 1 : 0);
