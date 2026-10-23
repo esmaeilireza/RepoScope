@@ -28,13 +28,16 @@ const RULE_ID_RE =
 const SENTENCE_RE = /[^.!?\n]+[.!?]/g;
 
 // Suspicious-source patterns: `test` for detection, `replace` for stripping.
+// Trigger phrases are case-insensitive on the first letter only; the name
+// after them stays case-sensitive so common English words like "the" or
+// "this" after "per" do not trigger a false positive.
 const SUSPICIOUS_PATTERNS: Array<{ test: RegExp; replace: RegExp }> = [
   { test: /\b(?:page|pp?\.)\s*\d+/i,
     replace: /\b(?:page|pp?\.)\s*\d+(?:\s*[-–]\s*\d+)?/gi },
   { test: /\b(?:section|clause|chapter)\s+\d+(?:\.\d+)?/i,
     replace: /\b(?:section|clause|chapter)\s+\d+(?:\.\d+)?/gi },
-  { test: /\b(?:according to|as stated by|per)\s+[A-Z][a-z]{2,}/,
-    replace: /\b(?:according to|as stated by|per)\s+[A-Z][a-z]{2,}/g },
+  { test: /\b(?:[Aa]ccording to|[Aa]s stated by|[Pp]er)\s+[A-Z][a-z]{2,}/,
+    replace: /\b(?:[Aa]ccording to|[Aa]s stated by|[Pp]er)\s+[A-Z][a-z]{2,}/g },
 ];
 
 export function validateCitations(rawText: string, options: GateOptions = {}): CitationResult {
