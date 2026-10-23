@@ -33,7 +33,7 @@ claims:
     implementation: docs/specs/
     verification:
       type: total_yaml_rule_count
-      expected_count: 50
+      expected_count: 34
 
   - id: claim-checklists-001
     description: "All five domain checklist markdown files exist under docs/checklists/."

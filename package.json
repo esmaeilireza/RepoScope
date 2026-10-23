@@ -31,7 +31,9 @@
     "kg:neo4j:import": "python scripts/kg/neo4j_import.py",
     "kg:neo4j:validate": "python scripts/kg/neo4j_validate.py",
     "kg:neo4j:export": "python scripts/kg/neo4j_export.py",
-    "verify:registry": "tsx scripts/verify-knowledge-registry.ts"
+    "verify:registry": "tsx scripts/verify-knowledge-registry.ts",
+    "gate:claims": "bash scripts/gates/check-grounded-claims.sh",
+    "neo4j:schema": "scripts\\neo4j.bat schema"
   },
   "dependencies": {
     "@cyclonedx/cyclonedx-library": "^10.2.0",
@@ -60,15 +62,26 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "roots": ["<rootDir>/__tests__"],
-    "moduleNameMapper": { "^@/(.*)$": "<rootDir>/$1" },
+    "roots": [
+      "<rootDir>/__tests__"
+    ],
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/$1"
+    },
     "transform": {
-      "^.+\\.tsx?$": ["ts-jest", { "tsconfig": "tsconfig.json" }]
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "tsconfig": "tsconfig.json"
+        }
+      ]
     }
   },
   "pnpm": {
     "auditConfig": {
-      "ignoreGhsas": ["GHSA-vfj7-8cjw-p6xm"]
+      "ignoreGhsas": [
+        "GHSA-vfj7-8cjw-p6xm"
+      ]
     },
     "overrides": {
       "braces": ">=3.0.3",

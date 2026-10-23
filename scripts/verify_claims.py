@@ -10,6 +10,18 @@ import sys
 from pathlib import Path
 import yaml
 
+# Windows defaults stdout/stderr to cp1252 when not attached to a TTY (which
+# is exactly the case when the gate runs `python scripts/verify_claims.py`
+# inside a subshell). Status strings below contain ">=" / "≥" (U+2265) and
+# other non-ASCII symbols; printing them under cp1252 raises UnicodeEncodeError
+# before the print() completes, crashing the verifier and surfacing as
+# "[FAIL] scripts/verify_claims.py failed" in the gate. Reconfigure both
+# streams to UTF-8 so that never happens. errors="replace" is a last-ditch
+# safety net -- UTF-8 can represent every codepoint, so it should never fire.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 ROOT = Path(__file__).resolve().parents[1]
 CLAIMS_FILE = ROOT / "docs" / "claims.yaml"
 

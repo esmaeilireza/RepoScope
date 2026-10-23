@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
 """
-scripts/kg/seed.py
 Seeds Neo4j from public/knowledge/specs.json.
 Nodes: Rule, Concept, Book, Profile.
 Edges: BELONGS_TO, GROUNDED_IN, CITED_IN.
 """
-import json, os
+import json, os, sys
 from pathlib import Path
 from neo4j import GraphDatabase
 
-NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+NEO4J_URI  = os.getenv("NEO4J_URI",  "bolt://localhost:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASS = os.getenv("NEO4J_PASS", "reposcope")
+
 
 def main():
     specs = json.loads(Path("public/knowledge/specs.json").read_text(encoding="utf-8"))
     driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASS))
 
+    non_book_refs = 0
     with driver.session() as s:
         s.run("MATCH (n) DETACH DELETE n")
         for profile, bundle in specs.items():
@@ -48,8 +49,22 @@ def main():
                             concept=ref.get("concept", "unspecified"),
                             id=rule["id"],
                         )
+                    else:
+                        non_book_refs += 1
+                        print(
+                            f"[warn] {rule['id']}: skipping non-book ref "
+                            f"(keys={sorted(ref.keys())})",
+                            file=sys.stderr,
+                        )
     driver.close()
+    if non_book_refs:
+        print(
+            f"[warn] {non_book_refs} non-book reference(s) skipped — "
+            f"see warnings above",
+            file=sys.stderr,
+        )
     print("[ok] seeded Neo4j from specs.json")
+
 
 if __name__ == "__main__":
     main()

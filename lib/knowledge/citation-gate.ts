@@ -1,5 +1,5 @@
 // lib/knowledge/citation-gate.ts
-// Day 18 — machine-verifiable sources.
+// Day 18 - machine-verifiable sources.
 // Strips every LLM claim of "page N", "section X.Y", or "according to <Name>"
 // UNLESS the sentence also cites a known book/standard from the registry.
 // Validates cited rule IDs against the knowledge graph.
@@ -33,7 +33,7 @@ const SENTENCE_RE = /[^.!?\n]+[.!?]/g;
 // "this" after "per" do not trigger a false positive.
 const SUSPICIOUS_PATTERNS: Array<{ test: RegExp; replace: RegExp }> = [
   { test: /\b(?:page|pp?\.)\s*\d+/i,
-    replace: /\b(?:page|pp?\.)\s*\d+(?:\s*[-–]\s*\d+)?/gi },
+    replace: /\b(?:page|pp?\.)\s*\d+(?:\s*[-\u2013]\s*\d+)?/gi },
   { test: /\b(?:section|clause|chapter)\s+\d+(?:\.\d+)?/i,
     replace: /\b(?:section|clause|chapter)\s+\d+(?:\.\d+)?/gi },
   { test: /\b(?:[Aa]ccording to|[Aa]s stated by|[Pp]er)\s+[A-Z][a-z]{2,}/,
