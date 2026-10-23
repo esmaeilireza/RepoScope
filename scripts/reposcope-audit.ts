@@ -7,7 +7,7 @@
 // generateFindings() + auditDataOpsRepository() + auditIIoTRepository(),
 // merges the results, prints a table, and exits non-zero on violations
 // if --strict is set.
-
+import { execSync } from "child_process";
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { generateFindings, scoreAndExplain } from "../lib/audit";
@@ -76,6 +76,16 @@ function formatFinding(f: Finding): string {
   return `[${badge}] ${f.ruleId}\n        ${f.title}\n        Fix: ${f.fix}`;
 }
 
+// ── Phase 2: repo-type routing with evidence ─────────────────────────
+function routeRepo(repoPath: string): { profiles: string[]; evidence: Record<string, string[]> } {
+  try {
+    const raw = execSync(`python scripts/route_repo.py "${repoPath}"`, { encoding: "utf-8" });
+    return JSON.parse(raw);
+  } catch {
+    return { profiles: ["webapp"], evidence: { webapp: ["fallback"] } };
+  }
+}
+
 function main() {
   const { repo, profile, strict } = parseArgs();
   if (!existsSync(repo)) {
@@ -86,39 +96,74 @@ function main() {
   console.log(`[INFO] RepoScope audit — target: ${repo}`);
   if (profile) console.log(`[INFO] Profile filter: ${profile}`);
 
+  // ── Phase 2: repo-type routing with evidence ─────────────────────
+  const route = routeRepo(repo);
+  console.log(`[ROUTE] profiles: ${route.profiles.join(", ")}`);
+  for (const [profileName, evidence] of Object.entries(route.evidence)) {
+    if (evidence.length > 0) {
+      console.log(`[ROUTE] ${profileName} evidence: ${evidence.join(", ")}`);
+    }
+  }
+
+  // ── Fix 2: gate rule execution by route.profiles ─────────────────
+  // Anything not in route.profiles is not evaluated, not printed, and
+  // does not contribute to the score. In this codebase the "rule set"
+  // is a set of audit functions rather than a specs.json bundle, so we
+  // key the auditors by the profile they serve and skip the ones whose
+  // profile is not route-active.
+  const activeProfiles = new Set(route.profiles);
+  if (profile && !activeProfiles.has(profile)) {
+    console.log(
+      `[WARN] --profile ${profile} is not in the routed set ` +
+      `(${route.profiles.join(", ")}); no rules will execute.`
+    );
+  }
+
   const tree = scanLocalTree(repo);
   const fileContents = readTextFiles(repo, tree);
   console.log(`[INFO] Scanned ${tree.filter(t => t.type === "blob").length} files\n`);
 
-  // FIXED: Pass fileContents as the 7th argument to generateFindings
-  const core = generateFindings({}, tree, [], [], [], "main", fileContents);
-  
-  const dataops = auditDataOpsRepository(tree, undefined, fileContents).checks
-    .filter(c => c.status !== "pass")
-    .map(c => ({
-      ruleId: c.ruleId,
-      severity: (c.status === "fail" ? "error" : "warning") as "error" | "warning",
-      title: c.title,
-      detail: c.message,
-      fix: c.recommendation,
-      weight: c.status === "fail" ? 15 : 10,
-      // FIXED: Respect the optional profile override (e.g. for cross-001)
-      profile: c.profile ?? ("dataops" as const), 
-    }));
+  // Register each auditor under the profile it serves. Auditors whose
+  // profile is NOT in activeProfiles are never invoked.
+  const profileAuditors: Record<
+    string,
+    (t: GitHubTreeItem[], fc: Record<string, string>) => Finding[]
+  > = {
+    webapp: (t, fc) => generateFindings({}, t, [], [], [], "main", fc),
+    dataops: (t, fc) =>
+      auditDataOpsRepository(t, undefined, fc).checks
+        .filter(c => c.status !== "pass")
+        .map(c => ({
+          ruleId: c.ruleId,
+          severity: (c.status === "fail" ? "error" : "warning") as "error" | "warning",
+          title: c.title,
+          detail: c.message,
+          fix: c.recommendation,
+          weight: c.status === "fail" ? 15 : 10,
+          // FIXED: Respect the optional profile override (e.g. for cross-001)
+          profile: c.profile ?? ("dataops" as const),
+        })),
+    iiot: (t, fc) =>
+      auditIIoTRepository(t, fc).checks
+        .filter(c => c.status !== "pass")
+        .map(c => ({
+          ruleId: c.ruleId,
+          severity: (c.status === "fail" ? "error" : "warning") as "error" | "warning",
+          title: c.title,
+          detail: c.message,
+          fix: c.recommendation,
+          weight: c.status === "fail" ? 15 : 10,
+          profile: "iiot" as const,
+        })),
+  };
 
-  const iiot = auditIIoTRepository(tree, fileContents).checks
-    .filter(c => c.status !== "pass")
-    .map(c => ({
-      ruleId: c.ruleId,
-      severity: (c.status === "fail" ? "error" : "warning") as "error" | "warning",
-      title: c.title,
-      detail: c.message,
-      fix: c.recommendation,
-      weight: c.status === "fail" ? 15 : 10,
-      profile: "iiot" as const,
-    }));
+  const all: Finding[] = [];
+  for (const [routedProfile, runAudit] of Object.entries(profileAuditors)) {
+    if (!activeProfiles.has(routedProfile)) continue;
+    all.push(...runAudit(tree, fileContents));
+  }
 
-  const all: Finding[] = [...core, ...dataops, ...iiot];
+  // --profile is an *additional* narrowing on top of route gating.
   const filtered = profile
     ? all.filter(f => f.profile === profile || f.ruleId.startsWith(`${profile}-`))
     : all;

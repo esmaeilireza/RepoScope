@@ -123,7 +123,7 @@ export function auditDataOpsRepository(
 
   if (hasLockFile) {
     checks.push({
-      ruleId: 'dataops-005',
+      ruleId: 'dataops-atwal-003',
       category: 'environment_parity',
       status: 'pass',
       title: 'Deterministic Dependency Lockfile Present',
@@ -133,7 +133,7 @@ export function auditDataOpsRepository(
     });
   } else if (hasLooseRequirements || hasPyproject || hasCondaEnv) {
     checks.push({
-      ruleId: 'dataops-005',
+      ruleId: 'dataops-atwal-003',
       category: 'environment_parity',
       status: 'warn',
       title: 'Loose Python Dependency Specification',
@@ -146,7 +146,7 @@ export function auditDataOpsRepository(
     });
   } else {
     checks.push({
-      ruleId: 'dataops-005',
+      ruleId: 'dataops-atwal-003',
       category: 'environment_parity',
       status: 'warn',
       title: 'No Python Environment Config Detected',
