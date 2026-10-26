@@ -1434,7 +1434,7 @@
         "full_text": "Rule: Potential hardcoded secret\nID: general-security-001\nProfile: webapp\nSeverity: critical\nWhy it matters: A hardcoded credential in source control remains exposed in Git history even after removal. Secrets belong in the runtime environment or a secret manager, not in the codebase.\n\nHow to fix: Move the secret to an environment variable and rotate the exposed key.\n\nReferences: Web Application Security"
       },
       {
-        "id": "iiot-hw-001",
+        "id": "webapp-hw-001",
         "profile": "webapp",
         "severity": "info",
         "title": "Hardware paths referenced in documentation",
@@ -1456,7 +1456,7 @@
             "concept": "hardware-documentation"
           }
         ],
-        "full_text": "Rule: Hardware paths referenced in documentation\nID: iiot-hw-001\nProfile: webapp\nSeverity: info\nWhy it matters: Documentation that references device or hardware paths (serial ports, USB devices, COM ports) should also document the hardware requirements so operators can prepare the deployment environment.\n\nHow to fix: Document hardware requirements (device drivers, serial port setup, required\nadapters) in a dedicated section of the README.\n\nReferences: Practical Industrial Data Networks"
+        "full_text": "Rule: Hardware paths referenced in documentation\nID: webapp-hw-001\nProfile: webapp\nSeverity: info\nWhy it matters: Documentation that references device or hardware paths (serial ports, USB devices, COM ports) should also document the hardware requirements so operators can prepare the deployment environment.\n\nHow to fix: Document hardware requirements (device drivers, serial port setup, required\nadapters) in a dedicated section of the README.\n\nReferences: Practical Industrial Data Networks"
       },
       {
         "id": "webapp-sec-001",

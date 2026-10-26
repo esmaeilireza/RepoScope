@@ -275,7 +275,7 @@ rules:
   # This rule is emitted by `lib/audit.ts` when a README references device or
   # hardware paths. It is an informational signal reminding authors to
   # document hardware requirements alongside code that expects them.
-  - id: iiot-hw-001
+  - id: webapp-hw-001
     profile: webapp
     severity: info
     title: "Hardware paths referenced in documentation"
