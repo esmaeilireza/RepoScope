@@ -82,11 +82,20 @@ VALID_PROFILES = {
 # emitted "[WARN] unknown check type" and the per-check field validation was
 # skipped entirely — meaning a semantic rule missing evaluation_prompt or
 # threshold passed the build silently and dropped to skipped:true at runtime.
+#
+# FIX 5: added "structural_ast". AST/structural checks are emitted by the
+# Python extraction pipeline into the property graph; without this entry every
+# structural rule was rejected as "unknown check type". Note: structural_ast
+# currently receives only the generic per-check validation (message required,
+# no type-specific field checks). If the runner grows structural-specific
+# required fields, add a _validate_structural_check() mirroring
+# _validate_semantic_check().
 VALID_CHECK_TYPES = {
     "pattern_match",
     "file_exists",
     "file_absent",
     "semantic_eval",
+    "structural_ast",
 }
 
 VALID_ID_RE = re.compile(

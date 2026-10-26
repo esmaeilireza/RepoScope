@@ -14,6 +14,10 @@
 //   6. `RuleCheckType` includes `"semantic_eval"` for LLM-backed checks.
 //      Semantic checks are OPTIONAL, budget-capped, and MUST fail-open
 //      (skipped, not failed) when the LLM is unavailable.
+//   7. `RuleCheckType` includes `"structural_ast"` for AST-based checks.
+//      Structural checks are deterministic, subprocess-based, and MUST
+//      fail-open (skipped) when the parser script is missing or the
+//      target file cannot be parsed. They do not consume LLM budget.
 
 // ─── Severity ────────────────────────────────────────────────────────────
 export type Severity = "critical" | "error" | "warning" | "info";
@@ -81,7 +85,8 @@ export type RuleCheckType =
   | "pattern_match"
   | "file_exists"
   | "file_absent"
-  | "semantic_eval"; // NEW — LLM-backed evaluation
+  | "semantic_eval"   // LLM-backed evaluation (Week-1)
+  | "structural_ast"; // AST-based evaluation (Week-3)
 
 export type RuleErrorWhen =
   | "pattern_present"
@@ -115,6 +120,15 @@ export interface RuleCheck {
   threshold?: number;
   /** Max characters fed to the LLM. Default 8000. NOT a token count. */
   max_input_chars?: number;
+
+  // ─── structural_ast ONLY ──────────────────────────────────────────────
+  /**
+   * Which parser to invoke for `structural_ast` checks.
+   *   "sql" → scripts/kg/parse_sql_ast.py
+   *   "ts"  → scripts/kg/parse_ts_ast.mjs
+   * Ignored by all other check types.
+   */
+  parser?: "sql" | "ts";
 }
 
 export interface RuleSpec {
