@@ -1,4 +1,69 @@
 {
+  "cross": {
+    "version": "1.0",
+    "rules": [
+      {
+        "id": "cross-001",
+        "profile": "cross",
+        "severity": "error",
+        "status": "active",
+        "title": "IIoT driver and analytics library ABI conflict risk",
+        "rationale": "Mixing industrial protocol drivers (pymodbus, opcua, snap7) with data analytics libraries (pandas, polars, pyspark) in the same Python environment can produce silent ABI conflicts and non-reproducible behavior.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "(pymodbus|opcua|asyncua|python-snap7|pycomm3|minimalmodbus)",
+            "must_exist": false,
+            "file_glob": "**/*.py",
+            "error_when": "pattern_present",
+            "message": "IIoT driver detected — verify environment isolation from analytics layer."
+          }
+        ],
+        "fix": "Use separate venv/conda environments for IIoT drivers and the data layer.\nEach part should have its own requirements file.\n",
+        "references": [
+          {
+            "book": "Practical DataOps",
+            "concept": "environment-parity"
+          },
+          {
+            "book": "Designing Data-Intensive Applications",
+            "concept": "reproducibility"
+          }
+        ],
+        "full_text": "Rule: IIoT driver and analytics library ABI conflict risk\nID: cross-001\nProfile: cross\nSeverity: error\nWhy it matters: Mixing industrial protocol drivers (pymodbus, opcua, snap7) with data analytics libraries (pandas, polars, pyspark) in the same Python environment can produce silent ABI conflicts and non-reproducible behavior.\n\nHow to fix: Use separate venv/conda environments for IIoT drivers and the data layer.\nEach part should have its own requirements file.\n\nReferences: Practical DataOps, Designing Data-Intensive Applications"
+      },
+      {
+        "id": "cross-002",
+        "profile": "cross",
+        "severity": "warning",
+        "status": "active",
+        "title": "IIoT control plane exposed via web API",
+        "rationale": "When web application and IIoT components coexist, PLC commands must not be reachable through unauthenticated API routes. The IT/OT boundary is a safety boundary, not only a security boundary.\n",
+        "checks": [
+          {
+            "type": "pattern_match",
+            "pattern": "(modbus|plc|scada|opcua|opc-ua|s7comm|profinet)",
+            "must_exist": false,
+            "file_glob": "{app/api/**/*.ts,pages/api/**/*.ts,src/app/api/**/*.ts,src/pages/api/**/*.ts}",
+            "error_when": "pattern_present",
+            "message": "Web API route references OT control keywords — verify authentication."
+          }
+        ],
+        "fix": "Require authentication and authorization for API routes that reach PLC/OT\ndevices, and enforce network segmentation (DMZ) between IT and OT.\n",
+        "references": [
+          {
+            "book": "Industrial Network Security",
+            "concept": "network-segmentation"
+          },
+          {
+            "standard": "IEC 62443",
+            "concept": "zone-and-conduit-model"
+          }
+        ],
+        "full_text": "Rule: IIoT control plane exposed via web API\nID: cross-002\nProfile: cross\nSeverity: warning\nWhy it matters: When web application and IIoT components coexist, PLC commands must not be reachable through unauthenticated API routes. The IT/OT boundary is a safety boundary, not only a security boundary.\n\nHow to fix: Require authentication and authorization for API routes that reach PLC/OT\ndevices, and enforce network segmentation (DMZ) between IT and OT.\n\nReferences: Industrial Network Security, IEC 62443"
+      }
+    ]
+  },
   "dataops": {
     "version": "1.0",
     "rules": [
@@ -653,71 +718,6 @@
           }
         ],
         "full_text": "Rule: Fact table uses natural key joins (Kimball violation)\nID: dataops-kimball-ast-001\nProfile: dataops\nSeverity: error\nWhy it matters: Kimball methodology requires fact tables to join dimensions via surrogate keys, not natural operational keys. Natural-key joins break history tracking, introduce implicit dependency on operational systems, and prevent conformed-dimension reuse across marts. This rule uses sqlglot AST analysis to detect the violation directly rather than relying on a regex heuristic.\n\nHow to fix: Replace natural-key joins with surrogate-key joins. For example, replace\n`LEFT JOIN dim_customers c ON o.customer_id = c.customer_id`\nwith\n`LEFT JOIN dim_customers c ON o.customer_sk = c.customer_sk`.\n\nReferences: The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling"
-      }
-    ]
-  },
-  "cross": {
-    "version": "1.0",
-    "rules": [
-      {
-        "id": "cross-001",
-        "profile": "cross",
-        "severity": "error",
-        "status": "active",
-        "title": "IIoT driver and analytics library ABI conflict risk",
-        "rationale": "Mixing industrial protocol drivers (pymodbus, opcua, snap7) with data analytics libraries (pandas, polars, pyspark) in the same Python environment can produce silent ABI conflicts and non-reproducible behavior.\n",
-        "checks": [
-          {
-            "type": "pattern_match",
-            "pattern": "(pymodbus|opcua|asyncua|python-snap7|pycomm3|minimalmodbus)",
-            "must_exist": false,
-            "file_glob": "**/*.py",
-            "error_when": "pattern_present",
-            "message": "IIoT driver detected — verify environment isolation from analytics layer."
-          }
-        ],
-        "fix": "Use separate venv/conda environments for IIoT drivers and the data layer.\nEach part should have its own requirements file.\n",
-        "references": [
-          {
-            "book": "Practical DataOps",
-            "concept": "environment-parity"
-          },
-          {
-            "book": "Designing Data-Intensive Applications",
-            "concept": "reproducibility"
-          }
-        ],
-        "full_text": "Rule: IIoT driver and analytics library ABI conflict risk\nID: cross-001\nProfile: cross\nSeverity: error\nWhy it matters: Mixing industrial protocol drivers (pymodbus, opcua, snap7) with data analytics libraries (pandas, polars, pyspark) in the same Python environment can produce silent ABI conflicts and non-reproducible behavior.\n\nHow to fix: Use separate venv/conda environments for IIoT drivers and the data layer.\nEach part should have its own requirements file.\n\nReferences: Practical DataOps, Designing Data-Intensive Applications"
-      },
-      {
-        "id": "cross-002",
-        "profile": "cross",
-        "severity": "warning",
-        "status": "active",
-        "title": "IIoT control plane exposed via web API",
-        "rationale": "When web application and IIoT components coexist, PLC commands must not be reachable through unauthenticated API routes. The IT/OT boundary is a safety boundary, not only a security boundary.\n",
-        "checks": [
-          {
-            "type": "pattern_match",
-            "pattern": "(modbus|plc|scada|opcua|opc-ua|s7comm|profinet)",
-            "must_exist": false,
-            "file_glob": "{app/api/**/*.ts,pages/api/**/*.ts,src/app/api/**/*.ts,src/pages/api/**/*.ts}",
-            "error_when": "pattern_present",
-            "message": "Web API route references OT control keywords — verify authentication."
-          }
-        ],
-        "fix": "Require authentication and authorization for API routes that reach PLC/OT\ndevices, and enforce network segmentation (DMZ) between IT and OT.\n",
-        "references": [
-          {
-            "book": "Industrial Network Security",
-            "concept": "network-segmentation"
-          },
-          {
-            "standard": "IEC 62443",
-            "concept": "zone-and-conduit-model"
-          }
-        ],
-        "full_text": "Rule: IIoT control plane exposed via web API\nID: cross-002\nProfile: cross\nSeverity: warning\nWhy it matters: When web application and IIoT components coexist, PLC commands must not be reachable through unauthenticated API routes. The IT/OT boundary is a safety boundary, not only a security boundary.\n\nHow to fix: Require authentication and authorization for API routes that reach PLC/OT\ndevices, and enforce network segmentation (DMZ) between IT and OT.\n\nReferences: Industrial Network Security, IEC 62443"
       }
     ]
   },

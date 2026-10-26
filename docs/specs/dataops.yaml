@@ -453,56 +453,6 @@ rules:
       - book: "Practical DataOps"
         concept: "notebook-hygiene"
 
-  - id: "cross-001"
-    profile: "cross"
-    severity: "error"
-    status: "active"
-    title: "IIoT driver and analytics library ABI conflict risk"
-    rationale: >
-      Mixing industrial protocol drivers (pymodbus, opcua, snap7) with data
-      analytics libraries (pandas, polars, pyspark) in the same Python environment
-      can produce silent ABI conflicts and non-reproducible behavior.
-    checks:
-      - type: "pattern_match"
-        pattern: '(pymodbus|opcua|asyncua|python-snap7|pycomm3|minimalmodbus)'
-        must_exist: false
-        file_glob: "**/*.py"
-        error_when: "pattern_present"
-        message: "IIoT driver detected — verify environment isolation from analytics layer."
-    fix: |
-      Use separate venv/conda environments for IIoT drivers and the data layer.
-      Each part should have its own requirements file.
-    references:
-      - book: "Practical DataOps"
-        concept: "environment-parity"
-      - book: "Designing Data-Intensive Applications"
-        concept: "reproducibility"
-
-  - id: "cross-002"
-    profile: "cross"
-    severity: "warning"
-    status: "active"
-    title: "IIoT control plane exposed via web API"
-    rationale: >
-      When web application and IIoT components coexist, PLC commands must not be
-      reachable through unauthenticated API routes. The IT/OT boundary is a safety
-      boundary, not only a security boundary.
-    checks:
-      - type: "pattern_match"
-        pattern: '(modbus|plc|scada|opcua|opc-ua|s7comm|profinet)'
-        must_exist: false
-        file_glob: "{app/api/**/*.ts,pages/api/**/*.ts,src/app/api/**/*.ts,src/pages/api/**/*.ts}"
-        error_when: "pattern_present"
-        message: "Web API route references OT control keywords — verify authentication."
-    fix: |
-      Require authentication and authorization for API routes that reach PLC/OT
-      devices, and enforce network segmentation (DMZ) between IT and OT.
-    references:
-      - book: "Industrial Network Security"
-        concept: "network-segmentation"
-      - standard: "IEC 62443"
-        concept: "zone-and-conduit-model"
-
   # =================================================================
   # SEMANTIC EVALUATION RULES — Layer 3
   # These read file contents and score architectural quality
