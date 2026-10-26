@@ -85,11 +85,14 @@ VALID_PROFILES = {
 #
 # FIX 5: added "structural_ast". AST/structural checks are emitted by the
 # Python extraction pipeline into the property graph; without this entry every
-# structural rule was rejected as "unknown check type". Note: structural_ast
-# currently receives only the generic per-check validation (message required,
-# no type-specific field checks). If the runner grows structural-specific
-# required fields, add a _validate_structural_check() mirroring
-# _validate_semantic_check().
+# structural rule was rejected as "unknown check type".
+#
+# FIX 6: added _validate_structural_check(). Now that dataops-kimball-ast-001
+# declares parser: "sql" and file_glob, the check has structural-specific
+# required fields. Without a dedicated validator, a future structural_ast
+# check that omits parser or file_glob would pass the build silently — the
+# same class of bug _validate_semantic_check was added to close for
+# semantic_eval.
 VALID_CHECK_TYPES = {
     "pattern_match",
     "file_exists",
@@ -106,6 +109,13 @@ VALID_ID_RE = re.compile(
 SEMANTIC_PROMPT_MIN_LEN = 50
 SEMANTIC_MAX_INPUT_MIN = 100
 SEMANTIC_DEFAULT_THRESHOLD = 0.7
+
+# Structural-AST parser identifiers — mirror lib/knowledge/structural.ts.
+# Extend as parsers are wired; the validator does not gate on membership
+# (that would false-warn on legitimate future parsers before the runner
+# knows about them), but documenting the known set here keeps the constant
+# discoverable in one place.
+STRUCTURAL_KNOWN_PARSERS = {"sql", "typescript", "python"}
 
 
 def _as_list(value: Any) -> list:
@@ -185,12 +195,55 @@ def _validate_semantic_check(
     return warnings
 
 
+def _validate_structural_check(
+    yaml_name: str, rule_id: str, idx: int, check: dict
+) -> list[str]:
+    """
+    FIX 6: structural_ast-specific validation. Mirrors _validate_semantic_check:
+    every field the AST runner reads is validated at build time so a malformed
+    check surfaces here, not as a silent skip at runtime.
+
+    Contract mirrors lib/knowledge/structural.ts (Week 3 target):
+      - parser: non-empty string identifying the AST backend (e.g. "sql")
+      - file_glob or path_glob required (target resolution)
+      - message required (already enforced by the generic pass)
+
+    Deliberately does NOT whitelist parser values against
+    STRUCTURAL_KNOWN_PARSERS. That constant is documentation; gating on it
+    here would false-warn on a legitimate parser added to a YAML before the
+    runner is wired to consume it, which inverts the fail-open posture of
+    this build script.
+    """
+    warnings: list[str] = []
+    prefix = f"{yaml_name}/{rule_id} check[{idx}]"
+
+    parser = check.get("parser")
+    if not isinstance(parser, str) or not parser.strip():
+        warnings.append(
+            f"{prefix}: structural_ast missing 'parser' "
+            f"(expected one of {sorted(STRUCTURAL_KNOWN_PARSERS)})"
+        )
+
+    if not check.get("file_glob") and not check.get("path_glob"):
+        warnings.append(
+            f"{prefix}: structural_ast requires file_glob or path_glob "
+            f"so the runner can resolve a target file"
+        )
+
+    return warnings
+
+
 def validate_rule(yaml_name: str, rule: dict, seen_ids: set[str]) -> list[str]:
     """
     Return a list of warning strings for a single rule.
 
     This function never raises. Warnings are informational unless --strict
     is passed to main(), in which case they become a non-zero exit code.
+
+    This function does NOT modify `rule`. Fields inside `checks` pass through
+    to specs.json unchanged — a check field like `parser` survives verbatim
+    even when no validator inspects it. Validation and serialization are
+    separate concerns by design: a warning does not strip a field.
     """
     warnings: list[str] = []
 
@@ -254,6 +307,10 @@ def validate_rule(yaml_name: str, rule: dict, seen_ids: set[str]) -> list[str]:
             warnings.extend(
                 _validate_semantic_check(yaml_name, rule_id, idx, check)
             )
+        elif check_type == "structural_ast":
+            warnings.extend(
+                _validate_structural_check(yaml_name, rule_id, idx, check)
+            )
 
     return warnings
 
@@ -295,6 +352,12 @@ def load_specs() -> tuple[dict[str, dict], list[str]]:
     `profile`. Previously a rule with `profile: "cross"` inside dataops.yaml
     was silently mis-bucketed under `dataops`, so downstream runtime checks
     filtering by profile never found it.
+
+    Note on serialization: this function does not rebuild `checks` arrays.
+    The `rule` dict is the raw YAML object with one added key (`full_text`)
+    and is appended to the bucket as-is. Every field inside each check —
+    `parser`, `threshold`, `file_glob`, anything — passes through to
+    specs.json unchanged. Validation and serialization are separate.
     """
     bundle: dict[str, dict] = {}
     seen_ids: set[str] = set()
