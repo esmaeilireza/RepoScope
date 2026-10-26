@@ -9,6 +9,13 @@
 //
 // Only runs when `fileContents` is provided — otherwise returns
 // deterministic findings unchanged (fail-open, not fail-closed).
+//
+// Two calling conventions:
+//   1. Webapp (default): omit `baseFindings`. The orchestrator calls
+//      generateFindings(...) internally, preserving Week-1 behavior.
+//   2. Dataops/IIoT: pass `baseFindings` with your own deterministic
+//      findings. The orchestrator skips generateFindings to avoid
+//      polluting profile-specific output with webapp findings.
 
 import { generateFindings } from "./audit";
 import { runSemanticChecks } from "./semantic/runner";
@@ -27,22 +34,21 @@ export async function generateAllFindings(
   defaultBranch: string,
   rules: RuleSpec[],
   fileContents?: Record<string, string>,
+  baseFindings?: Finding[],
 ): Promise<Finding[]> {
-  const base = generateFindings(
-    meta,
-    tree,
-    claims,
-    diffs,
-    pulls,
-    defaultBranch,
-    fileContents,
-  );
+  // If the caller supplied their own deterministic findings (e.g., the
+  // dataops or iiot auditors), use those. Otherwise fall back to the
+  // webapp-specific generateFindings for backward compatibility.
+  const base =
+    baseFindings ??
+    generateFindings(meta, tree, claims, diffs, pulls, defaultBranch, fileContents);
 
   if (!fileContents) return base;
 
-  const semanticRules = rules.filter((r) =>
-    Array.isArray(r.checks) &&
-    r.checks.some((c) => c.type === "semantic_eval"),
+  const semanticRules = rules.filter(
+    (r) =>
+      Array.isArray(r.checks) &&
+      r.checks.some((c) => c.type === "semantic_eval"),
   );
 
   if (semanticRules.length === 0) return base;

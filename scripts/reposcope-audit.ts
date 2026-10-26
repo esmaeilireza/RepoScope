@@ -160,8 +160,8 @@ async function main() {
     (t: GitHubTreeItem[], fc: Record<string, string>) => Finding[] | Promise<Finding[]>
   > = {
     webapp: async (t, fc) => generateAllFindings({}, t, [], [], [], "main", loadRules("webapp"), fc),
-    dataops: (t, fc) =>
-      auditDataOpsRepository(t, undefined, fc).checks
+    dataops: async (t, fc) => {
+      const deterministic = auditDataOpsRepository(t, undefined, fc).checks
         .filter(c => c.status !== "pass")
         .map(c => ({
           ruleId: c.ruleId,
@@ -170,9 +170,13 @@ async function main() {
           detail: c.message,
           fix: c.recommendation,
           weight: c.status === "fail" ? 15 : 10,
-          // FIXED: Respect the optional profile override (e.g. for cross-001)
+          // Respect the optional profile override (e.g. for cross-001)
           profile: c.profile ?? ("dataops" as const),
-        })),
+        }));
+      return generateAllFindings(
+        {}, t, [], [], [], "main", loadRules("dataops"), fc, deterministic,
+      );
+    },
     iiot: (t, fc) =>
       auditIIoTRepository(t, fc).checks
         .filter(c => c.status !== "pass")
