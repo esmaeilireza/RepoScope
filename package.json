@@ -39,7 +39,7 @@
     "semantic:debug": "tsx scripts/semantic-debug.ts"
   },
   "dependencies": {
-    "@cyclonedx/cyclonedx-library": "^10.2.0",
+    "@cyclonedx/cyclonedx-library": "^10.3.0",
     "lucide-react": "^1.39.0",
     "next": "16.4.1",
     "react": "^18.3.1",
