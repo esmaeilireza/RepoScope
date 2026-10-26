@@ -2,6 +2,8 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import type { SemanticEvalResult } from "../types";
+
 const CACHE_DIR = path.join(process.cwd(), ".reposcope-cache", "semantic");
 
 function hashContent(content: string, prompt: string): string {
