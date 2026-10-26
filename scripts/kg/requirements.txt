@@ -1,3 +1,4 @@
 # Python client for Neo4j — used by scripts/kg/seed.py and scripts/kg/ground.py.
 # Pinned to the 5.x driver line; Neo4j server is 5.26 (LTS).
 neo4j>=5.0,<6.0
+sqlglot>=20.0
