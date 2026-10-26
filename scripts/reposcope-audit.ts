@@ -177,8 +177,8 @@ async function main() {
         {}, t, [], [], [], "main", loadRules("dataops"), fc, deterministic,
       );
     },
-    iiot: (t, fc) =>
-      auditIIoTRepository(t, fc).checks
+    iiot: async (t, fc) => {
+      const deterministic = auditIIoTRepository(t, fc).checks
         .filter(c => c.status !== "pass")
         .map(c => ({
           ruleId: c.ruleId,
@@ -188,7 +188,11 @@ async function main() {
           fix: c.recommendation,
           weight: c.status === "fail" ? 15 : 10,
           profile: "iiot" as const,
-        })),
+        }));
+      return generateAllFindings(
+        {}, t, [], [], [], "main", loadRules("iiot"), fc, deterministic,
+      );
+    },
   };
 
   const all: Finding[] = [];
