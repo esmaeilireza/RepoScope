@@ -78,7 +78,11 @@
           "tsconfig": "tsconfig.json"
         }
       ]
-    }
+    },
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/__tests__/fixtures/"
+    ]
   },
   "pnpm": {
     "auditConfig": {
