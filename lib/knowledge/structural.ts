@@ -51,6 +51,19 @@ const SCRIPT_SEGMENTS: Record<StructuralParser, string[]> = {
   ts: ["scripts", "kg", "parse_ts_ast.mjs"],
 };
 
+// The audit run's target root (`--repo <path>`). Set once by
+// scripts/reposcope-audit.ts after arg parsing; defaults to cwd so
+// direct callers (calibration, tests) work unchanged. Threading this
+// through generateAllFindings -> runStructuralChecks -> here is the
+// clean long-term fix; module scope is the minimal stopgap for the
+// Day-4 gate.
+let _rootDir: string = process.cwd();
+
+/** Set the root directory that structural file paths resolve against. */
+export function setStructuralRootDir(dir: string): void {
+  _rootDir = dir;
+}
+
 const MAX_BUFFER = 8 * 1024 * 1024;
 const TIMEOUT_MS = 10_000;
 
@@ -68,13 +81,15 @@ export async function runStructuralParser(
   const fs = await import("node:fs");
   const path = await import("node:path");
 
-  const root = process.cwd();
-  const scriptPath = path.join(root, ...SCRIPT_SEGMENTS[parser]);
+  const scriptPath = path.join(process.cwd(), ...SCRIPT_SEGMENTS[parser]);
+  const resolvedFile = path.isAbsolute(filePath)
+    ? filePath
+    : path.resolve(_rootDir, filePath);
 
   if (!fs.existsSync(scriptPath)) {
     return { file: filePath, hits: [], error: null, skipped: true, skipReason: "parser_missing" };
   }
-  if (!fs.existsSync(filePath)) {
+  if (!fs.existsSync(resolvedFile)) {
     return { file: filePath, hits: [], error: null, skipped: true, skipReason: "file_missing" };
   }
 
@@ -82,7 +97,7 @@ export async function runStructuralParser(
     parser === "sql" ? process.env.REPOSCOPE_PYTHON ?? "python" : "node";
 
   try {
-    const raw = execFileSync(interpreter, [scriptPath, filePath], {
+    const raw = execFileSync(interpreter, [scriptPath, resolvedFile], {
       encoding: "utf8",
       timeout: TIMEOUT_MS,
       maxBuffer: MAX_BUFFER,

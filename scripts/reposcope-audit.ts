@@ -9,6 +9,8 @@
 // if --strict is set.
 import { execSync } from "child_process";
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
+import { resolve as resolvePath } from "node:path";
+import { setStructuralRootDir } from "../lib/knowledge/structural";
 import { join, relative } from "node:path";
 import { generateFindings, scoreAndExplain } from "../lib/audit";
 import { generateAllFindings } from "../lib/audit-orchestrator";
@@ -60,7 +62,7 @@ function scanLocalTree(root: string): GitHubTreeItem[] {
 
 function readTextFiles(root: string, tree: GitHubTreeItem[]): Record<string, string> {
   const out: Record<string, string> = {};
-  const textExt = /\.(py|ts|tsx|js|jsx|json|yaml|yml|toml|md|txt|cfg|ini|conf|sh)$/i;
+  const textExt = /\.(py|ts|tsx|js|jsx|json|yaml|yml|toml|md|txt|cfg|ini|conf|sh|sql)$/i;
   for (const item of tree) {
     if (item.type !== "blob") continue;
     if (!textExt.test(item.path)) continue;
@@ -149,6 +151,7 @@ async function main() {
     );
   }
 
+  setStructuralRootDir(resolvePath(repo));
   const tree = scanLocalTree(repo);
   const fileContents = readTextFiles(repo, tree);
   console.log(`[INFO] Scanned ${tree.filter(t => t.type === "blob").length} files\n`);
@@ -213,7 +216,10 @@ async function main() {
   }
 
   for (const f of filtered) {
-    console.log(formatFinding(f) + "\n");
+    const _detailSuffix = f.detail && f.detail !== f.title && f.detail !== f.fix
+      ? "\n        Detail: " + f.detail
+      : "";
+    console.log(formatFinding(f) + _detailSuffix + "\n");
     // Phase 4: ground this finding in Neo4j (skip general-* legacy rules)
     if (!f.ruleId.startsWith("general-")) {
       const grounding = groundRule(f.ruleId);

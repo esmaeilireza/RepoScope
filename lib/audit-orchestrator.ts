@@ -48,6 +48,17 @@ type TreeItem = Parameters<typeof generateFindings>[1];
 // (filesystem cache).
 const MAX_STRUCTURAL_CHECKS = 50;
 
+/**
+ * Historical specs.json may lack an explicit `parser` on structural_ast
+ * checks (field added same release as executor). Infer from file_glob so
+ * the audit works with older serializers.
+ */
+function inferParserFromGlob(glob: string): "sql" | "ts" | undefined {
+  if (/\.sql\b/i.test(glob)) return "sql";
+  if (/\.(ts|tsx|js|jsx)\b/i.test(glob)) return "ts";
+  return undefined;
+}
+
 export async function generateAllFindings(
   meta: unknown,
   tree: TreeItem,
@@ -108,10 +119,10 @@ async function runStructuralChecks(
     if (checksRun >= MAX_STRUCTURAL_CHECKS) break;
     for (const check of rule.checks) {
       if (check.type !== "structural_ast") continue;
-      const parser = check.parser;
-      if (parser !== "sql" && parser !== "ts") continue;
       const pattern = check.file_glob ?? check.path_glob;
       if (!pattern) continue;
+      const parser = check.parser ?? inferParserFromGlob(pattern);
+      if (parser !== "sql" && parser !== "ts") continue;
 
       for (const targetPath of resolveTargets(pattern, fileContents)) {
         if (checksRun >= MAX_STRUCTURAL_CHECKS) break;
