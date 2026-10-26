@@ -8,7 +8,7 @@ const SPECS_DIR = path.join(ROOT, "docs", "specs");
 
 const VALID_PROFILES = new Set(["iiot", "dataops", "webapp", "cross"]);
 const VALID_SEVERITIES = new Set(["critical", "error", "warning", "info"]);
-const VALID_CHECK_TYPES = new Set(["pattern_match", "file_exists", "file_absent"]);
+const VALID_CHECK_TYPES = new Set(["pattern_match", "file_exists", "file_absent", "semantic_eval", "structural_ast"]);
 
 const REQUIRED_FIELDS = [
   "id",
