@@ -49,7 +49,7 @@ function toStringArray(v: unknown): string[] {
   return v.filter((x): x is string => typeof x === "string");
 }
 
-function weightFor(severity: Finding["severity"]): number {
+export function weightFor(severity: Finding["severity"]): number {
   switch (severity) {
     case "critical": return 20;
     case "error":    return 15;
@@ -77,7 +77,7 @@ function expandBraces(pattern: string): string {
   return out;
 }
 
-function resolveTargets(
+export function resolveTargets(
   pattern: string,
   fileContents: Record<string, string>,
 ): string[] {
