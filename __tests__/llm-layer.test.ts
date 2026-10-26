@@ -395,13 +395,17 @@ describe("adapters (Day 6)", () => {
   it("builds OpenAI-compatible wire format", () => {
     const r = callBuildRequest(PROVIDERS.groq, {
       model: "mixtral-8x7b-32768",
-      messages: [{ role: "user", content: "hello" }],
+      system: "You are a helpful assistant.",
+      prompt: "hello",
       apiKey: "key1",
     });
 
     expect(r.url).toBe("https://api.groq.com/openai/v1/chat/completions");
     expect(r.headers.Authorization).toBe("Bearer key1");
-    expect(r.body.messages).toEqual([{ role: "user", content: "hello" }]);
+    expect(r.body.messages).toEqual([
+      { role: "system", content: "You are a helpful assistant." },
+      { role: "user", content: "hello" },
+    ]);
   });
 
   it("builds Anthropic wire format with version header", () => {
