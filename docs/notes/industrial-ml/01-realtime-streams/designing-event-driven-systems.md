@@ -1,14 +1,16 @@
+1. Source Identity
+Title: Designing Event Driven Systems
+
 # Designing Event-Driven Systems — RepoScope Knowledge Note
 
 ## 1. Source identity
 
 - **Title:** Designing Event-Driven Systems
-- Title: Designing Event-Driven Systems
-- Author(s): Ben Stopford
-- Branch: dataops
-- RepoScope profile: dataops
-- Primary source file: Designing-Event-Driven-Systems.pdf
-- Note status: reviewed-with-candidate-rules
+- **Author(s):** Ben Stopford
+- **Branch:** dataops
+- **RepoScope profile:** dataops
+- **Primary source file:** Designing-Event-Driven-Systems.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ## 2. Scope
 - In scope:

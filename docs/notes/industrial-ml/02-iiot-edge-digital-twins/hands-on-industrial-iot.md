@@ -1,6 +1,10 @@
+1. Source Identity
+Title: Hands On Industrial Iot
+
 # Hands-On Industrial Internet of Things, Second Edition — RepoScope Knowledge Note
 
 ## 1. Source identity
+
 - **Title:** Hands-On Industrial Internet of Things, Second Edition
 - **Author(s):** Giacomo Veneri, Antonio Capasso
 - **Branch:** iiot

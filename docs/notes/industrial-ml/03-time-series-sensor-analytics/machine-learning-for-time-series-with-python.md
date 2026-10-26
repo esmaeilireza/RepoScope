@@ -1,15 +1,16 @@
+1. Source Identity
+Title: Machine Learning For Time Series With Python
+
 # Machine Learning for Time-Series with Python — RepoScope Knowledge Note
 
-## 1. Source Identity
+## 1. Source identity
 
-| Field | Value |
-|---|---|
-| **Title** | Machine Learning for Time-Series with Python |
-| **Author(s)** | Ben Auffarth |
-| **Branch** | dataops |
-| **RepoScope profile** | dataops |
-| **Primary source file** | `CHINE LEARNING FOR TIME-SERIES WITH PYTHON - forecast, -- Ben Auffarth -- Packt Publishing, Birmingham, 2021 -- Packt Publishing, Limited; Packt.pdf` |
-| **Note status** | reviewed-with-candidate-rules |
+- **Title:** Machine Learning for Time-Series with Python
+- **Author(s):** Ben Auffarth
+- **Branch:** dataops
+- **RepoScope profile:** dataops
+- **Primary source file:** CHINE LEARNING FOR TIME-SERIES WITH PYTHON - forecast, -- Ben Auffarth -- Packt Publishing, Birmingham, 2021 -- Packt Publishing, Limited; Packt.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

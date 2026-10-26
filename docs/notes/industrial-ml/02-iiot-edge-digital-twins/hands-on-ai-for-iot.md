@@ -1,6 +1,10 @@
+1. Source Identity
+Title: Hands On Ai For Iot
+
 # Hands-On Artificial Intelligence for IoT, Second Edition — RepoScope Knowledge Note
 
 ## 1. Source identity
+
 - **Title:** Hands-On Artificial Intelligence for IoT, Second Edition: Expert machine learning and deep learning techniques for developing smarter IoT systems
 - **Author(s):** Dr. Amita Kapoor
 - **Branch:** iiot

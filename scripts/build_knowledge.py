@@ -4,10 +4,15 @@ scripts/build_knowledge.py
 
 YAML specs -> public/knowledge/specs.json
 
-Runs locally via `pnpm build:knowledge`.
+Usage:
+    python scripts/build_knowledge.py                 # write specs.json
+    python scripts/build_knowledge.py --check         # validate only, no write
+    python scripts/build_knowledge.py --strict        # exit 1 if any warning
+    python scripts/build_knowledge.py --check --strict  # CI validation gate
 
-Validation warnings are printed but do not fail the build. This is deliberate:
-you can delete a field, see the warning, and still inspect the generated JSON.
+Validation warnings are printed but do not fail the build unless --strict is
+passed. This is deliberate: you can delete a field, see the warning, and still
+inspect the generated JSON.
 
 Canonical profiles:
   - iiot
@@ -30,6 +35,7 @@ Rule ID convention:
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -59,21 +65,38 @@ REQUIRED_FIELDS = (
 
 VALID_SEVERITIES = {"critical", "error", "warning", "info"}
 
+# FIX 1: previously missing "cross", "graph", "general". The module docstring
+# already declared these as canonical — the constant disagreed with it, so
+# every cross-domain rule emitted "[WARN] invalid profile 'cross'" and every
+# graph rule would emit the same. The warning was real; the constant was wrong.
 VALID_PROFILES = {
     "iiot",
     "dataops",
     "webapp",
+    "cross",
+    "graph",
+    "general",
 }
 
+# FIX 2: previously missing "semantic_eval". Without it, every semantic rule
+# emitted "[WARN] unknown check type" and the per-check field validation was
+# skipped entirely — meaning a semantic rule missing evaluation_prompt or
+# threshold passed the build silently and dropped to skipped:true at runtime.
 VALID_CHECK_TYPES = {
     "pattern_match",
     "file_exists",
     "file_absent",
+    "semantic_eval",
 }
 
 VALID_ID_RE = re.compile(
     r"^(iiot|dataops|webapp|cross|general|graph)(-[a-z0-9]+)*-\d{3}[a-z]?$"
 )
+
+# Semantic-eval thresholds — mirror lib/semantic/runner.ts constants.
+SEMANTIC_PROMPT_MIN_LEN = 50
+SEMANTIC_MAX_INPUT_MIN = 100
+SEMANTIC_DEFAULT_THRESHOLD = 0.7
 
 
 def _as_list(value: Any) -> list:
@@ -81,12 +104,84 @@ def _as_list(value: Any) -> list:
     return value if isinstance(value, list) else []
 
 
+def _validate_semantic_check(
+    yaml_name: str, rule_id: str, idx: int, check: dict
+) -> list[str]:
+    """
+    FIX 3: semantic_eval-specific validation. Runs after the generic
+    check-type validation in validate_rule(). Every field the runner reads
+    is validated here, so a malformed rule surfaces at build time rather
+    than as a silent skipped:true at runtime.
+
+    Contract mirrors lib/semantic/runner.ts:
+      - evaluation_prompt: string, >= 50 chars
+      - threshold: number in [0, 1] (default 0.7)
+      - max_input_chars: int >= 100 (optional; NOT max_tokens)
+      - file_glob or path_glob required (target resolution)
+      - error_when is redundant (threshold is the failure signal)
+    """
+    warnings: list[str] = []
+    prefix = f"{yaml_name}/{rule_id} check[{idx}]"
+
+    prompt = check.get("evaluation_prompt")
+    if not isinstance(prompt, str):
+        warnings.append(
+            f"{prefix}: semantic_eval missing 'evaluation_prompt'"
+        )
+    elif len(prompt.strip()) < SEMANTIC_PROMPT_MIN_LEN:
+        warnings.append(
+            f"{prefix}: evaluation_prompt too short "
+            f"({len(prompt)} < {SEMANTIC_PROMPT_MIN_LEN}) — likely vague"
+        )
+
+    if "max_tokens" in check:
+        warnings.append(
+            f"{prefix}: uses deprecated 'max_tokens' — "
+            f"rename to 'max_input_chars' (the runner slices by characters)"
+        )
+
+    if "error_when" in check:
+        warnings.append(
+            f"{prefix}: 'error_when' is redundant for semantic_eval — "
+            f"'threshold' is the failure signal; remove from YAML"
+        )
+
+    threshold = check.get("threshold", SEMANTIC_DEFAULT_THRESHOLD)
+    if not isinstance(threshold, (int, float)) or isinstance(threshold, bool):
+        warnings.append(
+            f"{prefix}: threshold not numeric ({threshold!r})"
+        )
+    elif not (0.0 <= float(threshold) <= 1.0):
+        warnings.append(
+            f"{prefix}: threshold {threshold} outside [0, 1]"
+        )
+
+    mic = check.get("max_input_chars")
+    if mic is not None:
+        if not isinstance(mic, int) or isinstance(mic, bool):
+            warnings.append(
+                f"{prefix}: max_input_chars not int ({mic!r})"
+            )
+        elif mic < SEMANTIC_MAX_INPUT_MIN:
+            warnings.append(
+                f"{prefix}: max_input_chars {mic} < {SEMANTIC_MAX_INPUT_MIN}"
+            )
+
+    if not check.get("file_glob") and not check.get("path_glob"):
+        warnings.append(
+            f"{prefix}: semantic_eval requires file_glob or path_glob "
+            f"so the runner can resolve a target file"
+        )
+
+    return warnings
+
+
 def validate_rule(yaml_name: str, rule: dict, seen_ids: set[str]) -> list[str]:
     """
     Return a list of warning strings for a single rule.
 
-    This function never raises. Warnings are informational and allow the build
-    to continue while still surfacing schema problems.
+    This function never raises. Warnings are informational unless --strict
+    is passed to main(), in which case they become a non-zero exit code.
     """
     warnings: list[str] = []
 
@@ -98,42 +193,58 @@ def validate_rule(yaml_name: str, rule: dict, seen_ids: set[str]) -> list[str]:
 
     if not VALID_ID_RE.match(rule_id):
         warnings.append(
-            f"{yaml_name}/{rule_id}: id does not match convention " "(domain-...-###)"
+            f"{yaml_name}/{rule_id}: id does not match convention "
+            f"(domain-...-###)"
         )
 
     if rule_id in seen_ids:
         warnings.append(f"{yaml_name}/{rule_id}: duplicate id")
-
     seen_ids.add(rule_id)
 
     if rule.get("severity") not in VALID_SEVERITIES:
         warnings.append(
-            f"{yaml_name}/{rule_id}: invalid severity '{rule.get('severity')}'"
+            f"{yaml_name}/{rule_id}: invalid severity "
+            f"'{rule.get('severity')}'"
         )
 
     if rule.get("profile") not in VALID_PROFILES:
         warnings.append(
-            f"{yaml_name}/{rule_id}: invalid profile '{rule.get('profile')}'"
+            f"{yaml_name}/{rule_id}: invalid profile "
+            f"'{rule.get('profile')}'"
         )
 
     for ref in _as_list(rule.get("references")):
-        if not isinstance(ref, dict) or not (ref.get("book") or ref.get("standard")):
+        if not isinstance(ref, dict) or not (
+            ref.get("book") or ref.get("standard")
+        ):
             warnings.append(
-                f"{yaml_name}/{rule_id}: reference needs 'book' or 'standard': {ref}"
+                f"{yaml_name}/{rule_id}: reference needs 'book' or "
+                f"'standard': {ref}"
             )
 
-    for check in _as_list(rule.get("checks")):
+    for idx, check in enumerate(_as_list(rule.get("checks"))):
         if not isinstance(check, dict):
-            warnings.append(f"{yaml_name}/{rule_id}: check is not a mapping: {check}")
+            warnings.append(
+                f"{yaml_name}/{rule_id}: check[{idx}] is not a mapping: {check}"
+            )
             continue
 
-        if check.get("type") not in VALID_CHECK_TYPES:
+        check_type = check.get("type")
+        if check_type not in VALID_CHECK_TYPES:
             warnings.append(
-                f"{yaml_name}/{rule_id}: unknown check type " f"'{check.get('type')}'"
+                f"{yaml_name}/{rule_id}: unknown check type '{check_type}'"
             )
+            continue
 
         if not check.get("message"):
-            warnings.append(f"{yaml_name}/{rule_id}: check without 'message'")
+            warnings.append(
+                f"{yaml_name}/{rule_id}: check[{idx}] without 'message'"
+            )
+
+        if check_type == "semantic_eval":
+            warnings.extend(
+                _validate_semantic_check(yaml_name, rule_id, idx, check)
+            )
 
     return warnings
 
@@ -170,6 +281,11 @@ def load_specs() -> tuple[dict[str, dict], list[str]]:
     Files beginning with underscore are skipped, e.g.:
       - _schema.yaml
       - _template.yaml
+
+    FIX 4: rules are bucketed by their OWN `profile`, not the file-level
+    `profile`. Previously a rule with `profile: "cross"` inside dataops.yaml
+    was silently mis-bucketed under `dataops`, so downstream runtime checks
+    filtering by profile never found it.
     """
     bundle: dict[str, dict] = {}
     seen_ids: set[str] = set()
@@ -189,51 +305,107 @@ def load_specs() -> tuple[dict[str, dict], list[str]]:
             all_warnings.append(f"{yaml_file.name}: YAML parse error: {exc}")
             continue
 
-        profile = data.get("profile")
-
-        if profile not in VALID_PROFILES:
+        if not isinstance(data, dict):
             all_warnings.append(
-                f"{yaml_file.name}: missing/invalid 'profile' "
-                f"({profile!r}), skipping"
+                f"{yaml_file.name}: file root is not a mapping, skipping"
+            )
+            continue
+
+        file_profile = data.get("profile")
+        if file_profile not in VALID_PROFILES:
+            all_warnings.append(
+                f"{yaml_file.name}: missing/invalid file-level 'profile' "
+                f"({file_profile!r}), skipping"
             )
             continue
 
         rules = _as_list(data.get("rules"))
+        file_version = data.get("version", "1.0")
+        accepted = 0
+        rejected = 0
 
         for rule in rules:
             if not isinstance(rule, dict):
                 all_warnings.append(
                     f"{yaml_file.name}: rule is not a mapping: {rule!r}"
                 )
+                rejected += 1
                 continue
 
-            # Inject the file-level profile into each rule if absent.
-            # This keeps YAML files clean while still allowing per-rule override.
-            rule.setdefault("profile", profile)
+            # Inherit the file-level profile only when the rule does not
+            # declare one. Cross-domain rules (cross-001, cross-002) can
+            # therefore live in dataops.yaml and still bucket under 'cross'.
+            rule.setdefault("profile", file_profile)
 
             all_warnings.extend(validate_rule(yaml_file.name, rule, seen_ids))
-
             rule["full_text"] = build_full_text(rule)
 
+            # FIX 4: bucket by rule-level profile, not file-level profile.
+            rule_profile = rule.get("profile", file_profile)
+            if rule_profile not in VALID_PROFILES:
+                all_warnings.append(
+                    f"{yaml_file.name}/{rule.get('id', '?')}: "
+                    f"unknown bucket profile '{rule_profile}', dropped"
+                )
+                rejected += 1
+                continue
+
             bucket = bundle.setdefault(
-                profile,
-                {
-                    "version": data.get("version", "1.0"),
-                    "rules": [],
-                },
+                rule_profile,
+                {"version": file_version, "rules": []},
             )
-
             bucket["rules"].append(rule)
+            accepted += 1
 
-        print(f"[OK]   {yaml_file.name} -> {len(rules)} rules " f"({profile})")
+        status = f"[OK]   {yaml_file.name} -> {accepted} rules ({file_profile})"
+        if rejected:
+            status += f", {rejected} rejected"
+        print(status)
 
     return bundle, all_warnings
 
 
-def main() -> None:
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    """
+    FIX: previously the script had no argument parser. `python
+    scripts/build_knowledge.py --check` was silently accepted because Python
+    ignores argv, and the script wrote specs.json anyway. The roadmap's
+    Phase 0 command F was reading a flag that did not exist as a real flag.
+    This parser makes --check and --strict real.
+    """
+    parser = argparse.ArgumentParser(
+        description="Build public/knowledge/specs.json from docs/specs/*.yaml"
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Validate only; do not write specs.json",
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit non-zero if any validation warning is emitted",
+    )
+    return parser.parse_args(argv)
+
+
+def _count_semantic_rules(bundle: dict[str, dict]) -> int:
+    """Count semantic_eval checks across all rules for the summary line."""
+    total = 0
+    for bucket in bundle.values():
+        for rule in bucket.get("rules", []):
+            for check in _as_list(rule.get("checks")):
+                if isinstance(check, dict) and check.get("type") == "semantic_eval":
+                    total += 1
+    return total
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv if argv is not None else sys.argv[1:])
+
     if not SPECS_DIR.exists():
         print(f"[ERROR] Specs directory not found: {SPECS_DIR}")
-        sys.exit(1)
+        return 1
 
     bundle, warnings = load_specs()
 
@@ -242,7 +414,22 @@ def main() -> None:
 
     if not bundle:
         print("[ERROR] No specs loaded. Check docs/specs/ directory.")
-        sys.exit(1)
+        return 1
+
+    total_rules = sum(len(v["rules"]) for v in bundle.values())
+    semantic_count = _count_semantic_rules(bundle)
+
+    if args.check:
+        print()
+        print(f"[CHECK] Would write {OUTPUT_FILE}")
+        print(f"  Profiles: {sorted(bundle.keys())}")
+        print(f"  Total rules: {total_rules}")
+        print(f"  Semantic rules: {semantic_count}")
+        print(f"  Validation warnings: {len(warnings)}")
+        if args.strict and warnings:
+            print("[FAIL] --strict: warnings present")
+            return 1
+        return 0
 
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_FILE.write_text(
@@ -250,13 +437,18 @@ def main() -> None:
         encoding="utf-8",
     )
 
-    total_rules = sum(len(v["rules"]) for v in bundle.values())
-
-    print(f"\nBuilt {OUTPUT_FILE}")
+    print()
+    print(f"Built {OUTPUT_FILE}")
     print(f"  Profiles: {sorted(bundle.keys())}")
     print(f"  Total rules: {total_rules}")
+    print(f"  Semantic rules: {semantic_count}")
     print(f"  Validation warnings: {len(warnings)} (informational)")
+
+    if args.strict and warnings:
+        print("[FAIL] --strict: warnings present")
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

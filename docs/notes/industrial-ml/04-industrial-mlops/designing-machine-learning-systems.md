@@ -1,12 +1,18 @@
+1. Source Identity
+Title: Designing Machine Learning Systems
+
 # RepoScope Knowledge Note: Designing Machine Learning Systems (Chip Huyen, 2022)
 
 ---
 
-## 1. Source Identity & Scope
-* **Document Identifier:** `Designing Machine Learning Systems.pdf`
-* **Author & Origin:** Chip Huyen (O'Reilly Media, 2022)
-* **Branch Focus:** Industrial MLOps, Governance, ML Lifecycle & Systems Architecture
-* **Primary Scope:** Bridging academic/research ML modeling with production systems engineering, covering scoping, data engineering, feature stores, model training, deployment patterns, distribution shifts, continuous monitoring, and feedback loops.
+## 1. Source identity
+
+- **Title:** Designing Machine Learning Systems: An Iterative Process for Production-Ready Applications
+- **Author(s):** Chip Huyen
+- **Branch:** dataops
+- **RepoScope profile:** dataops
+- **Primary source file:** Designing Machine Learning Systems.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

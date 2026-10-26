@@ -1,0 +1,13 @@
+{
+  "rule_id": "webapp-csp-sem-001",
+  "fixtures": {
+    "good":       { "min_score": 0.85, "max_score": 1.00, "missing_allowlist": [] },
+    "borderline": {
+      "min_score": 0.40,
+      "max_score": 0.75,
+      "missing_allowlist": ["script"],
+      "_note": "frame-ancestors omitted from allowlist. reposcope-mistral:latest writes 'frame-ancestors: PASS' in its reasoning while scoring 0.52, which is the 3-PASS midpoint (internally counted frame-ancestors as FAIL). The score band [0.40,0.75] still forces the correct 3-PASS count; only the verbal label is unreliable. Revisit if the model changes or if a larger model is added to the fallback chain."
+    },
+    "bad":        { "min_score": 0.00, "max_score": 0.40, "missing_allowlist": ["default", "script"] }
+  }
+}

@@ -24,9 +24,9 @@ export default function Home() {
   const [error, setError] = useState('');
   const [result, setResult] = useState<any>(null);
   const [githubToken, setGithubToken] = useState<string | null>(null);
-  const [currentProfile, setCurrentProfile] = useState<AuditProfile>('web');
+  const [currentProfile, setCurrentProfile] = useState<AuditProfile>('webapp');
 
-  async function analyze(input: string, token: string, profile: AuditProfile = 'web', branch?: string) {
+  async function analyze(input: string, token: string, profile: AuditProfile = 'webapp', branch?: string) {
     const p = parseRepo(input);
     if (!p) {
       setError('Invalid format. Use owner/repo');
@@ -199,7 +199,7 @@ export default function Home() {
             <span className="text-mint font-semibold">
               {currentProfile === 'dataops' && 'DataOps & Analytics'}
               {currentProfile === 'iiot' && 'Industrial / PLC'}
-              {currentProfile === 'web' && 'General Web App'}
+              {currentProfile === 'webapp' && 'General Web App'}
             </span>{' '}
             profile...
           </p>
@@ -237,7 +237,7 @@ export default function Home() {
             >
               {result.profile === 'dataops' && '🗄️ DataOps & Analytics'}
               {result.profile === 'iiot' && '⚙️ Industrial / PLC'}
-              {result.profile === 'web' && '🌐 General Web App'}
+              {result.profile === 'webapp' && '🌐 General Web App'}
             </span>
           </div>
 

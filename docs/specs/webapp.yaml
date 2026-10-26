@@ -3,6 +3,44 @@ version: "1.0"
 profile: webapp
 
 rules:
+  # ──────────────────────────────────────────────────────────────
+  # Section 1 — Secrets & Credentials
+  # ──────────────────────────────────────────────────────────────
+  # Draft: hardcoded-secret detection is currently implemented under
+  # `general-security-001` in lib/audit.ts. This webapp-scoped variant is
+  # retained as a source-backed heuristic spec but is not emitted by any
+  # TypeScript audit module yet. When `lib/webapp-audit.ts` gains a
+  # dedicated secret check, flip this back to `status: active`.
+  - id: webapp-sec-001
+    profile: webapp
+    severity: critical
+    status: draft
+    title: "Hardcoded secret or credential detected"
+    rationale: >
+      Committed secrets create credential leakage risk and break environment
+      portability. Credentials belong in environment variables or a managed
+      secret store, never in the codebase or version history. A leaked secret
+      in Git history remains exploitable even after the file is deleted.
+    checks:
+      - type: pattern_match
+        pattern: '(?i)(password|passwd|pwd|secret|api_key|apikey|access_token|private_key)\s*[:=]\s*["''][^"'']{6,}'
+        must_exist: false
+        file_glob: "**/*.{py,js,ts,tsx,go,java,rb,sh,yaml,yml,json,env,toml,ini}"
+        error_when: "pattern_present"
+        message: "Hardcoded secret or credential detected. Use environment variables or a secret manager."
+    fix: |
+      Replace literal secrets with environment variables or secret-store references.
+      Rotate any exposed credentials and purge them from git history if needed.
+    references:
+      - book: "Web Application Security"
+        concept: "secret-management"
+      - standard: "OWASP Top 10"
+        concept: "security-misconfiguration"
+
+  # ──────────────────────────────────────────────────────────────
+  # Section 2 — API Protection & Hardening
+  # ──────────────────────────────────────────────────────────────
+  # Active: emitted by lib/audit.ts via the `webapp-001` rule ID.
   - id: webapp-001
     profile: webapp
     severity: critical
@@ -14,19 +52,20 @@ rules:
       budget.
     checks:
       - type: pattern_match
-        pattern: "rateLimit|rate-limit|upstash|redis|kv"
-        must_exist: false
+        pattern: 'rateLimit|rate-limit|upstash|redis|kv'
+        must_exist: true
         file_glob: "**/*.{ts,tsx,js,jsx}"
         error_when: "pattern_absent"
         message: "No rate limiting pattern found in application source files"
     fix: |
       Use @upstash/ratelimit with Vercel KV or middleware rate limiting.
     references:
-      - book: "Site Reliability Engineering"
+      - book: "Site Reliability Engineering: How Google Runs Production Systems"
         concept: "error-budgets"
       - standard: "OWASP Top 10"
         concept: "api-abuse"
 
+  # Active: emitted by lib/audit.ts via the `webapp-002` rule ID.
   - id: webapp-002
     profile: webapp
     severity: error
@@ -37,8 +76,8 @@ rules:
       applied centrally without changing every application code path.
     checks:
       - type: pattern_match
-        pattern: "Content-Security-Policy|contentSecurityPolicy"
-        must_exist: false
+        pattern: 'Content-Security-Policy|contentSecurityPolicy'
+        must_exist: true
         file_glob: "**/*.{ts,tsx,js,jsx,json}"
         error_when: "pattern_absent"
         message: "No CSP header configuration found"
@@ -47,6 +86,5 @@ rules:
     references:
       - book: "Web Application Security"
         concept: "output-encoding"
-      - book: "Continuous Delivery"
+      - book: "Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation"
         concept: "deployment-pipeline"
-

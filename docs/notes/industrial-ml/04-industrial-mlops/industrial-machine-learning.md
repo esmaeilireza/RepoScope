@@ -1,12 +1,16 @@
+1. Source Identity
+Title: Industrial Machine Learning
+
 # RepoScope Knowledge Note: Industrial Machine Learning (Andreas François Vermeulen, 2020)
 
-## 1. Source Identity
+## 1. Source identity
 
-- **Title:** Industrial Machine Learning
-* **Source Title:** *Industrial Machine Learning: Using Artificial Intelligence as a Transformational Disruptor* 
-* **Author:** Andreas François Vermeulen
-* **Primary Focus:** Industrialized Artificial Intelligence (IAI), mechatronics engineering, SCADA/IoT system integration, the Rapid Information Framework (RIF), data lake architecture, and regulatory/GDPR compliance for automated decision systems.
-* **RepoScope Branch:** Industrial MLOps, Governance, and Operational Technology (OT) Boundaries.
+- **Title:** Industrial Machine Learning: Artificial Intelligence in the Internet of Things Era
+- **Author(s):** Andreas François Vermeulen
+- **Branch:** industrial-ml
+- **RepoScope profile:** industrial-mlops
+- **Primary source file:** Industrial Machine Learning.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

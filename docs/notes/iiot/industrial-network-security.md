@@ -1,18 +1,16 @@
+1. Source Identity
+Title: Industrial Network Security
+
 # Industrial Network Security — RepoScope Knowledge Note
 
-## 1. Source Identity
+## 1. Source identity
 
-- **Title:** Industrial Network Security
-
-| Field | Value |
-|---|---|
-| **Title** | Industrial Network Security: Securing Critical Infrastructure Networks for Smart Grid, SCADA, and Other Industrial Control Systems |
-| **Author(s)** | Eric D. Knapp |
-| **Branch** | iiot |
-| **RepoScope profile** | iiot |
-| **Primary source file** | `Eric D. Knapp - Industrial Network Security_ Securing Critical Infrastructure Networks for Smart Grid, SCADA, and Other Industrial Control Syst (2011, Syngress).pdf` |
-| **Note status** | reviewed-with-candidate-rules |
-
+- **Title:** Industrial Network Security: Securing Critical Infrastructure Networks for Smart Grid, SCADA, and Other Industrial Control Systems
+- **Author(s):** Eric D. Knapp
+- **Branch:** iiot
+- **RepoScope profile:** iiot
+- **Primary source file:** Eric D. Knapp - Industrial Network Security_ Securing Critical Infrastructure Networks for Smart Grid, SCADA, and Other Industrial Control Syst (2011, Syngress).pdf
+- **Note status:** reviewed-with-candidate-rules
 ---
 
 ## 2. Scope

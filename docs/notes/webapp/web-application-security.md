@@ -1,14 +1,13 @@
-# Web Application Security — RepoScope Knowledge Note
+# RepoScope Knowledge Note: Web Application Security
 
 ## 1. Source identity
 
 - **Title:** Web Application Security
-- Title: Web Application Security: Exploitation and Countermeasures for Modern Web Applications
-- Author(s): Andrew Hoffman
-- Branch: webapp
-- RepoScope profile: webapp
-- Primary source file: Andrew Hoffman - Web Application Security_ Exploitation and Countermeasures for Modern Web Applications (2024, O'Reilly Media).pdf
-- Note status: reviewed-with-candidate-rules
+- **Author(s):** Andrew Hoffman
+- **Branch:** webapp
+- **RepoScope profile:** webapp
+- **Primary source file:** Andrew Hoffman - Web Application Security_ Exploitation and Countermeasures for Modern Web Applications (2024, O'Reilly Media).pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ## 2. Scope
 - In scope: Web application security posture, defense-in-depth countermeasures, security headers (CSP, HSTS, COOP, CORP, CORS), input validation and output encoding patterns.

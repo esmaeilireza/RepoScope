@@ -1,7 +1,13 @@
-// lib/knowledge/graph.ts — SERVER ONLY. Loads the static knowledge graph
-// produced by scripts/kg/assemble_graph.py (Day 15) and provides traversal.
-// Graceful degradation: if graph.json is missing, grounding silently
-// disables and the audit engine keeps working (resilience by design).
+// lib/knowledge/graph.ts — SERVER ONLY.
+//
+// Loads the static knowledge graph produced by scripts/kg/assemble_graph.py
+// and provides bounded traversal helpers for grounding and citation gating.
+//
+// Graceful degradation:
+//   If public/knowledge/graph.json is missing or malformed, grounding is
+//   silently disabled and the deterministic audit engine continues working.
+//   This is intentional resilience-by-design behavior.
+
 import fs from "node:fs";
 import path from "node:path";
 
@@ -16,7 +22,11 @@ export interface GraphNode {
   definition?: string;
   domain?: string;
   kind?: string; // for book nodes: "book" | "standard"
-  source?: { book?: string; chapter?: string; page_range?: string };
+  source?: {
+    book?: string;
+    chapter?: string;
+    page_range?: string;
+  };
 }
 
 export interface GraphEdge {
@@ -46,21 +56,47 @@ export interface OneHop {
   books: string[];
 }
 
+export interface CrossDomainResult {
+  crossDomain: boolean;
+  domains: string[];
+}
+
 let cached: KnowledgeGraph | null | undefined; // undefined = not yet loaded
+
+const nodeById = new Map<string, GraphNode>();
+const edgesFrom = new Map<string, GraphEdge[]>();
+let indexed = false;
+
+function graphFilePath(): string {
+  return path.join(process.cwd(), "public", "knowledge", "graph.json");
+}
 
 export function loadGraph(): KnowledgeGraph | null {
   if (cached !== undefined) return cached;
+
   try {
-    const file = path.join(process.cwd(), "public", "knowledge", "graph.json");
+    const file = graphFilePath();
+
     if (!fs.existsSync(file)) {
       cached = null;
       return cached;
     }
-    cached = JSON.parse(fs.readFileSync(file, "utf-8")) as KnowledgeGraph;
+
+    const raw = fs.readFileSync(file, "utf-8");
+    const parsed = JSON.parse(raw) as KnowledgeGraph;
+
+    if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
+      console.warn("[graph] graph.json has unexpected shape — grounding disabled");
+      cached = null;
+      return cached;
+    }
+
+    cached = parsed;
   } catch (err) {
     console.warn("[graph] failed to load graph.json — grounding disabled:", err);
     cached = null;
   }
+
   return cached;
 }
 
@@ -68,22 +104,33 @@ export function graphIsAvailable(): boolean {
   return loadGraph() !== null;
 }
 
-// ---- lazy indexes ----
-const nodeById = new Map<string, GraphNode>();
-const edgesFrom = new Map<string, GraphEdge[]>();
-let indexed = false;
+export function resetGraphCache(): void {
+  cached = undefined;
+  nodeById.clear();
+  edgesFrom.clear();
+  indexed = false;
+}
 
 function ensureIndex(): void {
   if (indexed) return;
-  const g = loadGraph();
-  if (g) {
-    for (const n of g.nodes) nodeById.set(n.id, n);
-    for (const e of g.edges) {
-      const arr = edgesFrom.get(e.source) ?? [];
-      arr.push(e);
-      edgesFrom.set(e.source, arr);
+
+  const graph = loadGraph();
+
+  if (graph) {
+    for (const node of graph.nodes) {
+      nodeById.set(node.id, node);
+    }
+
+    for (const edge of graph.edges) {
+      const existing = edgesFrom.get(edge.source);
+      if (existing) {
+        existing.push(edge);
+      } else {
+        edgesFrom.set(edge.source, [edge]);
+      }
     }
   }
+
   indexed = true;
 }
 
@@ -99,26 +146,44 @@ export function getRule(id: string): GraphNode | null {
 
 export function loadValidRuleIds(): Set<string> {
   ensureIndex();
+
   const ids = new Set<string>();
-  for (const [id, node] of nodeById) {
-    if (node.type === "rule") ids.add(id.replace(/^rule:/, ""));
+
+  for (const [id, node] of nodeById.entries()) {
+    if (node.type === "rule") {
+      ids.add(id.replace(/^rule:/, ""));
+    }
   }
+
   return ids;
 }
 
-/** One-hop BFS from a rule node (per Graph Algorithms, ch. 2 — bounded traversal). */
+/**
+ * One-hop BFS from a rule node.
+ *
+ * This is intentionally bounded. Graph traversal in grounding contexts should
+ * never be unbounded; see Graph Databases / Graph algorithms guidance on
+ * bounded multi-hop traversal.
+ */
 export function expandOneHop(ruleId: string): OneHop {
   ensureIndex();
+
   const rid = `rule:${ruleId.toLowerCase()}`;
   const rule = nodeById.get(rid) ?? null;
-  if (!rule) return { rule: null, concepts: [], books: [] };
+
+  if (!rule) {
+    return { rule: null, concepts: [], books: [] };
+  }
 
   const concepts: ConceptRef[] = [];
   const books: string[] = [];
 
-  for (const edge of edgesFrom.get(rid) ?? []) {
+  const outgoing = edgesFrom.get(rid) ?? [];
+
+  for (const edge of outgoing) {
     const target = nodeById.get(edge.target);
     if (!target) continue;
+
     if (target.type === "concept") {
       concepts.push({
         label: target.label,
@@ -129,36 +194,59 @@ export function expandOneHop(ruleId: string): OneHop {
       books.push(target.label);
     }
   }
+
   return { rule, concepts, books };
 }
 
-export function subgraphForProfile(profile: string): { nodes: GraphNode[]; edges: GraphEdge[] } {
-  const g = loadGraph();
-  if (!g) return { nodes: [], edges: [] };
-  const nodes = g.nodes.filter(
-    (n) =>
-      n.profile === profile ||
-      n.domain === profile ||
-      (n.type === "rule" && n.id.startsWith(`rule:${profile}`))
+export function subgraphForProfile(profile: string): {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+} {
+  const graph = loadGraph();
+  if (!graph) return { nodes: [], edges: [] };
+
+  const p = profile.toLowerCase();
+
+  const nodes = graph.nodes.filter(
+    (node) =>
+      node.profile?.toLowerCase() === p ||
+      node.domain?.toLowerCase() === p ||
+      (node.type === "rule" && node.id.toLowerCase().startsWith(`rule:${p}`)),
   );
-  const ids = new Set(nodes.map((n) => n.id));
-  const edges = g.edges.filter((e) => ids.has(e.source) && ids.has(e.target));
+
+  const ids = new Set(nodes.map((node) => node.id));
+
+  const edges = graph.edges.filter(
+    (edge) => ids.has(edge.source) && ids.has(edge.target),
+  );
+
   return { nodes, edges };
 }
 
 export function graphStats(): Record<string, number> {
   return loadGraph()?.stats ?? {};
 }
+
+/**
+ * Detect whether a set of findings spans more than one audit profile.
+ *
+ * Used by grounding/citation layers to avoid silently mixing domain evidence
+ * from unrelated profiles.
+ */
 export function detectCrossDomain(
-  findings: ReadonlyArray<{ profile?: string }>
-): { crossDomain: boolean; domains: string[] } {
+  findings: ReadonlyArray<{ profile?: string | null }>,
+): CrossDomainResult {
   const domains = Array.from(
     new Set(
       findings
-        .map((f) => f.profile)
-        .filter((p): p is string => typeof p === "string" && p.length > 0)
-    )
-  );
+        .map((finding) =>
+          typeof finding.profile === "string"
+            ? finding.profile.trim().toLowerCase()
+            : "",
+        )
+        .filter((profile): profile is string => profile.length > 0),
+    ),
+  ).sort();
 
   return {
     crossDomain: domains.length > 1,

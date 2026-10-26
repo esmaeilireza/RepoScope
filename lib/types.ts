@@ -1,66 +1,45 @@
 // lib/types.ts
-// ============================================================================
-// Shared domain types for RepoScope.
+// Shared TypeScript vocabulary for RepoScope.
 //
-// Every other module should import from here. Avoid duplicate shapes.
-//
-// Important invariant:
-//   Every TypeScript-emitted finding.ruleId MUST match a YAML rule id in
-//   docs/specs/*.yaml, public/knowledge/specs.json, and
-//   public/knowledge/graph.json.
-// ============================================================================
+// Design rules:
+//   1. `Finding` is the lean audit primitive produced by lib/*-audit.ts.
+//      It carries `ruleId`, `severity`, `title`, `detail`, `fix`, `weight`,
+//      and optional `profile` / `file`. It deliberately does NOT carry
+//      `id` or `message` — those are synthesized on the derived types.
+//   2. `ScoredFinding` is what scoreAndExplain() produces: it adds `points`.
+//   3. `InsightFinding` is what the AI layer consumes: it adds `id`,
+//      `message`, and `insight`, all backfilled from the lean fields.
+//   4. `AuditProfile` is `"dataops" | "iiot" | "webapp" | "cross" | "general"`.
+//   5. `KnowledgeProfile` additionally includes `"graph"` for grounding notes.
+//   6. `RuleCheckType` includes `"semantic_eval"` for LLM-backed checks.
+//      Semantic checks are OPTIONAL, budget-capped, and MUST fail-open
+//      (skipped, not failed) when the LLM is unavailable.
 
-// ─── GitHub tree item ───────────────────────────────────────────────────────
-export interface GitHubTreeItem {
-  path: string;
-  mode?: string;
-  type: "blob" | "tree";
-  sha?: string;
-  size?: number;
-  url?: string;
-}
-
-// ─── Severity ───────────────────────────────────────────────────────────────
+// ─── Severity ────────────────────────────────────────────────────────────
 export type Severity = "critical" | "error" | "warning" | "info";
-
-/**
- * Backward-compatible alias used by UI components (Board.tsx, ScoreBoard.tsx).
- * Prefer `Severity` in new code.
- */
 export type FindingSeverity = Severity;
 
-export const SEVERITY_WEIGHTS: Record<Severity, number> = {
-  critical: 20,
-  error: 15,
-  warning: 10,
-  info: 2,
-};
-
-// ─── Canonical audit profiles ───────────────────────────────────────────────
-export type CanonicalAuditProfile =
+// ─── Profiles ────────────────────────────────────────────────────────────
+export type AuditProfile =
   | "dataops"
   | "iiot"
   | "webapp"
   | "cross"
-  | "graph";
-
-export type AuditProfile = CanonicalAuditProfile | "web";
+  | "general";
 
 export interface AuditProfileConfig {
-  id: CanonicalAuditProfile;
+  id: AuditProfile;
   label: string;
   description: string;
 }
 
-export const CANONICAL_AUDIT_PROFILES: readonly CanonicalAuditProfile[] = [
-  "dataops",
-  "iiot",
-  "webapp",
-  "cross",
-  "graph",
-];
-
-export const AUDIT_PROFILES: AuditProfileConfig[] = [
+export const AUDIT_PROFILES: readonly AuditProfileConfig[] = [
+  {
+    id: "webapp",
+    label: "General Web App",
+    description:
+      "Standard CI/CD, README, dependency, security, and deployment audit.",
+  },
   {
     id: "dataops",
     label: "DataOps & Analytics",
@@ -74,81 +53,201 @@ export const AUDIT_PROFILES: AuditProfileConfig[] = [
       "Validates deterministic code, Modbus mocks, SCADA tests, and OT safety patterns.",
   },
   {
-    id: "webapp",
-    label: "General Web App",
-    description:
-      "Standard CI/CD, README, dependency, security, and deployment audit.",
-  },
-  {
     id: "cross",
     label: "Cross-Domain",
     description:
       "Composite rules that span IIoT, DataOps, web, and knowledge-graph concerns.",
   },
   {
-    id: "graph",
-    label: "Graph RAG / Knowledge Graph",
+    id: "general",
+    label: "General",
     description:
-      "Checks graph grounding, citation integrity, schema stability, and GraphRAG audit rules.",
+      "Universal repository hygiene rules (docs, license, CI, configs).",
   },
-];
+] as const;
 
-export const PROFILE_ALIASES: Record<string, CanonicalAuditProfile> = {
-  web: "webapp",
-  website: "webapp",
-  general: "webapp",
-  graphrag: "graph",
-  "graph-rag": "graph",
-};
+export type KnowledgeProfile =
+  | "dataops"
+  | "iiot"
+  | "webapp"
+  | "cross"
+  | "general"
+  | "graph";
 
-function isCanonicalAuditProfile(value: string): value is CanonicalAuditProfile {
-  return (CANONICAL_AUDIT_PROFILES as readonly string[]).includes(value);
+export type Profile = KnowledgeProfile;
+
+// ─── Rule schema ─────────────────────────────────────────────────────────
+export type RuleCheckType =
+  | "pattern_match"
+  | "file_exists"
+  | "file_absent"
+  | "semantic_eval"; // NEW — LLM-backed evaluation
+
+export type RuleErrorWhen =
+  | "pattern_present"
+  | "pattern_absent"
+  | "file_present"
+  | "file_absent";
+
+export interface RuleReference {
+  book?: string;
+  standard?: string;
+  concept?: string;
 }
 
-export function normalizeAuditProfile(
-  value: unknown
-): CanonicalAuditProfile | null {
-  if (typeof value !== "string") return null;
-  const raw = value.trim().toLowerCase();
-  if (!raw) return null;
-  if (isCanonicalAuditProfile(raw)) return raw;
-  return PROFILE_ALIASES[raw] ?? null;
+export interface RuleCheck {
+  type: RuleCheckType;
+  pattern?: string;
+  file_glob?: string;
+  path_glob?: string;
+  paths?: string[];
+  must_exist?: boolean;
+  error_when?: RuleErrorWhen;
+  message?: string;
+
+  // ─── semantic_eval ONLY ───────────────────────────────────────────────
+  /**
+   * Instruction sent to the local LLM. MUST be a synthesized audit rule,
+   * never a quoted passage from a copyrighted reference book.
+   */
+  evaluation_prompt?: string;
+  /** Pass threshold in [0,1]. Default 0.7. */
+  threshold?: number;
+  /** Max characters fed to the LLM. Default 8000. NOT a token count. */
+  max_input_chars?: number;
 }
 
-export function canonicalAuditProfile(
-  value: unknown,
-  fallback: CanonicalAuditProfile = "webapp"
-): CanonicalAuditProfile {
-  return normalizeAuditProfile(value) ?? fallback;
-}
-
-// ─── Rule ID convention ─────────────────────────────────────────────────────
-export const RULE_ID_REGEX =
-  /^(iiot|dataops|webapp|cross|general|graph)(-[a-z0-9]+)*-\d{3}[a-z]?$/;
-
-export function isValidRuleId(value: unknown): boolean {
-  return typeof value === "string" && RULE_ID_REGEX.test(value);
-}
-
-// ─── Finding ────────────────────────────────────────────────────────────────
-//
-// ruleId MUST match the YAML spec id.
-// The `detail` field is canonical here. Do NOT add a `message` field to
-// Finding — use toInsightFinding() to convert for the AI layer.
-export interface Finding {
-  ruleId: string;
+export interface RuleSpec {
+  id: string;
+  profile: KnowledgeProfile;
   severity: Severity;
   title: string;
+  rationale: string;
+  checks: RuleCheck[];
+  fix: string;
+  references: RuleReference[];
+  full_text?: string;
+  /**
+   * Lifecycle marker used by build_knowledge.py and the acceptance suite:
+   *   "active"  = implemented in TypeScript AND emitted into specs.json
+   *   "draft"   = specified in YAML but not yet implemented in TS
+   * Missing status is treated as "active" by the current test suite.
+   */
+  status?: "active" | "draft";
+}
+
+export interface SpecGlobalSettings {
+  fail_on_critical?: boolean;
+  ignore_paths?: string[];
+  [key: string]: unknown;
+}
+
+export interface SpecFile {
+  version: string;
+  profile: KnowledgeProfile;
+  description?: string;
+  global_settings?: SpecGlobalSettings;
+  rules: RuleSpec[];
+}
+
+export interface SpecBundle {
+  version: string;
+  rules: RuleSpec[];
+}
+
+// ─── Semantic evaluation result ──────────────────────────────────────────
+export type SemanticSkipReason =
+  | "budget_exceeded"
+  | "llm_unavailable"
+  | "invalid_json"
+  | "file_missing";
+
+export interface SemanticEvalResult {
+  passed: boolean;
+  score: number;
+  missing: string[];
+  reasoning: string;
+  tokens_used: number;
+  /**
+   * True when the evaluation could not run (LLM down, malformed reply,
+   * budget exhausted). A skipped result MUST NOT produce a finding.
+   */
+  skipped: boolean;
+  skipReason?: SemanticSkipReason;
+}
+
+// ─── Findings (lean audit primitive) ─────────────────────────────────────
+export interface FindingReference {
+  book?: string;
+  standard?: string;
+  concept?: string;
+}
+
+export interface Finding {
+  /** Rule identifier. Must match a `id` in docs/specs/*.yaml. */
+  ruleId: string;
+  severity: FindingSeverity;
+  title: string;
+  /** Long-form explanation. The test contract requires this field name. */
   detail: string;
   fix: string;
   weight: number;
   profile?: AuditProfile;
+  /** Optional file path where the finding was observed. */
   file?: string;
+  /** Optional line number inside `file`. */
+  line?: number;
+  references?: FindingReference[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface ScoredFinding extends Finding {
   points: number;
 }
+
+export interface InsightFinding extends Finding {
+  /** Backfilled from ruleId when absent. */
+  id?: string;
+  /** Backfilled from detail when absent. */
+  message?: string;
+  /** Backfilled from detail when absent. */
+  insight?: string;
+}
+
+/**
+ * Normalize any Finding-like object into the canonical InsightFinding shape.
+ *
+ *   Finding.detail          -> InsightFinding.message AND .insight
+ *   Finding.ruleId          -> InsightFinding.id
+ *   InsightFinding.id       -> InsightFinding.ruleId (backfilled)
+ *
+ * Call this at every boundary where a raw audit finding enters the AI layer.
+ */
+export function toInsightFinding(
+  f: Finding | InsightFinding,
+): InsightFinding {
+  const existing = f as InsightFinding;
+  return {
+    ...f,
+    id: existing.id ?? f.ruleId,
+    message: existing.message ?? f.detail,
+    insight: existing.insight ?? f.detail,
+  };
+}
+
+// ─── Deductions & scoring ────────────────────────────────────────────────
+export interface Deduction {
+  severity: FindingSeverity;
+  points: number;
+  reason: string;
+  findingIds?: string[];
+}
+
+export type ScoreGrade =
+  | "Excellent"
+  | "Needs Attention"
+  | "Critical"
+  | (string & {});
 
 export interface AuditScore {
   score: number;
@@ -167,7 +266,15 @@ export interface AuditScore {
   summary: string;
 }
 
-// ─── Knowledge graph / citation gate types ──────────────────────────────────
+// ─── GitHub tree ─────────────────────────────────────────────────────────
+export interface GitHubTreeItem {
+  path: string;
+  type: "blob" | "tree";
+  sha?: string;
+  size?: number;
+}
+
+// ─── Diagnosis / citations ───────────────────────────────────────────────
 export interface KnowledgeNode {
   id: string;
   concept: string;
@@ -176,7 +283,7 @@ export interface KnowledgeNode {
   page?: number;
   pageRange?: string;
   ruleId?: string;
-  profile?: CanonicalAuditProfile;
+  profile?: AuditProfile;
   verificationStatus?:
     | "source-backed"
     | "synthesis"
@@ -198,69 +305,116 @@ export interface GroundedSources {
 
 export interface SmartDiagnosis {
   summary: string;
+  steps?: string[];
   citations: CitationResult[];
   strippedCount: number;
 }
 
-// ─── Insight finding shape used by the AI layer ─────────────────────────────
-//
-// INTENTIONALLY LOOSE:
-//   - profile and severity are `string` here (not the strict unions) so that
-//     a caller can pass legacy values like "web" or "info" without TS fighting
-//     them.
-//   - Both `message` and `detail` exist; use toInsightFinding() to fill both
-//     so downstream prompt builders never see an empty body.
-export interface InsightFinding {
-  id?: string;
-  ruleId?: string;
-  profile?: string;
-  severity?: string;
-  title?: string;
-  message?: string;
-  detail?: string;
-  fix?: string;
-  file?: string;
+// ─── Board / routing / notes ─────────────────────────────────────────────
+export type BoardStatus =
+  | "pass"
+  | "warn"
+  | "fail"
+  | "info"
+  | "pending"
+  | (string & {});
+
+export interface BoardSection {
+  id: string;
+  title: string;
+  status: BoardStatus;
+  summary: string;
+  findings?: Finding[];
 }
 
-/**
- * Normalize any Finding-like object into the canonical InsightFinding shape.
- *
- * This is the SINGLE source of truth for the message/detail alias. Call this
- * at every boundary where a raw audit finding enters the AI layer.
- *
- *   Finding.detail     -> InsightFinding.message AND .detail
- *   InsightFinding.id  -> InsightFinding.ruleId (backfilled)
- *   InsightFinding.ruleId -> InsightFinding.id (backfilled)
- */
-export function toInsightFinding(
-  finding: Finding | InsightFinding
-): InsightFinding {
-  const id =
-    (finding as Finding).ruleId ??
-    (finding as InsightFinding).id ??
-    (finding as InsightFinding).ruleId;
+export interface RepoSignals {
+  paths: string[];
+  dependencies?: string[];
+  fileCount?: number;
+  languageHints?: string[];
+}
 
-  const detail =
-    (finding as Finding).detail ??
-    (finding as InsightFinding).message ??
-    (finding as InsightFinding).detail ??
-    "";
+export interface KnowledgeNote {
+  path: string;
+  profile: KnowledgeProfile;
+  layer?: "grounding" | "global" | "profile";
+  title?: string;
+  source?: string;
+  summary?: string;
+  staticChecks?: string[];
+  humanReview?: string[];
+  readyRuleIds?: string[];
+  candidateRuleIds?: string[];
+}
 
-  const severity =
-    typeof finding.severity === "string" ? finding.severity : undefined;
+export interface KnowledgeBundle {
+  repo_root: string;
+  primary_profile: KnowledgeProfile;
+  secondary_profiles: KnowledgeProfile[];
+  scores: Partial<Record<KnowledgeProfile, number>>;
+  grounding_notes: KnowledgeNote[];
+  global_notes: KnowledgeNote[];
+  profile_notes: KnowledgeNote[];
+  global_order: string[];
+  profile_folders: string[];
+  citation_allowlist?: string[];
+  repo_signals?: RepoSignals;
+}
 
-  const profile =
-    typeof finding.profile === "string" ? finding.profile : undefined;
-
-  return {
-    id,
-    ruleId: id,
-    profile,
-    severity,
-    title: finding.title,
-    message: detail,
-    detail,
-    fix: finding.fix,
-    file: finding.file,
+export interface RoutingSummary {
+  repository: string;
+  primary_profile: KnowledgeProfile;
+  secondary_profiles: KnowledgeProfile[];
+  profile_scores: Partial<Record<KnowledgeProfile, number>>;
+  global_lens_order: string[];
+  layer_counts: {
+    grounding: number;
+    global: number;
+    profile: number;
+    total: number;
   };
+  citation_allowlist_count: number;
+}
+
+export interface CrossDomainResult {
+  crossDomain: boolean;
+  domains: string[];
+}
+
+export interface CitationGateResult {
+  grounded: boolean;
+  text: string;
+  stripped: number;
+  validCitations: string[];
+  strippedCitations: string[];
+}
+
+// ─── LLM provider (public metadata only) ─────────────────────────────────
+export interface LLMProviderConfig {
+  id: string;
+  label: string;
+  baseUrl?: string;
+  apiKeyEnv?: string;
+  model?: string;
+  headers?: Record<string, string>;
+  keyless?: boolean;
+}
+
+export interface LLMRequest {
+  url: string;
+  method: "POST";
+  headers: Record<string, string>;
+  body: unknown;
+}
+
+export interface LLMResponse {
+  content: string;
+  raw?: unknown;
+}
+
+export interface LLMErrorInfo {
+  message: string;
+  status?: number;
+  provider?: string;
+  raw?: unknown;
 }

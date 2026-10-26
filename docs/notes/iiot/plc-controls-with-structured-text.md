@@ -1,14 +1,16 @@
+1. Source Identity
+Title: Plc Controls With Structured Text
+
 # PLC Controls with Structured Text (ST) — RepoScope Knowledge Note
 
 ## 1. Source identity
 
-- **Title:** PLC Controls with Structured Text
-- Title: PLC Controls with Structured Text (ST)
-- Author(s): Tom Mejer Antonsen
-- Branch: iiot
-- RepoScope profile: iiot
-- Primary source file: PLC Controls with Structured Text (ST).pdf
-- Note status: reviewed-with-candidate-rules
+- **Title:** PLC Controls with Structured Text (ST)
+- **Author(s):** Tom Mejer Antonsen
+- **Branch:** iiot
+- **RepoScope profile:** iiot
+- **Primary source file:** PLC Controls with Structured Text (ST).pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

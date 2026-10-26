@@ -1,0 +1,8 @@
+name: customer-events
+owner:
+  team: data-platform
+schema_version: 1.0.0
+sla:
+  freshness: 1h
+consumers:
+  - analytics-dashboard

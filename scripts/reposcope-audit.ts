@@ -11,6 +11,7 @@ import { execSync } from "child_process";
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { generateFindings, scoreAndExplain } from "../lib/audit";
+import { generateAllFindings } from "../lib/audit-orchestrator";
 import { auditDataOpsRepository } from "../lib/dataops-audit";
 import { auditIIoTRepository } from "../lib/iiot-audit";
 import type { GitHubTreeItem, Finding } from "../lib/types";
@@ -106,7 +107,7 @@ function groundRule(ruleId: string): Array<{ rule: string; concept: string; book
   }
 }
 
-function main() {
+async function main() {
   const { repo, profile, strict } = parseArgs();
   if (!existsSync(repo)) {
     console.error(`[ERROR] Repo path does not exist: ${repo}`);
@@ -156,9 +157,9 @@ function main() {
   // profile is NOT in activeProfiles are never invoked.
   const profileAuditors: Record<
     string,
-    (t: GitHubTreeItem[], fc: Record<string, string>) => Finding[]
+    (t: GitHubTreeItem[], fc: Record<string, string>) => Finding[] | Promise<Finding[]>
   > = {
-    webapp: (t, fc) => generateFindings({}, t, [], [], [], "main", fc),
+    webapp: async (t, fc) => generateAllFindings({}, t, [], [], [], "main", loadRules("webapp"), fc),
     dataops: (t, fc) =>
       auditDataOpsRepository(t, undefined, fc).checks
         .filter(c => c.status !== "pass")
@@ -189,7 +190,8 @@ function main() {
   const all: Finding[] = [];
   for (const [routedProfile, runAudit] of Object.entries(profileAuditors)) {
     if (!activeProfiles.has(routedProfile)) continue;
-    all.push(...runAudit(tree, fileContents));
+    const profileFindings = await runAudit(tree, fileContents);
+    all.push(...profileFindings);
   }
 
   // --profile is an *additional* narrowing on top of route gating.
@@ -220,4 +222,12 @@ function main() {
   process.exit(strict && filtered.length > 0 ? 1 : 0);
 }
 
-main();
+main().catch((err) => { console.error(err); process.exit(1); });
+function loadRules(profile: string): any[] {
+  const fs = require("fs");
+  const path = require("path");
+  const specsPath = path.join(process.cwd(), "public", "knowledge", "specs.json");
+  if (!fs.existsSync(specsPath)) return [];
+  const specs = JSON.parse(fs.readFileSync(specsPath, "utf8"));
+  return specs[profile]?.rules ?? [];
+}

@@ -28,6 +28,11 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 function str(v: unknown): string | undefined {
   return typeof v === "string" ? v : undefined;
 }
+/**
+ * Extract concatenated text from an array of parts.
+ * Works for Anthropic `content: [{ type: "text", text: ... }]`
+ * and for Google `parts: [{ text: ... }]`.
+ */
 function partsText(v: unknown): string {
   if (!Array.isArray(v)) return "";
   return v
@@ -37,26 +42,51 @@ function partsText(v: unknown): string {
 }
 
 export function buildRequest(
-  config: ProviderConfig, req: LLMRequest, apiKey: string
+  config: ProviderConfig,
+  req: LLMRequest,
+  apiKey: string,
 ): OutboundRequest {
   switch (config.apiFormat) {
-    case "openai-compatible": return buildOpenAI(config, req, apiKey);
-    case "anthropic":         return buildAnthropic(config, req, apiKey);
-    case "google":            return buildGoogle(config, req, apiKey);
+    case "openai-compatible":
+      return buildOpenAI(config, req, apiKey);
+    case "anthropic":
+      return buildAnthropic(config, req, apiKey);
+    case "google":
+      return buildGoogle(config, req, apiKey);
+    default: {
+      // Compile-time exhaustiveness check. If `ApiFormat` grows, this
+      // becomes a type error instead of a silent runtime fallthrough.
+      const _exhaustive: never = config.apiFormat;
+      throw new Error(`Unsupported API format: ${String(_exhaustive)}`);
+    }
   }
 }
 
-export function parseResponse(config: ProviderConfig, data: unknown): ParsedResponse {
+export function parseResponse(
+  config: ProviderConfig,
+  data: unknown,
+): ParsedResponse {
   switch (config.apiFormat) {
-    case "openai-compatible": return parseOpenAI(data);
-    case "anthropic":         return parseAnthropic(data);
-    case "google":            return parseGoogle(data);
+    case "openai-compatible":
+      return parseOpenAI(data);
+    case "anthropic":
+      return parseAnthropic(data);
+    case "google":
+      return parseGoogle(data);
+    default: {
+      const _exhaustive: never = config.apiFormat;
+      throw new Error(`Unsupported API format: ${String(_exhaustive)}`);
+    }
   }
 }
 
 // ---- 1. OpenAI-compatible: OpenAI, Groq, Mistral, DeepSeek, Together,
 //         OpenRouter, Fireworks, Perplexity, xAI, Ollama, vLLM, LiteLLM ----
-function buildOpenAI(c: ProviderConfig, r: LLMRequest, key: string): OutboundRequest {
+function buildOpenAI(
+  c: ProviderConfig,
+  r: LLMRequest,
+  key: string,
+): OutboundRequest {
   return {
     url: `${c.baseUrl}/chat/completions`,
     headers: {
@@ -76,15 +106,23 @@ function buildOpenAI(c: ProviderConfig, r: LLMRequest, key: string): OutboundReq
   };
 }
 function parseOpenAI(d: unknown): ParsedResponse {
-  if (!isRecord(d) || !Array.isArray(d.choices) || d.choices.length === 0) return { content: "" };
+  if (!isRecord(d) || !Array.isArray(d.choices) || d.choices.length === 0) {
+    return { content: "" };
+  }
   const first = d.choices[0];
   const content =
-    isRecord(first) && isRecord(first.message) ? str(first.message.content)?.trim() ?? "" : "";
+    isRecord(first) && isRecord(first.message)
+      ? str(first.message.content)?.trim() ?? ""
+      : "";
   return { content };
 }
 
 // ---- 2. Anthropic Messages API ----
-function buildAnthropic(c: ProviderConfig, r: LLMRequest, key: string): OutboundRequest {
+function buildAnthropic(
+  c: ProviderConfig,
+  r: LLMRequest,
+  key: string,
+): OutboundRequest {
   return {
     url: `${c.baseUrl}/messages`,
     headers: {
@@ -107,7 +145,11 @@ function parseAnthropic(d: unknown): ParsedResponse {
 }
 
 // ---- 3. Google Gemini generateContent ----
-function buildGoogle(c: ProviderConfig, r: LLMRequest, key: string): OutboundRequest {
+function buildGoogle(
+  c: ProviderConfig,
+  r: LLMRequest,
+  key: string,
+): OutboundRequest {
   return {
     url: `${c.baseUrl}/models/${r.model}:generateContent`,
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
@@ -122,10 +164,17 @@ function buildGoogle(c: ProviderConfig, r: LLMRequest, key: string): OutboundReq
   };
 }
 function parseGoogle(d: unknown): ParsedResponse {
-  if (!isRecord(d) || !Array.isArray(d.candidates) || d.candidates.length === 0) {
+  if (
+    !isRecord(d) ||
+    !Array.isArray(d.candidates) ||
+    d.candidates.length === 0
+  ) {
     return { content: "" };
   }
   const first = d.candidates[0];
-  const content = isRecord(first) && isRecord(first.content) ? partsText(first.content.parts) : "";
+  const content =
+    isRecord(first) && isRecord(first.content)
+      ? partsText(first.content.parts)
+      : "";
   return { content };
 }

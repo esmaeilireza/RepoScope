@@ -1,0 +1,8 @@
+{
+  "rule_id": "dataops-kimball-sem-001",
+  "fixtures": {
+    "good":       { "min_score": 0.85, "max_score": 1.00, "missing_allowlist": [] },
+    "borderline": { "min_score": 0.40, "max_score": 0.75, "missing_allowlist": ["grain"] },
+    "bad":        { "min_score": 0.00, "max_score": 0.45, "missing_allowlist": ["grain", "additive"] }
+  }
+}

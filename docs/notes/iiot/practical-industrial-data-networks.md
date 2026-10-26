@@ -1,14 +1,16 @@
+1. Source Identity
+Title: Practical Industrial Data Networks
+
 # Practical Industrial Data Networks — RepoScope Knowledge Note
 
 ## 1. Source identity
 
-- **Title:** Practical Industrial Data Networks
-- Title: Practical Industrial Data Networks: Design, Installation and Troubleshooting
-- Author(s): Steve Mackay, Edwin Wright, Deon Reynders, John Park
-- Branch: iiot
-- RepoScope profile: iiot
-- Primary source file: Steve Mackay CPEng BSc ( BSc (Hons) MBA, Edwin Wright - Practical Industrial Data Networks_ Design, Installation and Troubleshooting (2004, Newnes) .pdf
-- Note status: reviewed-with-candidate-rules
+- **Title:** Practical Industrial Data Networks: Design, Installation and Troubleshooting
+- **Author(s):** Steve Mackay, Edwin Wright, Deon Reynders, John Park
+- **Branch:** iiot
+- **RepoScope profile:** iiot
+- **Primary source file:** Steve Mackay CPEng BSc ( BSc (Hons) MBA, Edwin Wright - Practical Industrial Data Networks_ Design, Installation and Troubleshooting (2004, Newnes) .pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

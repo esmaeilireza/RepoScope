@@ -1,10 +1,13 @@
 # RepoScope Knowledge Note: Designing Web APIs
 
-## 1. Source Identity
-* **Title**: Designing Web APIs: Building APIs That Developers Love
-* **Authors**: Brenda Jin, Saurabh Sahni, and Amir Shevat
-* **Publication Focus**: Architectural design, API paradigm selection, developer experience (DX), authorization standards, rate limiting, and long-term lifecycle management for web APIs.
-* **Primary Target Audience**: Web API architects, backend software engineers, platform engineering leads, and technical product managers.
+## 1. Source identity
+
+- **Title:** Designing Web APIs: Building APIs That Developers Love
+- **Author(s):** Brenda Jin, Saurabh Sahni, Amir Shevat
+- **Branch:** webapp
+- **RepoScope profile:** webapp
+- **Primary source file:** Designing Web APIs_ Building APIs That Developers Love.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

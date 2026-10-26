@@ -1,0 +1,29 @@
+apiVersion: datamesh/v1
+kind: DataProduct
+metadata:
+  name: customer-events
+  version: 2.1.0
+  owner:
+    team: data-platform
+    contact: data-platform@example.com
+    oncall: pagerduty://data-platform
+spec:
+  schema:
+    version: 2.1.0
+    registry: https://schemas.internal/customer-events/2.1.0
+  sla:
+    freshness: 5m
+    latency_p95: 800ms
+    availability: 99.9%
+  consumers:
+    - name: analytics-dashboard
+      owner: analytics-team
+    - name: churn-model
+      owner: ml-platform
+    - name: exec-reports
+      owner: bi-team
+  quality_gates:
+    - name: null-rate-check
+      threshold: 0.001
+    - name: schema-drift-check
+      fail_on: breaking

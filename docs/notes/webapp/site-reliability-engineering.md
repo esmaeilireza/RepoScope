@@ -1,10 +1,13 @@
-# RepoScope Knowledge Note: Site Reliability Engineering (Google SRE Team)
+# RepoScope Knowledge Note: Site Reliability Engineering 
 
-## 1. Source Identity
-- **Title**: Site Reliability Engineering: How Google Runs Production Systems
-- **Author(s)**: Betsy Beyer, Chris Jones, Jennifer Petoff, and Niall Richard Murphy
-- **Primary Domain**: Systems Engineering, Site Reliability Engineering, Production Operations, Infrastructure Automation, Service Level Management
-- **Target Audience**: Site Reliability Engineers, DevOps Engineers, Infrastructure Architects, Systems Administrators, Software Engineering Leaders
+## 1. Source identity
+
+- **Title:** Site Reliability Engineering: How Google Runs Production Systems
+- **Author(s):** Betsy Beyer, Chris Jones, Jennifer Petoff, and Niall Richard Murphy
+- **Branch:** webapp
+- **RepoScope profile:** webapp
+- **Primary source file:** Site Reliability Engineering_ How Google Runs Production Systems.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

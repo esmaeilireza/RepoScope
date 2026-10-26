@@ -1,6 +1,10 @@
+1. Source Identity
+Title: Agentic Graphrag
+
 # Agentic GraphRAG: Integrating Knowledge Graphs, Reasoning, and Agency for Enterprise AI — RepoScope Knowledge Note
 
 ## 1. Source identity
+
 - **Title:** Agentic GraphRAG: Integrating Knowledge Graphs, Reasoning, and Agency for Enterprise AI
 - **Author(s):** Anthony Alcaraz and Sam Julien
 - **Branch:** graph

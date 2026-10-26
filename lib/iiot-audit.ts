@@ -1,9 +1,14 @@
-// IIoT / PLC audit module — all findings linked to docs/specs/iiot.yaml via ruleId.
+// lib/iiot-audit.ts
+//
+// IIoT / PLC audit module — all findings linked to docs/specs/iiot.yaml via
+// ruleId.
 //
 // Self-audit notes:
 //   • Detection strings that would trigger iiot-007 on THIS file are split with
 //     string concatenation, e.g. ":" + "502", so the scanner never matches itself.
 //   • Numbers like 502 and 2000 require nearby industrial context before matching.
+
+import type { GitHubTreeItem } from './types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -188,8 +193,6 @@ const PROTOCOL_LIBRARIES: string[] = [
 
 // ---------------------------------------------------------------------------
 // Helper: decide whether a file path is a production source file.
-// FIX: added 'scripts/' to the exclusion list to prevent self-audit false
-//      positives from internal tooling / router scripts.
 // ---------------------------------------------------------------------------
 
 function isProductionSourceFile(filePath: string): boolean {
@@ -213,20 +216,20 @@ function isProductionSourceFile(filePath: string): boolean {
     'simulator',
     'fixture',
     '/spec/',
-    // ── FIX: exclude internal tool / router scripts ──────────────────────
+    // Exclude internal tool / router scripts
     '/scripts/',
     'scripts/',
-    // ── FIX: exclude build artifacts ─────────────────────────────────────
+    // Exclude build artifacts
     '/.next/',
     '.next/',
-    // ── FIX: exclude dependency/environment directories ───────────────────
+    // Exclude dependency / environment directories
     '/node_modules/',
     'node_modules/',
     '/.venv/',
     '.venv/',
     '/venv/',
     'venv/',
-    // ── FIX: exclude self-referencing audit rule file ─────────────────────
+    // Exclude self-referencing audit rule file
     'iiot-audit.ts',
     'iiot-audit.js',
   ];
@@ -288,12 +291,6 @@ function hasProtocolDependencies(
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
-
-export interface GitHubTreeItem {
-  path: string;
-  type: 'blob' | 'tree';
-  sha?: string;
-}
 
 export function auditIIoTRepository(
   treeItems: GitHubTreeItem[],

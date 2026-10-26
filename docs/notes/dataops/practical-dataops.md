@@ -1,14 +1,16 @@
+1. Source Identity
+Title: Practical Dataops
+
 # Practical DataOps — RepoScope Knowledge Note
 
 ## 1. Source identity
 
 - **Title:** Practical DataOps
-- Title: Practical DataOps: Delivering Agile Data Science At Scale
-- Author(s): Harvinder Atwal
-- Branch: dataops
-- RepoScope profile: dataops
-- Primary source file: Harvinder Atwal - Practical DataOps_ Delivering Agile Data Science At Scale (2020, Apress).pdf
-- Note status: reviewed-with-candidate-rules
+- **Author(s):** Harvinder Atwal
+- **Branch:** dataops
+- **RepoScope profile:** dataops
+- **Primary source file:** Harvinder Atwal - Practical DataOps_ Delivering Agile Data Science At Scale (2020, Apress).pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ## 2. Scope
 - In scope:
@@ -263,22 +265,22 @@ rules:
 ### Candidates not emitted
 - `dataops-atwal-004`: Requires AST or structural Python parsing to inspect DAG task definitions accurately for operational metadata callbacks (YAML readiness: needs-review).
 
-## 12. Handoff checklist
+## 12. Handoff Checklist
+
 - [x] All emitted rule IDs are unique.
 - [x] All emitted severities match Section 10.
-- [x] All emitted references use {book|standard, concept}.
-- [x] All emitted check types are in {pattern_match, file_exists, file_absent}.
-- [x] All "ready" rules appear in Section 11 YAML.
-- [x] All "needs-review" / "blocked" rules are absent from Section 11 YAML.
-- [x] Section 11 ends with "### Candidates not emitted".
+- [x] All emitted references use `{book|standard, concept}`.
+- [x] All emitted check types are in `{pattern_match, file_exists, file_absent}`.
+- [x] All `ready` rules appear in Section 11 YAML.
+- [x] All `needs-review` / `blocked` rules are absent from Section 11 YAML.
+- [x] Section 11 ends with `### Candidates not emitted` or an explicit block explanation.
 - [x] No page numbers anywhere in the note.
 - [x] No verbatim quotes longer than 15 words.
-- [x] Every supplied rule ID is either used with a source-backed meaning or explicitly marked "Meaning to be confirmed."
-- [x] "Note status" reflects the weakest readiness in Section 10.
-- [x] Section 9 does not smuggle non-static advice into the automated list.
-- [x] Section 3 has all 10 fields filled.
-- [x] Section 10 has at least 3 rules (or explicit justification).
-
+- [x] Every supplied rule ID is either used with a source-backed meaning or explicitly marked `Meaning to be confirmed.`
+- [x] `Note status` reflects the weakest readiness in Section 10.
+- [x] Section 9 explicitly separates automated static checks from human review.
+- [x] Section 3 has all required spirit fields filled.
+- [x] Section 10 has at least three rules or an explicit justification.
 
 ## References
 

@@ -1,0 +1,8 @@
+{
+  "rule_id": "iiot-loto-sem-001",
+  "fixtures": {
+    "good":       { "min_score": 0.85, "max_score": 1.00, "missing_allowlist": [] },
+    "borderline": { "min_score": 0.40, "max_score": 0.75, "missing_allowlist": ["emergency"] },
+    "bad":        { "min_score": 0.00, "max_score": 0.40, "missing_allowlist": ["isolation", "verification", "authorized", "emergency"] }
+  }
+}

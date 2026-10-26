@@ -1,15 +1,16 @@
+1. Source Identity
+Title: Deep Learning For Time Series Forecasting
+
 # Deep Learning for Time Series Forecasting — RepoScope Knowledge Note
 
-## 1. Source Identity
+## 1. Source identity
 
-| Field | Value |
-|---|---|
-| **Title** | Deep Learning for Time Series Forecasting |
-| **Author(s)** | Jason Brownlee |
-| **Branch** | dataops |
-| **RepoScope profile** | dataops |
-| **Primary source file** | `Deep Learning for Time Series Forecasting- Predict the -- Jason Brownlee -- Machine Learning Mastery, 2019` |
-| **Note status** | reviewed-with-candidate-rules |
+- **Title:** Deep Learning for Time Series Forecasting
+- **Author(s):** Jason Brownlee
+- **Branch:** dataops
+- **RepoScope profile:** dataops
+- **Primary source file:** Deep Learning for Time Series Forecasting- Predict the -- Jason Brownlee -- Machine Learning Mastery, 2019
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

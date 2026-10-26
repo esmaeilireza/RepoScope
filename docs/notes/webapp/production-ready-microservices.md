@@ -1,11 +1,13 @@
 # RepoScope Knowledge Note: Production-Ready Microservices
 
-## 1. Source Identity
-* **Title**: Production-Ready Microservices: Building Standardized Systems Across an Engineering Organization
-* **Author**: Susan J. Fowler
-* **Publisher**: O'Reilly Media (2016)
-* **Primary Focus**: Establishing organization-wide standards for microservice production readiness across stability, scalability, fault tolerance, monitoring, documentation, and catastrophe preparedness.
+## 1. Source identity
 
+- **Title:** Production-Ready Microservices: Building Standardized Systems Across an Engineering Organization
+- **Author(s):** Susan J. Fowler
+- **Branch:** webapp
+- **RepoScope profile:** webapp
+- **Primary source file:** Production-Ready Microservices_ Building Standardized Systems Across an Engineering Organization.pdf
+- **Note status:** reviewed-with-candidate-rules
 ---
 
 ## 2. Scope

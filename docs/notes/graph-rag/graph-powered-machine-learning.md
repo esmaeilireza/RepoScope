@@ -1,19 +1,16 @@
+1. Source Identity
+Title: Graph Powered Machine Learning
+
 # Graph-Powered Machine Learning — RepoScope Knowledge Note
 
-> **Status:** reviewed-with-candidate-rules · **Profile:** graph · **RepoScope KG Series**
+## 1. Source identity
 
----
-
-## 1. Source Identity
-
-| Field | Value |
-|---|---|
-| **Title** | Graph-Powered Machine Learning |
-| **Author(s)** | Alessandro Negro (Foreword by Dr. Jim Webber) |
-| **Branch** | `graph` |
-| **RepoScope profile** | `graph` |
-| **Primary source file** | `Graph-Powered Machine Learning.pdf` |
-| **Note status** | `reviewed-with-candidate-rules` |
+- **Title:** Graph-Powered Machine Learning
+- **Author(s):** Alessandro Negro (Foreword by Dr. Jim Webber)
+- **Branch:** graph
+- **RepoScope profile:** graph
+- **Primary source file:** Graph-Powered Machine Learning.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

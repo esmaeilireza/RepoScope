@@ -1,11 +1,14 @@
 # RepoScope Knowledge Note: Continuous Delivery
 
-## 1. Source Identity
-* **Title:** Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation
-* **Authors:** Jez Humble, David Farley
-* **Publication Year:** 2010
-* **Domain / Subject Area:** Software Engineering, DevOps, Release Engineering, Build & Deployment Automation
-* **Primary Architectural Focus:** Deployment Pipeline Architecture, Continuous Integration, Automated Testing, Configuration Management, and Low-Risk Release Strategies
+## 1. Source identity
+
+- **Title:** Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation
+- **Author(s):** Jez Humble, David Farley
+- **Branch:** webapp
+- **RepoScope profile:** webapp
+- **Primary source file:** Continuous Delivery_ Reliable Software Releases through Build, Test, and Deployment Automation.pdf
+- **Note status:** reviewed-with-candidate-rules
+
 
 ---
 

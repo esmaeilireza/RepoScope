@@ -1,14 +1,16 @@
+1. Source Identity
+Title: Streaming Systems
+
 # Streaming Systems — RepoScope Knowledge Note
 
 ## 1. Source identity
 
-- **Title:** Streaming Systems
-- Title: Streaming Systems: The What, Where, When, and How of Large-Scale Data Processing
-- Author(s): Tyler Akidau, Slava Chernyak, Reuven Lax
-- Branch: dataops
-- RepoScope profile: dataops
-- Primary source file: Streaming Systems- The What, Where, When, and How of Large-Scale Data Processing.pdf
-- Note status: reviewed-with-candidate-rules
+- **Title:** Streaming Systems: The What, Where, When, and How of Large-Scale Data Processing
+- **Author(s):** Tyler Akidau, Slava Chernyak, Reuven Lax
+- **Branch:** dataops
+- **RepoScope profile:** dataops
+- **Primary source file:** Streaming Systems- The What, Where, When, and How of Large-Scale Data Processing.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ## 2. Scope
 - In scope:

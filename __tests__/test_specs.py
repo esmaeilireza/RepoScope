@@ -35,6 +35,7 @@ ROOT = Path(__file__).resolve().parents[1]
 import pytest
 import yaml
 
+
 # ─────────────────────────────────────────────────────────────────────
 # Marker registration (keeps `-m live` warning-free without pytest.ini)
 # ─────────────────────────────────────────────────────────────────────
@@ -143,6 +144,16 @@ IP_SAFE_ALLOWLIST_RE = re.compile(
     r"without page numbers|page locators|paragraph locators)",
     re.IGNORECASE,
 )
+
+# Semantic-eval rule constraints. Mirrors lib/semantic/runner.ts:
+#   - evaluation_prompt must be a substantive instruction
+#   - threshold in [0, 1]
+#   - max_input_chars (NOT max_tokens) >= 100 when present
+#   - file_glob or path_glob required (target resolution)
+#   - error_when is rejected on semantic_eval (use threshold instead)
+SEMANTIC_PROMPT_MIN_LEN = 50      # YAML-side quality floor (TS load-time floor is 10)
+SEMANTIC_MAX_INPUT_MIN = 100
+SEMANTIC_DEFAULT_THRESHOLD = 0.7
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -441,6 +452,147 @@ def test_general_yaml_covers_every_general_prefixed_id(
     assert not missing, (
         f"{len(missing)} general-* rule ids are emitted by TS but missing from "
         f"{general_yaml.name}: {missing}"
+    )
+
+
+def test_semantic_eval_rules_are_well_formed(yaml_specs: dict[Path, dict]):
+    """
+    Every `semantic_eval` check in every YAML manifest must satisfy the
+    contract enforced by lib/semantic/runner.ts at load time and re-enforced
+    here at the corpus level with stricter quality floors.
+
+    Requirements (per check):
+      - `evaluation_prompt`: string, >= 50 chars (rejects vague one-word prompts)
+      - `threshold` (optional): number in [0, 1]; default 0.7
+      - `max_input_chars` (optional): int >= 100
+      - `file_glob` or `path_glob` present (target resolution)
+      - `error_when` ABSENT — semantic failures are governed by `threshold`
+      - `max_tokens` ABSENT — the field is `max_input_chars` (chars ≠ tokens)
+
+    Requirements (per rule, defence in depth — also covered by
+    test_yaml_rules_have_required_fields):
+      - `references[]` non-empty — otherwise citation-gate.ts strips every
+        downstream assertion as ungrounded (Week-4 IP boundary).
+    """
+    problems: list[str] = []
+    semantic_checks_seen = 0
+
+    for path, doc in yaml_specs.items():
+        if not isinstance(doc, dict):
+            continue
+        for rule in doc.get("rules", []) or []:
+            rid = rule.get("id", "?")
+            checks = rule.get("checks", []) or []
+
+            # Determine whether this rule contains at least one semantic check.
+            rule_has_semantic = any(
+                isinstance(c, dict) and c.get("type") == "semantic_eval"
+                for c in checks
+            )
+            if not rule_has_semantic:
+                continue
+
+            # Grounding precondition — semantic rules MUST carry references,
+            # else the citation gate strips them and the finding is dead text.
+            if not rule.get("references"):
+                problems.append(
+                    f"{path.name}/{rid}: semantic_eval rule has empty references[] "
+                    "— citation-gate.ts will strip every assertion"
+                )
+
+            for i, check in enumerate(checks):
+                if not isinstance(check, dict):
+                    problems.append(f"{path.name}/{rid} check[{i}]: not a mapping")
+                    continue
+                if check.get("type") != "semantic_eval":
+                    continue
+                semantic_checks_seen += 1
+                prefix = f"{path.name}/{rid} check[{i}]"
+
+                prompt = check.get("evaluation_prompt")
+                if not isinstance(prompt, str):
+                    problems.append(f"{prefix}: evaluation_prompt missing or not a string")
+                elif len(prompt) < SEMANTIC_PROMPT_MIN_LEN:
+                    problems.append(
+                        f"{prefix}: evaluation_prompt too short "
+                        f"({len(prompt)} < {SEMANTIC_PROMPT_MIN_LEN} chars) — "
+                        "likely vague"
+                    )
+
+                if "max_tokens" in check:
+                    problems.append(
+                        f"{prefix}: uses deprecated 'max_tokens' — "
+                        "rename to 'max_input_chars' (the runner slices by characters, "
+                        "not tokens)"
+                    )
+
+                if "error_when" in check:
+                    problems.append(
+                        f"{prefix}: semantic_eval must not declare 'error_when' — "
+                        "use 'threshold' as the single source of failure semantics"
+                    )
+
+                threshold = check.get("threshold", SEMANTIC_DEFAULT_THRESHOLD)
+                if not isinstance(threshold, (int, float)) or isinstance(threshold, bool):
+                    problems.append(f"{prefix}: threshold must be numeric, got {threshold!r}")
+                elif not (0.0 <= float(threshold) <= 1.0):
+                    problems.append(f"{prefix}: threshold must be in [0, 1], got {threshold!r}")
+
+                if "max_input_chars" in check:
+                    mic = check["max_input_chars"]
+                    if not isinstance(mic, int) or isinstance(mic, bool):
+                        problems.append(
+                            f"{prefix}: max_input_chars must be an int, got {mic!r}"
+                        )
+                    elif mic < SEMANTIC_MAX_INPUT_MIN:
+                        problems.append(
+                            f"{prefix}: max_input_chars must be >= "
+                            f"{SEMANTIC_MAX_INPUT_MIN}, got {mic}"
+                        )
+
+                if not check.get("file_glob") and not check.get("path_glob"):
+                    problems.append(
+                        f"{prefix}: semantic_eval requires file_glob or path_glob "
+                        "so the runner can resolve a target file"
+                    )
+
+    # If no semantic rules exist yet, the feature is not shipped — skip
+    # rather than fail. The xfail-marked companion test below tracks the goal.
+    if semantic_checks_seen == 0:
+        pytest.skip(
+            "No semantic_eval checks declared yet across docs/specs/*.yaml. "
+            "Ship the first rule (status: draft) before enabling this gate."
+        )
+
+    assert not problems, (
+        f"{len(problems)} semantic_eval problem(s) across "
+        f"{semantic_checks_seen} check(s):\n  " + "\n  ".join(problems)
+    )
+
+
+@pytest.mark.xfail(
+    reason="First semantic_eval rule is not yet authored. Flip to a hard "
+           "assertion once docs/specs/webapp.yaml (or similar) ships a "
+           "`status: active` semantic rule.",
+    strict=False,
+)
+def test_at_least_one_semantic_eval_rule_shipped(yaml_specs: dict[Path, dict]):
+    """
+    Tracks feature completion. Fails (xfailed until implementation) if no
+    YAML manifest declares a `semantic_eval` check. The companion test
+    test_semantic_eval_rules_are_well_formed validates each rule once shipped.
+    """
+    count = 0
+    for doc in yaml_specs.values():
+        if not isinstance(doc, dict):
+            continue
+        for rule in doc.get("rules", []) or []:
+            for check in rule.get("checks", []) or []:
+                if isinstance(check, dict) and check.get("type") == "semantic_eval":
+                    count += 1
+    assert count >= 1, (
+        "No semantic_eval checks found in docs/specs/*.yaml. "
+        "Author the first rule (status: draft) to begin the semantic layer rollout."
     )
 
 
@@ -1423,26 +1575,25 @@ def test_report_routing_summary(routed_bundle, capsys):
 
 def test_active_rules_are_all_implemented_in_typescript():
     """Every YAML rule marked status: active MUST be emitted by lib/*-audit.ts."""
-    import re
-    import yaml
-
     # 1. Collect active rule IDs from YAML
-    active_ids = set()
-    for p in sorted((ROOT / "docs/specs").glob("*.yaml")):
+    active_ids: set[str] = set()
+    for p in sorted((REPO_ROOT / "docs/specs").glob("*.yaml")):
         if p.name.startswith("_"):
             continue
         data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
-        for r in data.get("rules", []):
+        for r in data.get("rules", []) or []:
             if r.get("status", "active") == "active":
                 active_ids.add(r["id"])
 
     # 2. Collect rule IDs emitted by TypeScript
     ts_files = [
-        ROOT / "lib/audit.ts",
-        ROOT / "lib/dataops-audit.ts",
-        ROOT / "lib/iiot-audit.ts",
+        REPO_ROOT / "lib/audit.ts",
+        REPO_ROOT / "lib/dataops-audit.ts",
+        REPO_ROOT / "lib/iiot-audit.ts",
     ]
-    ts_blob = "\n".join(f.read_text(encoding="utf-8") for f in ts_files)
+    ts_blob = "\n".join(
+        f.read_text(encoding="utf-8") for f in ts_files if f.exists()
+    )
     emitted = set(re.findall(
         r"ruleId:\s*['\"]((?:iiot|dataops|webapp|cross|general|graph)(?:-[a-z0-9]+)*-\d{3}[a-z]?)['\"]",
         ts_blob,
@@ -1453,4 +1604,112 @@ def test_active_rules_are_all_implemented_in_typescript():
         f"{len(missing)} YAML rule(s) marked 'active' are NOT implemented in TS:\n"
         + "\n".join(f"  {r}" for r in missing)
         + "\n\nEither implement them in lib/*-audit.ts or mark them 'status: draft'."
+    )
+
+# === RepoScope semantic fixture calibration (added by bootstrap) ===
+# Requires a running local Ollama server (marker: live).
+SEMANTIC_FIXTURES_DIR = REPO_ROOT / "__tests__" / "fixtures" / "semantic"
+
+
+def _load_semantic_rules() -> dict[str, dict]:
+    """{rule_id: {evaluation_prompt, threshold}} from docs/specs/*.yaml."""
+    out: dict[str, dict] = {}
+    if not SPECS_DIR.is_dir():
+        return out
+    for path in list(SPECS_DIR.glob("*.yaml")) + list(SPECS_DIR.glob("*.yml")):
+        if path.name.startswith("_"):
+            continue
+        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        for rule in doc.get("rules", []) or []:
+            for check in rule.get("checks", []) or []:
+                if check.get("type") == "semantic_eval" and check.get("evaluation_prompt"):
+                    out[rule["id"]] = {
+                        "evaluation_prompt": check["evaluation_prompt"],
+                        "threshold": check.get("threshold", 0.7),
+                    }
+                    break
+    return out
+
+
+def _find_fixture(rule_dir: Path, band: str) -> Path | None:
+    for ext in (".md", ".yml", ".yaml", ".sql", ".js", ".ts"):
+        p = rule_dir / f"{band}{ext}"
+        if p.exists():
+            return p
+    return None
+
+
+@pytest.mark.live
+def test_semantic_fixtures_calibrate(ollama_model: str):
+    """Run each fixture through the model and assert band + missing fingerprint."""
+    if not SEMANTIC_FIXTURES_DIR.is_dir():
+        pytest.skip(f"No semantic fixtures at {SEMANTIC_FIXTURES_DIR}")
+
+    rules = _load_semantic_rules()
+    assert rules, "No semantic_eval rules found in docs/specs/*.yaml"
+
+    failures: list[str] = []
+    total = 0
+
+    for rule_dir in sorted(SEMANTIC_FIXTURES_DIR.iterdir()):
+        if not rule_dir.is_dir():
+            continue
+        meta_path = rule_dir / "meta.json"
+        if not meta_path.exists():
+            continue
+
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        rule_id = meta["rule_id"]
+        if rule_id not in rules:
+            failures.append(f"{rule_id}: fixture exists but no rule in specs")
+            continue
+
+        prompt = rules[rule_id]["evaluation_prompt"]
+        for band in ("good", "borderline", "bad"):
+            fixture = _find_fixture(rule_dir, band)
+            if fixture is None:
+                continue
+            total += 1
+
+            content = fixture.read_text(encoding="utf-8")[:8000]
+            raw = _ollama_generate(
+                ollama_model,
+                system=(
+                    "You are a senior engineering auditor. Reply with strict JSON only: "
+                    '{ "score": number, "missing": string[], "reasoning": string }'
+                ),
+                prompt=f"{prompt}\n\n---\nFile: {fixture.name}\n---\nContent:\n{content}",
+                num_predict=512,
+            )
+
+            try:
+                parsed = json.loads(raw)
+            except json.JSONDecodeError:
+                failures.append(f"{rule_id}/{band}: invalid JSON: {raw[:120]!r}")
+                continue
+
+            score = float(parsed.get("score", 0))
+            missing = [m.lower() for m in (parsed.get("missing") or [])]
+            expected = meta["fixtures"][band]
+
+            if not (expected["min_score"] <= score <= expected["max_score"]):
+                failures.append(
+                    f"{rule_id}/{band}: score {score:.2f} outside "
+                    f"[{expected['min_score']}, {expected['max_score']}]. "
+                    f"reasoning: {parsed.get('reasoning', '')[:160]!r}"
+                )
+                continue
+
+            for fp in expected.get("missing_allowlist", []):
+                if not any(fp.lower() in m for m in missing):
+                    failures.append(
+                        f"{rule_id}/{band}: missing[] lacks '{fp}'. Actual: {missing}"
+                    )
+
+    if total == 0:
+        pytest.skip("No fixtures found")
+
+    assert not failures, (
+        f"{len(failures)}/{total} semantic fixture(s) out of band:\n  "
+        + "\n  ".join(failures)
     )

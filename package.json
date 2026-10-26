@@ -33,7 +33,10 @@
     "kg:neo4j:export": "python scripts/kg/neo4j_export.py",
     "verify:registry": "tsx scripts/verify-knowledge-registry.ts",
     "gate:claims": "bash scripts/gates/check-grounded-claims.sh",
-    "neo4j:schema": "scripts\\neo4j.bat schema"
+    "neo4j:schema": "scripts\\neo4j.bat schema",
+    "semantic:calibrate": "tsx scripts/semantic-calibrate.ts",
+    "semantic:clear-cache": "tsx scripts/semantic-reset-cache.ts",
+    "semantic:debug": "tsx scripts/semantic-debug.ts"
   },
   "dependencies": {
     "@cyclonedx/cyclonedx-library": "^10.2.0",
@@ -85,7 +88,7 @@
     },
     "overrides": {
       "braces": ">=3.0.3",
-      "js-yaml": ">=4.1.0"
+      "js-yaml": "^4.1.0"
     }
   }
 }

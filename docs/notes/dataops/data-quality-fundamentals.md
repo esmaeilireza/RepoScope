@@ -2,13 +2,12 @@
 
 ## 1. Source identity
 
-- **Title:** Data Quality Fundamentals
-- Title: Data Quality Fundamentals: A Practitioner's Guide to Building Trustworthy Data Pipelines
-- Author(s): Barr Moses, Lior Gavish, Molly Vorwerck
-- Branch: dataops
-- RepoScope profile: dataops
-- Primary source file: Data Quality Fundamentals_ A Practitioner's Guide to Building Trustworthy Data Pipelines.pdf
-- Note status: reviewed-with-candidate-rules
+- **Title:** Data Quality Fundamentals: A Practitioner's Guide to Building Trustworthy Data Pipelines
+- **Author(s):** Barr Moses, Lior Gavish, Molly Vorwerck
+- **Branch:** dataops
+- **RepoScope profile:** dataops
+- **Primary source file:** Data Quality Fundamentals_ A Practitioner's Guide to Building Trustworthy Data Pipelines.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ## 2. Scope
 - In scope:

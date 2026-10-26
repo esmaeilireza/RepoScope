@@ -1,3 +1,6 @@
+1. Source Identity
+Title: Graph Databases
+
 # Graph Databases: New Opportunities for Connected Data — RepoScope Knowledge Note
 
 ## 1. Source identity
@@ -6,10 +9,9 @@
 - **Author(s):** Ian Robinson, Jim Webber, Emil Eifrem
 - **Branch:** graph
 - **RepoScope profile:** graph
-- **Primary source file:** `Graph Databases (2nd Edition) — Robinson, Webber, Eifrem — O'Reilly, 2015.pdf`
+- **Primary source file:** Graph Databases (2nd Edition) — Robinson, Webber, Eifrem — O'Reilly, 2015.pdf
 - **Note status:** reviewed-with-candidate-rules
 
-> Note status reflects the weakest readiness in Section 10. All three candidate rules are either `blocked` (publication gate) or `needs-review` (validator check-type boundary). Therefore no rule is `ready` for emission.
 
 ---
 

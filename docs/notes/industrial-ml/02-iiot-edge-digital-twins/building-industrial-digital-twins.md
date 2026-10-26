@@ -1,6 +1,10 @@
+1. Source Identity
+Title: Building Industrial Digital Twins
+
 # Building Industrial Digital Twins — RepoScope Knowledge Note
 
 ## 1. Source identity
+
 - **Title:** Building Industrial Digital Twins: Design, develop, and deploy digital twin solutions for real-world industries using Azure Digital Twins
 - **Author(s):** Shyam Varan Nath, Pieter van Schalkwyk
 - **Branch:** iiot

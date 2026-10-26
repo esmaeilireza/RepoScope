@@ -1,10 +1,16 @@
+1. Source Identity
+Title: Clean Architecture
+
 # RepoScope Knowledge Note: Clean Architecture
 
-## 1. Source Identity
-* **Title**: Clean Architecture: A Craftsman's Guide to Software Structure and Design
-* **Author**: Robert C. Martin
-* **Publication / Reference**: Prentice Hall (Robert C. Martin Series)
-* **Domain Focus**: Software Architecture, Component Principles, SOLID Design Principles, Architectural Boundaries, and System Maintainability.
+## 1. Source identity
+
+- **Title:** Clean Architecture: A Craftsman's Guide to Software Structure and Design
+- **Author(s):** Robert C. Martin
+- **Branch:** webapp
+- **RepoScope profile:** webapp
+- **Primary source file:** Clean Architecture_ A Craftsman's Guide to Software Structure and Design.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

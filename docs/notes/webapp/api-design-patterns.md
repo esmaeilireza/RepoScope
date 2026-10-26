@@ -1,14 +1,13 @@
-# API Design Patterns — RepoScope Knowledge Note
+# RepoScope Knowledge Note: API Design Patterns
 
 ## 1. Source identity
 
 - **Title:** API Design Patterns
-- Title: API Design Patterns
-- Author(s): JJ Geewax
-- Branch: webapp
-- RepoScope profile: webapp
-- Primary source file: API Design Patterns.pdf
-- Note status: reviewed-with-candidate-rules
+- **Author(s):** JJ Geewax
+- **Branch:** webapp
+- **RepoScope profile:** webapp
+- **Primary source file:** API Design Patterns.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ## 2. Scope
 - In scope: Resource identification, naming conventions, standard method definitions, field mask structures for partial updates/retrievals, custom methods, request validation, and idempotent operation handling.

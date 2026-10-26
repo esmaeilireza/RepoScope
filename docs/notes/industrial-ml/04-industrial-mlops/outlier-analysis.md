@@ -1,14 +1,16 @@
+1. Source Identity
+Title: Outlier Analysis
+
 # Charu C. Aggarwal (2013) Outlier Analysis — RepoScope Knowledge Note
 
 ## 1. Source identity
 
 - **Title:** Outlier Analysis
-- Title: Outlier Analysis
-- Author(s): Charu C. Aggarwal
-- Branch: dataops
-- RepoScope profile: dataops
-- Primary source file: Charu C. Aggarwal (auth.) - Outlier analysis (2013, Springer).pdf
-- Note status: partially-ready-for-YAML
+- **Author(s):** Charu C. Aggarwal
+- **Branch:** dataops
+- **RepoScope profile:** dataops
+- **Primary source file:** Charu C. Aggarwal (auth.) - Outlier analysis (2013, Springer).pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ## 2. Scope
 - In scope:

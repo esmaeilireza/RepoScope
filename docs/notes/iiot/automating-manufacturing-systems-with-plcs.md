@@ -1,14 +1,16 @@
+1. Source Identity
+Title: Automating Manufacturing Systems With Plcs
+
 # Automating Manufacturing Systems with PLCs — RepoScope Knowledge Note
 
 ## 1. Source identity
 
 - **Title:** Automating Manufacturing Systems with PLCs
-- Title: Automating Manufacturing Systems with PLCs
-- Author(s): Hugh Jack
-- Branch: iiot
-- RepoScope profile: iiot
-- Primary source file: Jack, H - Automating Manufacturing Systems with Plcs (2010).pdf
-- Note status: reviewed-with-candidate-rules
+- **Author(s):** Hugh Jack
+- **Branch:** iiot
+- **RepoScope profile:** iiot
+- **Primary source file:** Jack, H - Automating Manufacturing Systems with Plcs (2010).pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

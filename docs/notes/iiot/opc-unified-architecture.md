@@ -1,14 +1,16 @@
+1. Source Identity
+Title: Opc Unified Architecture
+
 # OPC Unified Architecture — RepoScope Knowledge Note
 
 ## 1. Source identity
 
 - **Title:** OPC Unified Architecture
-- Title: OPC Unified Architecture
-- Author(s): Wolfgang Mahnke, Stefan-Helmut Leitner, Matthias Damm
-- Branch: iiot
-- RepoScope profile: iiot
-- Primary source file: OPC Unified Architecture.pdf
-- Note status: reviewed-with-candidate-rules
+- **Author(s):** Wolfgang Mahnke, Stefan-Helmut Leitner, Matthias Damm
+- **Branch:** iiot
+- **RepoScope profile:** iiot
+- **Primary source file:** OPC Unified Architecture.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

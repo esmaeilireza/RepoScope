@@ -16,7 +16,7 @@ export interface ProviderConfig {
   apiFormat: ApiFormat;
   defaultModel: string;
   models: string[];
-  envVar: string;      // env var NAME holding the server-side key (value never leaves the server)
+  envVar: string;
   docsUrl: string;
   requiresKey: boolean;
   extraHeaders?: Record<string, string>;
@@ -102,7 +102,7 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
     envVar: "OPENROUTER_API_KEY",
     docsUrl: "https://openrouter.ai/docs",
     requiresKey: true,
-    extraHeaders: { "X-Title": "RepoScope" }, // add HTTP-Referer after deploy
+    extraHeaders: { "X-Title": "RepoScope" },
   },
   fireworks: {
     id: "fireworks", name: "Fireworks AI",

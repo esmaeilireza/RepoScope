@@ -1,15 +1,16 @@
+1. Source Identity
+Title: Essential Graphrag
+
 # Essential GraphRAG: Knowledge Graph–Enhanced RAG — RepoScope Knowledge Note
 
 ## 1. Source identity
 
-| Field | Value |
-|---|---|
-| **Title** | Essential GraphRAG: Knowledge Graph–Enhanced RAG |
-| **Author(s)** | Tomaž Bratanič and Oskar Hane (Foreword by Paco Nathan) |
-| **Branch** | graph |
-| **RepoScope profile** | graph |
-| **Primary source file** | `Essential GraphRAG.pdf` |
-| **Note status** | reviewed-with-candidate-rules |
+- **Title:** Essential GraphRAG: Knowledge Graph–Enhanced RAG
+- **Author(s):** Tomaž Bratanič and Oskar Hane (Foreword by Paco Nathan)
+- **Branch:** graph
+- **RepoScope profile:** graph
+- **Primary source file:** Essential GraphRAG.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

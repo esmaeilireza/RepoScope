@@ -1,3 +1,6 @@
+1. Source Identity
+Title: Graph Algorithms
+
 # Graph Algorithms: Practical Examples in Apache Spark and Neo4j — RepoScope Knowledge Note
 
 ## 1. Source identity
@@ -6,10 +9,9 @@
 - **Author(s):** Mark Needham, Amy E. Hodler
 - **Branch:** graph
 - **RepoScope profile:** graph
-- **Primary source file:** `Graph Algorithms: Practical Examples in Apache Spark and Neo4j.pdf`
+- **Primary source file:** Graph Algorithms: Practical Examples in Apache Spark and Neo4j.pdf
 - **Note status:** reviewed-with-candidate-rules
 
-> Note status reflects the weakest readiness in Section 10. All three candidate rules are either `blocked` (publication gate) or `needs-review` (validator check-type boundary). Therefore no rule is `ready` for emission.
 
 ---
 

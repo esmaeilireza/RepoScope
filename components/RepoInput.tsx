@@ -12,7 +12,7 @@ interface RepoInputProps {
 export default function RepoInput({ onAnalyze, loading }: RepoInputProps) {
   const [url, setUrl] = useState('');
   const [token, setToken] = useState('');
-  const [selectedProfile, setSelectedProfile] = useState<AuditProfile>('web');
+  const [selectedProfile, setSelectedProfile] = useState<AuditProfile>('webapp');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState('');
   

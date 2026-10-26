@@ -1,37 +1,63 @@
-import fs from "node:fs";
-import path from "node:path";
-import yaml from "js-yaml";
+/// <reference types="jest" />
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as yaml from "js-yaml";
 
-const SPECS_DIR = path.join(process.cwd(), "docs", "specs");
+const ROOT = process.cwd();
+const SPECS_DIR = path.join(ROOT, "docs", "specs");
+const GRAPH_SPEC_PATH = path.join(SPECS_DIR, "graph.yaml");
 
-interface SpecFile {
-  profile: string;
-  rules: Array<{ id: string }>;
+const GRAPH_ID_RE = /^graph(-[a-z0-9]+)*-\d{3}[a-z]?$/;
+
+interface SpecRule {
+  id?: unknown;
 }
 
-function loadGraphRuleIds(): Set<string> {
-  const file = path.join(SPECS_DIR, "graph.yaml");
-  if (!fs.existsSync(file)) return new Set();
-  const data = yaml.load(fs.readFileSync(file, "utf-8")) as SpecFile;
-  return new Set(data.rules.map((r) => r.id));
+interface SpecFile {
+  profile?: unknown;
+  rules?: unknown;
+}
+
+function loadSpec(filePath: string): SpecFile | null {
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
+  const raw = fs.readFileSync(filePath, "utf8");
+  const parsed = yaml.load(raw) as SpecFile | null;
+
+  return parsed ?? null;
+}
+
+function getRules(spec: SpecFile | null): SpecRule[] {
+  if (!spec || !Array.isArray(spec.rules)) {
+    return [];
+  }
+
+  return spec.rules.filter(
+    (rule): rule is SpecRule => typeof rule === "object" && rule !== null,
+  );
 }
 
 describe("graph spec ids", () => {
-  it("graph.yaml ids follow convention", () => {
-    const ids = [...loadGraphRuleIds()];
-    for (const id of ids) {
-      expect(id).toMatch(/^graph(-[a-z0-9]+)*-\d{3}[a-z]?$/);
+  it("graph.yaml ids follow convention when the gated spec file exists", () => {
+    const rules = getRules(loadSpec(GRAPH_SPEC_PATH));
+
+    for (const rule of rules) {
+      expect(typeof rule.id).toBe("string");
+      expect(rule.id as string).toMatch(GRAPH_ID_RE);
     }
   });
 
-  it("no duplicate graph ids", () => {
-    const file = path.join(SPECS_DIR, "graph.yaml");
-    if (!fs.existsSync(file)) return;
-    const data = yaml.load(fs.readFileSync(file, "utf-8")) as SpecFile;
+  it("has no duplicate graph ids", () => {
+    const rules = getRules(loadSpec(GRAPH_SPEC_PATH));
     const seen = new Set<string>();
-    for (const rule of data.rules) {
-      expect(seen.has(rule.id)).toBe(false);
-      seen.add(rule.id);
+
+    for (const rule of rules) {
+      const id = rule.id as string;
+
+      expect(seen.has(id)).toBe(false);
+      seen.add(id);
     }
   });
 });

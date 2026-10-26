@@ -1,11 +1,13 @@
 # RepoScope Knowledge Note: Building Microservices
 
-## 1. Source Identity
-* **Title:** Building Microservices: Designing Fine-Grained Systems
-* **Author:** Sam Newman
-* **Edition / Year:** Second Edition / 2021 (O'Reilly Media)
-* **Primary Domain:** Distributed Systems Architecture, Microservices, Domain-Driven Design, Software Architecture
-* **Core Thesis:** Microservices are an architectural style focused on independent deployability, where small, autonomous services are modeled around business domains. To realize the benefits of scale and velocity without incurring catastrophic complexity, teams must prioritize loose coupling, strong cohesion, information hiding, and encapsulated state while avoiding shared databases and distributed transactions.
+## 1. Source identity
+
+- **Title:** Building Microservices: Designing Fine-Grained Systems
+- **Author(s):** Sam Newman
+- **Branch:** webapp
+- **RepoScope profile:** webapp
+- **Primary source file:** Building Microservices_ Designing Fine-Grained Systems.pdf
+- **Note status:** reviewed-with-candidate-rules
 
 ---
 

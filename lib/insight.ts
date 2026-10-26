@@ -3,11 +3,9 @@
 // either a strict Finding (with `detail`) or a loose InsightFinding (with
 // `message`) without silent data loss.
 import { expandOneHop, getRule, hasRule } from "./knowledge/graph";
-import type { Finding, InsightFinding } from "./types";
+import type { AuditProfile, Finding, InsightFinding } from "./types";
 import { toInsightFinding } from "./types";
 
-// Re-export the canonical type so existing imports keep working:
-//   import type { InsightFinding } from "@/lib/insight";
 export type { InsightFinding } from "./types";
 
 const MAX_CONTEXT_CHARS = 6000; // token cap — keep under Vercel Hobby latency
@@ -33,7 +31,7 @@ function summarizeFindings(findings: InsightFinding[], max = 15): string {
 /** Day 7 — basic (non-grounded) prompt; the fallback when no graph exists. */
 export function buildInsightPrompt(
   rawFindings: ReadonlyArray<Finding | InsightFinding>,
-  profile: string
+  profile: string,
 ): { system: string; prompt: string } {
   const findings = rawFindings.map(toInsightFinding);
 
@@ -67,7 +65,7 @@ export interface GroundedSources {
  */
 export function buildGroundedPrompt(
   rawFindings: ReadonlyArray<Finding | InsightFinding>,
-  profileHint?: string
+  profileHint?: string,
 ): {
   system: string;
   prompt: string;
@@ -81,15 +79,16 @@ export function buildGroundedPrompt(
     new Set(
       findings
         .map((f) => f.id ?? f.ruleId)
-        .filter((id): id is string => Boolean(id))
-    )
+        .filter((id): id is string => Boolean(id)),
+    ),
   ).map((id) => id.toLowerCase());
 
   const groundedRuleIds = ruleIds.filter((id) => hasRule(id));
-  const profiles = new Set(
+
+  const profiles = new Set<AuditProfile>(
     findings
       .map((f) => f.profile)
-      .filter((p): p is string => typeof p === "string" && p.length > 0)
+      .filter((p): p is AuditProfile => typeof p === "string" && p.length > 0),
   );
   const crossDomain = profiles.size > 1;
 
@@ -127,13 +126,16 @@ export function buildGroundedPrompt(
     blocks.push(block);
   }
 
-  const context = blocks.join("\n\n") || "No matching rules in the knowledge graph.";
+  const context =
+    blocks.join("\n\n") || "No matching rules in the knowledge graph.";
 
   const system =
     `You are a senior ${profileHint ?? "software"} engineer reviewing a RepoScope repository audit. ` +
     `Today's date is ${utcDateAnchor()} UTC. ` +
     (crossDomain
-      ? `This repository spans MULTIPLE domains (${Array.from(profiles).join(" + ")}) — apply cross-domain risk reasoning. `
+      ? `This repository spans MULTIPLE domains (${Array.from(profiles).join(
+          " + ",
+        )}) — apply cross-domain risk reasoning. `
       : "") +
     "Cite ONLY rule IDs and book/standard titles that appear in the CONTEXT below. " +
     'If you are not certain of a source, write "verify the source" instead of citing. ' +

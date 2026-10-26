@@ -178,3 +178,5 @@ codebase.md
 # ============================================================================
 docs/specs/backup/
 requirements.lock
+# RepoScope semantic cache
+.reposcope-cache/
