@@ -630,6 +630,29 @@
           }
         ],
         "full_text": "Rule: Fact table uses natural key joins (Kimball violation)\nID: dataops-kimball-sem-001\nProfile: dataops\nSeverity: error\nWhy it matters: Kimball methodology requires fact tables to join dimensions via surrogate keys, not natural keys. Natural key joins break history tracking and performance.\n\nHow to fix: Replace natural-key joins with surrogate-key joins (customer_sk, product_sk).\n\nReferences: The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling"
+      },
+      {
+        "id": "dataops-kimball-ast-001",
+        "profile": "dataops",
+        "severity": "error",
+        "title": "Fact table uses natural key joins (Kimball violation)",
+        "rationale": "Kimball methodology requires fact tables to join dimensions via surrogate keys, not natural operational keys. Natural-key joins break history tracking, introduce implicit dependency on operational systems, and prevent conformed-dimension reuse across marts. This rule uses sqlglot AST analysis to detect the violation directly rather than relying on a regex heuristic.\n",
+        "checks": [
+          {
+            "type": "structural_ast",
+            "parser": "sql",
+            "file_glob": "models/marts/facts/**/*.sql",
+            "message": "Fact table joins on natural key — use surrogate keys (_sk)."
+          }
+        ],
+        "fix": "Replace natural-key joins with surrogate-key joins. For example, replace\n`LEFT JOIN dim_customers c ON o.customer_id = c.customer_id`\nwith\n`LEFT JOIN dim_customers c ON o.customer_sk = c.customer_sk`.\n",
+        "references": [
+          {
+            "book": "The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling",
+            "concept": "surrogate-keys"
+          }
+        ],
+        "full_text": "Rule: Fact table uses natural key joins (Kimball violation)\nID: dataops-kimball-ast-001\nProfile: dataops\nSeverity: error\nWhy it matters: Kimball methodology requires fact tables to join dimensions via surrogate keys, not natural operational keys. Natural-key joins break history tracking, introduce implicit dependency on operational systems, and prevent conformed-dimension reuse across marts. This rule uses sqlglot AST analysis to detect the violation directly rather than relying on a regex heuristic.\n\nHow to fix: Replace natural-key joins with surrogate-key joins. For example, replace\n`LEFT JOIN dim_customers c ON o.customer_id = c.customer_id`\nwith\n`LEFT JOIN dim_customers c ON o.customer_sk = c.customer_sk`.\n\nReferences: The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling"
       }
     ]
   },
