@@ -969,11 +969,20 @@ export function generateFindings(
 
 // ═══════════════════════════════════════════════════════════════
 // EXPORT: Calculate score
-// Returns the same shape as before, but every item carries `ruleId`
-// so the Week-4 Citation Gate can match it against YAML specs.
+//
+// Score is severity-threshold based, not additive. The score answers
+// one question: how bad is the worst thing here? A repo with any
+// critical fails outright; errors in the 5–9 range are "failing
+// review"; warnings only is "acceptable but noisy". Every band maps
+// to an actionable verdict.
+//
+// Prior implementation was `score = 100 - sum(weight)`, clamped at
+// [0, 100]. That made any repo with more than ~7 findings score 0
+// regardless of whether those findings were 7 warnings or 7
+// criticals — losing all signal past the threshold. The clamp was
+// arithmetic, not a bug.
 // ═══════════════════════════════════════════════════════════════
 export function scoreAndExplain(findings: Finding[]): AuditScore {
-  let score = 100;
   let critical = 0;
   let errors = 0;
   let warnings = 0;
@@ -982,20 +991,34 @@ export function scoreAndExplain(findings: Finding[]): AuditScore {
 
   findings.forEach((finding) => {
     const weight = finding.weight || 0;
-    score -= weight;
 
     if (finding.severity === 'critical') critical++;
     else if (finding.severity === 'error') errors++;
     else if (finding.severity === 'warning') warnings++;
     else infos++;
 
+    // `points` is a per-finding display hint, preserved for any
+    // downstream consumer that renders it. It is no longer the score
+    // source of truth — score is derived from severity thresholds below.
     items.push({
       ...finding,
       points: weight,
     });
   });
 
-  score = Math.max(0, Math.min(100, score));
+  let score = 100;
+  if (critical > 0) {
+    score = Math.max(0, 20 - (critical - 1) * 5);
+  } else if (errors >= 5) {
+    score = Math.max(20, 50 - (errors - 5) * 5);
+  } else if (errors > 0) {
+    score = Math.max(50, 80 - (errors - 1) * 5);
+  } else if (warnings >= 10) {
+    score = Math.max(60, 80 - (warnings - 10) * 2);
+  } else if (warnings > 0) {
+    score = Math.max(80, 100 - (warnings - 1) * 2);
+  }
+  // infos alone → score stays 100
 
   return {
     score,

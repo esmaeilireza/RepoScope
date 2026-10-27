@@ -266,71 +266,13 @@ export function auditDataOpsRepository(
       'Adopt Alembic or Flyway and store all schema DDL changes under migrations/.',
   });
 
-  // ─── 6. Cross-domain ABI conflict (cross-001) ───
-  //
-  // The YAML rule fires on pymodbus/opcua presence. This implementation
-  // is stricter and more useful: it only fires the FAIL case when the
-  // repository actually mixes IIoT drivers AND data-analytics libraries.
-  // A repository with IIoT drivers alone gets a WARN (check isolation),
-  // and a repository with neither gets no finding at all (not applicable).
-  const iiotDriverFiles = treeItems.filter((item) => {
-    if (item.type !== 'blob') return false;
-    if (!item.path.endsWith('.py')) return false;
-    const content = fileContents?.[item.path];
-    if (!content) return false;
-    return /\b(pymodbus|opcua|asyncua|python-snap7|pycomm3|minimalmodbus)\b/i.test(content);
-  });
+  // ─── 6. Cross-domain ABI conflict (cross-001) — REMOVED ───
+// Hardcoded emission duplicated cross.yaml's cross-001 rule. The YAML
+// rule now owns this evidence check and emits via the cross auditor.
+// Re-adding a dataops-scoped variant would need a distinct ruleId like
+// `dataops-cross-001` in dataops.yaml.
 
-  const analyticsLibFiles = treeItems.filter((item) => {
-    if (item.type !== 'blob') return false;
-    if (!item.path.endsWith('.py')) return false;
-    const content = fileContents?.[item.path];
-    if (!content) return false;
-    return /\b(pandas|polars|pyspark|dask|dbt|great_expectations)\b/i.test(content);
-  });
-
-  if (iiotDriverFiles.length > 0 && analyticsLibFiles.length > 0) {
-    checks.push({
-      ruleId: 'cross-001',
-      category: 'cross_domain',
-      status: 'fail',
-      title: 'IIoT + DataOps ABI conflict risk',
-      message: `${iiotDriverFiles.length} file(s) use IIoT drivers and ${analyticsLibFiles.length} file(s) use data analytics libraries in the same repo.`,
-      affectedFiles: Array.from(
-        new Set([...iiotDriverFiles, ...analyticsLibFiles].map((f) => f.path))
-      ).slice(0, 10),
-      recommendation:
-        'Use separate venv/conda environments for IIoT drivers and data layer. Each part should have its own requirements file.',
-      profile: 'cross',
-    });
-  } else if (iiotDriverFiles.length > 0) {
-    checks.push({
-      ruleId: 'cross-001',
-      category: 'cross_domain',
-      status: 'warn',
-      title: 'IIoT driver detected — verify environment isolation',
-      message: `${iiotDriverFiles.length} file(s) import IIoT protocol libraries. No data analytics library detected in the same repo — confirm isolation policy if this changes.`,
-      affectedFiles: iiotDriverFiles.map((f) => f.path).slice(0, 5),
-      recommendation:
-        'Keep IIoT drivers in a dedicated environment. If you later add pandas/pyspark/dbt, do not co-install — use isolated virtual environments.',
-      profile: 'cross',
-    });
-  } else {
-    // No IIoT driver at all — the cross-001 rule is not applicable.
-    // We push a "pass" record so the rule id appears in the report.
-    checks.push({
-      ruleId: 'cross-001',
-      category: 'cross_domain',
-      status: 'pass',
-      title: 'No IIoT driver / DataOps library collision detected',
-      message: 'No IIoT protocol library coexists with data analytics libraries in this repository.',
-      recommendation:
-        'If IIoT integration is added later, keep the dependency graph isolated from the analytics layer.',
-      profile: 'cross',
-    });
-  }
-
-  // ─── Scoring ───
+// ─── Scoring ───
   const failures = checks.filter((c) => c.status === 'fail').length;
   const warnings = checks.filter((c) => c.status === 'warn').length;
   const passed = checks.filter((c) => c.status === 'pass').length;

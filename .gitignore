@@ -168,7 +168,23 @@ neo4j/conf/
 *.database_lock
 
 # ============================================================================
-# Misc
+# Synthetic test fixtures
+#
+# Created on the fly to exercise specific rules (cross-001, layer-3, etc.).
+# These directories are parsed by the audit like any other source, so they
+# MUST be ignored — otherwise a `--repo .` run reports findings that have
+# nothing to do with the real codebase.
+#
+# Convention: `_<area>_test/` for fixture dirs, `_<area>_*.txt` for captured
+# run output. Delete the directory after each test run; do not commit.
+# ============================================================================
+_l3_test/
+_l3_*.txt
+_cross_test/
+_cross_*.txt
+
+# ============================================================================
+# RepoScope misc
 # ============================================================================
 public/pwa-icons/codebase.md
 codebase.md
@@ -178,10 +194,11 @@ codebase.md
 # ============================================================================
 docs/specs/backup/
 requirements.lock
+
+# ============================================================================
 # RepoScope semantic cache
+# ============================================================================
 .reposcope-cache/
 reposcope-context.txt
-_l3_test/
-_l3_*.txt
 _ci_local.txt
 _health_gate_local.txt
