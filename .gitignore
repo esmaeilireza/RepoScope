@@ -181,3 +181,7 @@ requirements.lock
 # RepoScope semantic cache
 .reposcope-cache/
 reposcope-context.txt
+_l3_test/
+_l3_*.txt
+_ci_local.txt
+_health_gate_local.txt
