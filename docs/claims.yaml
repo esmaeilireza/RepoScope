@@ -29,11 +29,11 @@ claims:
       min_count: 20
 
   - id: claim-total-rule-count-001
-    description: "Total YAML rules across all non-underscore profiles equals 50."
+    description: "Total YAML rules across all non-underscore profiles equals 58."
     implementation: docs/specs/
     verification:
       type: total_yaml_rule_count
-      expected_count: 34
+      expected_count: 58
 
   - id: claim-checklists-001
     description: "All five domain checklist markdown files exist under docs/checklists/."
