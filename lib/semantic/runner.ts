@@ -128,10 +128,30 @@ export async function runSemanticChecks(
         const result = await runOne(targetPath, content, check);
         checksRun++;
 
-        if (result.skipped) continue; // fail-open: LLM outage is not a finding
-        if (result.passed) continue;
+        if (result.skipped) {
+          // Visible diagnostic: skip is a legitimate fail-open, but a silent
+          // skip masks the difference between "LLM was busy" and "rule was
+          // never reached". stderr keeps this out of the JSON/CSV finding
+          // stream. Grep audit logs for [semantic-skip] to audit skips.
+          console.error(
+            `[semantic-skip] ${rule.id} on ${targetPath}: ` +
+            `${result.skipReason ?? "no-reason"} (score ${result.score.toFixed(2)})`
+          );
+          continue;
+        }
+        if (result.passed) {
+          console.error(
+            `[semantic-pass] ${rule.id} on ${targetPath}: ` +
+            `score ${result.score.toFixed(2)} >= ${(check.threshold ?? 0.7).toFixed(2)}`
+          );
+          continue;
+        }
 
         const threshold = check.threshold ?? 0.7;
+        console.error(
+          `[semantic-fail] ${rule.id} on ${targetPath}: ` +
+          `score ${result.score.toFixed(2)} < ${threshold.toFixed(2)} — emitting finding`
+        );
         findings.push({
           ruleId: rule.id,
           severity: rule.severity,
