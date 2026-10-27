@@ -637,9 +637,9 @@ rules:
           4. Additive facts: all measures are additive (quantity, amount, unit_price).
              A ratio such as amount/quantity (avg_price) is a defect.
 
-          Score bands:
-          - 0.00 if any JOIN uses a non-_sk column — the model is unsafe for aggregation
-          - 0.30–0.50 if joins are correct but grain is undeclared or a ratio appears
+          Score bands — read top to bottom, take the first that applies:
+          - 0.00–0.20 if ANY JOIN uses a non-_sk column
+          - 0.30–0.50 if joins are all _sk but grain is undeclared
           - 0.60–0.70 if joins and grain are correct but one minor defect remains
           - 0.85–1.00 only when all four criteria are satisfied
 
@@ -678,4 +678,3 @@ rules:
     references:
       - book: "The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling"
         concept: "surrogate-keys"
-

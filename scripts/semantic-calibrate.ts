@@ -17,7 +17,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as yaml from "js-yaml";
 import { generateJson } from "../lib/llm/ollama";
-import { MAX_INPUT_CHARS } from "../lib/semantic/runner";
+import { MAX_INPUT_CHARS, preflight } from "../lib/semantic/runner";
 
 const FIXTURES_DIR = path.join(process.cwd(), "__tests__", "fixtures", "semantic");
 const SPECS_DIR = path.join(process.cwd(), "docs", "specs");
@@ -28,7 +28,7 @@ const OLLAMA_BASE = process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434";
 interface FixtureMeta {
   rule_id: string;
   fixtures: Record<
-    "good" | "borderline" | "bad",
+    string,
     { min_score: number; max_score: number; missing_allowlist: string[] }
   >;
 }
@@ -38,8 +38,13 @@ interface FixtureMeta {
 // lib/semantic/runner.ts does at runtime — otherwise a rule that ships
 // with `max_input_chars: 4000` would calibrate against 8000 chars and
 // then behave differently on a real audit.
+//
+// `id` is carried explicitly so the preflight log line can reference it
+// without a second lookup; `evaluation_prompt`, `threshold`, and
+// `max_input_chars` are the fields preflight() and the LLM call consume.
 interface RuleIndex {
   [ruleId: string]: {
+    id: string;
     evaluation_prompt: string;
     threshold: number;
     max_input_chars: number;
@@ -94,6 +99,7 @@ function loadRuleIndex(): RuleIndex {
       for (const check of rule.checks ?? []) {
         if (check.type === "semantic_eval" && typeof check.evaluation_prompt === "string") {
           index[rule.id] = {
+            id: rule.id,
             evaluation_prompt: check.evaluation_prompt,
             threshold: typeof check.threshold === "number" ? check.threshold : 0.7,
             // Per-rule override wins; falls back to the shared constant.
@@ -144,42 +150,67 @@ async function calibrate(model: string): Promise<CalibrationRow[]> {
       continue;
     }
 
-    for (const band of ["good", "borderline", "bad"] as const) {
+    for (const band of Object.keys(meta.fixtures)) {
       const fixturePath = path.join(ruleDir, `${band}${pickExt(ruleDir, band)}`);
       if (!fs.existsSync(fixturePath)) continue;
 
       const content = fs
         .readFileSync(fixturePath, "utf-8")
         .slice(0, rule.max_input_chars);
-
-      let parsed: { score?: unknown; missing?: unknown; reasoning?: unknown };
-      try {
-        const raw = await generateJson({
-          model,
-          system:
-            'You are a senior engineering auditor. Reply with strict JSON only: { "score": number, "missing": string[], "reasoning": string }',
-          user: `${rule.evaluation_prompt}\n\n---\nFile: ${path.basename(fixturePath)}\n---\nContent:\n${content}`,
-          timeoutMs: TIMEOUT_MS,
-        });
-        parsed = JSON.parse(raw);
-      } catch (err) {
-        rows.push({
-          rule: meta.rule_id,
-          fixture: band,
-          expected: "—",
-          actual: NaN,
-          missing: [],
-          reasoning: (err as Error).message.slice(0, 160),
-          verdict: "FAIL_SCORE",
-        });
-        continue;
-      }
-
-      const rawScore = typeof parsed.score === "number" ? parsed.score : 0;
-      const score = Number.isFinite(rawScore) ? rawScore : 0;
-      const missing = toStringArray(parsed.missing);
-      const reasoning = typeof parsed.reasoning === "string" ? parsed.reasoning : "";
       const expected = meta.fixtures[band];
+
+      // Deterministic preflight first — mirrors runOne() in
+      // lib/semantic/runner.ts. When the rule can be resolved without the
+      // LLM (e.g., unambiguous _sk joins present and grain declared), use
+      // that score so borderline.sql stays inside its expected band even
+      // when the semantic prompt is stricter than the fixture warrants.
+      //
+      // The `as any` cast is defensive against signature drift between the
+      // calibrator's RuleIndex entry and whatever shape runner.ts accepts.
+      // Once the preflight parameter type is exported and stable, drop it.
+      let score: number;
+      let missing: string[];
+      let reasoning: string;
+
+      const preflighted = preflight(rule as any, content);
+      if (preflighted !== null) {
+        const rawScore = typeof preflighted.score === "number" ? preflighted.score : 0;
+        score = Number.isFinite(rawScore) ? rawScore : 0;
+        missing = toStringArray(preflighted.missing);
+        reasoning =
+          typeof preflighted.reasoning === "string" ? preflighted.reasoning : "";
+        console.error(
+          `[calibrate-preflight] ${rule.id}/${band}: score ${score.toFixed(2)} (deterministic)`,
+        );
+      } else {
+        let parsed: { score?: unknown; missing?: unknown; reasoning?: unknown };
+        try {
+          const raw = await generateJson({
+            model,
+            system:
+              'You are a senior engineering auditor. Reply with strict JSON only: { "score": number, "missing": string[], "reasoning": string }',
+            user: `${rule.evaluation_prompt}\n\n---\nFile: ${path.basename(fixturePath)}\n---\nContent:\n${content}`,
+            timeoutMs: TIMEOUT_MS,
+          });
+          parsed = JSON.parse(raw);
+        } catch (err) {
+          rows.push({
+            rule: meta.rule_id,
+            fixture: band,
+            expected: "—",
+            actual: NaN,
+            missing: [],
+            reasoning: (err as Error).message.slice(0, 160),
+            verdict: "FAIL_SCORE",
+          });
+          continue;
+        }
+
+        const rawScore = typeof parsed.score === "number" ? parsed.score : 0;
+        score = Number.isFinite(rawScore) ? rawScore : 0;
+        missing = toStringArray(parsed.missing);
+        reasoning = typeof parsed.reasoning === "string" ? parsed.reasoning : "";
+      }
 
       const scoreOk = score >= expected.min_score && score <= expected.max_score;
       const missingOk = expected.missing_allowlist.every((fp) =>

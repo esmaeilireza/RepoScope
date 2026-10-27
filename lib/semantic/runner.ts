@@ -10,6 +10,15 @@
 //   - ruleId === rule.id, verbatim (no :${file} suffix).
 //   - detail contains the model's reasoning (not the rule title).
 //   - MAX_INPUT_CHARS is exported so the calibrator and the runner agree.
+//
+// Deterministic preflight:
+//   For rules whose criteria are fully decidable from the file's syntax,
+//   a lightweight check runs BEFORE the LLM call. See PREFLIGHT_RULES.
+//   Rationale: `reposcope-mistral:latest` scored a natural-key-join dbt
+//   model at 0.85 both before and after the prompt was sharpened to make
+//   that defect absolute. The model was not reading the rule. A better
+//   prompt is not the fix. Not using a probabilistic layer for a
+//   deterministic property is the fix.
 
 import type { Finding, RuleCheck, RuleSpec, SemanticEvalResult } from "../types";
 import { generateJson } from "../llm/ollama";
@@ -26,6 +35,96 @@ const MODEL_ID = process.env.REPOSCOPE_MODEL ?? "reposcope-mistral:latest";
 
 const SYSTEM_PROMPT =
   'You are a senior engineering auditor. Reply with strict JSON only: { "score": number in [0,1], "missing": string[], "reasoning": string }';
+
+// ─── Preflight: deterministic checks that must not depend on the LLM ─────
+
+/**
+ * Rules whose scoring criteria are fully decidable from the file's syntax.
+ * A rule in this set runs through the deterministic preflight first; if
+ * the preflight fires, the LLM is skipped entirely.
+ *
+ * Keep this list small and explicit. Adding a rule here is a statement
+ * that the criterion is not a judgment call.
+ */
+const PREFLIGHT_RULES = new Set<string>(["dataops-kimball-sem-001"]);
+
+// `ON lhs.col = rhs.col` — matches the join shape in dbt fact models.
+// Deliberately simple: the structural layer already runs sqlglot AST walk
+// for the same defect (dataops-kimball-ast-001). This is the fast path for
+// the one rule where a 7B model empirically cannot override its own
+// heuristic, not a general SQL parser.
+const ON_CLAUSE_RE = /\bON\s+\w+\.(\w+)\s*=\s*\w+\.(\w+)\b/gi;
+
+/**
+ * Remove SQL line and block comments so the preflight does not match
+ * commented-out joins. Cheap enough to run on every check.
+ */
+function stripSqlComments(sql: string): string {
+  return sql
+    .replace(/--[^\n]*/g, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+}
+
+/**
+ * Return the offending column name if the SQL contains a JOIN ON clause
+ * where at least one side lacks the `_sk` surrogate-key suffix.
+ * Returns null when all joins are surrogate-keyed, or when the file has
+ * no JOIN ON clause at all.
+ */
+function detectNaturalKeyJoin(content: string): string | null {
+  const stripped = stripSqlComments(content);
+  ON_CLAUSE_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = ON_CLAUSE_RE.exec(stripped)) !== null) {
+    const left = m[1];
+    const right = m[2];
+    const leftIsSk = /_sk$/i.test(left);
+    const rightIsSk = /_sk$/i.test(right);
+    if (!leftIsSk || !rightIsSk) {
+      return leftIsSk ? right : left;
+    }
+  }
+  return null;
+}
+
+/**
+ * Run deterministic preflight for rules in PREFLIGHT_RULES.
+ *
+ * Returns a fully-populated SemanticEvalResult when the preflight fires
+ * (the caller should treat it as final and skip the LLM). Returns null
+ * when the preflight does not apply or does not fire, so the caller can
+ * proceed to the LLM.
+ *
+ * Exported so the calibrator can honour the same preflight and not test
+ * the model against a band the deterministic layer already decides.
+ *
+ * The parameter is `{ id: string }` rather than `RuleSpec` because the
+ * only field preflight reads is `id`. That keeps the call site in
+ * scripts/semantic-calibrate.ts free of casts: its lightweight
+ * `{ id, evaluation_prompt, threshold, max_input_chars }` entry is
+ * structurally assignable to `{ id: string }`.
+ */
+export function preflight(
+  rule: { id: string },
+  content: string,
+): SemanticEvalResult | null {
+  if (!PREFLIGHT_RULES.has(rule.id)) return null;
+  const offending = detectNaturalKeyJoin(content);
+  if (offending === null) return null;
+  return {
+    passed: false,
+    score: 0.15,
+    missing: ["natural key joins"],
+    reasoning:
+      `Deterministic preflight detected a JOIN ON clause comparing natural-key ` +
+      `column "${offending}". Kimball requires surrogate keys (_sk) on both ` +
+      `sides. Scored without an LLM round-trip.`,
+    tokens_used: 0,
+    skipped: false,
+  };
+}
+
+// ─── JSON parsing helpers ────────────────────────────────────────────────
 
 type SemanticJson = { score?: unknown; missing?: unknown; reasoning?: unknown };
 
@@ -57,6 +156,8 @@ export function weightFor(severity: Finding["severity"]): number {
     case "info":     return 1;
   }
 }
+
+// ─── Glob matcher ────────────────────────────────────────────────────────
 
 // Tiny glob matcher: handles the shapes our specs actually use
 // (docs/runbooks/*.md, models/marts/facts/**/*.sql, and brace-expanded
@@ -101,7 +202,7 @@ export function resolveTargets(
   return Object.keys(fileContents).filter((key) => re.test(key));
 }
 
-
+// ─── Public API ──────────────────────────────────────────────────────────
 
 export async function runSemanticChecks(
   rules: RuleSpec[],
@@ -125,7 +226,7 @@ export async function runSemanticChecks(
         const content = fileContents[targetPath];
         if (typeof content !== "string") continue;
 
-        const result = await runOne(targetPath, content, check);
+        const result = await runOne(rule, targetPath, content, check);
         checksRun++;
 
         if (result.skipped) {
@@ -172,10 +273,16 @@ export async function runSemanticChecks(
 }
 
 async function runOne(
+  rule: RuleSpec,
   filePath: string,
   content: string,
   check: RuleCheck,
 ): Promise<SemanticEvalResult> {
+  // Deterministic preflight first: no LLM, no timeout, no chance the model
+  // overrides a rule that is fully decidable from the file's syntax.
+  const preflighted = preflight(rule, content);
+  if (preflighted !== null) return preflighted;
+
   const prompt = check.evaluation_prompt;
   if (!prompt) {
     return { passed: false, score: 0, missing: [], reasoning: "", tokens_used: 0, skipped: true, skipReason: "file_missing" };
