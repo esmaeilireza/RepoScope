@@ -648,8 +648,8 @@ SPECS_IIOT_LIST="$(
     sort -u || true
 )"
 
-if [[ -z "$SPECS_IIOT_LIST" && -f "$SPECS" && "$HAVE_NODE" == true ]]; then
-  SPECS_IIOT_LIST="$(
+if [[ -f "$SPECS" && "$HAVE_NODE" == true ]]; then
+  _NODE_IIOT_LIST="$(
     node -e '
       const fs = require("fs");
       const p = process.argv[1];
@@ -678,10 +678,14 @@ if [[ -z "$SPECS_IIOT_LIST" && -f "$SPECS" && "$HAVE_NODE" == true ]]; then
         );
       }
 
-      function add(id) {
-        if (typeof id === "string" && id.startsWith("iiot-")) {
-          ids.add(id);
-        }
+      function add(rule, keyHint) {
+        const id = typeof rule.id === "string" && rule.id ? rule.id : keyHint;
+        if (typeof id !== "string" || !id.startsWith("iiot-")) return;
+        const checks = Array.isArray(rule.checks) ? rule.checks : [];
+        const hasDeterministic = checks.some(function(c) {
+          return c && (c.type === "pattern_match" || c.type === "file_exists" || c.type === "file_absent");
+        });
+        if (hasDeterministic) ids.add(id);
       }
 
       function walk(node, keyHint) {
@@ -692,7 +696,7 @@ if [[ -z "$SPECS_IIOT_LIST" && -f "$SPECS" && "$HAVE_NODE" == true ]]; then
 
         if (node && typeof node === "object") {
           if (isRule(node)) {
-            add(typeof node.id === "string" && node.id ? node.id : keyHint);
+            add(node, keyHint);
           } else {
             for (const [k, v] of Object.entries(node)) {
               const nextHint =
@@ -708,7 +712,10 @@ if [[ -z "$SPECS_IIOT_LIST" && -f "$SPECS" && "$HAVE_NODE" == true ]]; then
       const out = Array.from(ids).sort();
       console.log(out.join("\n"));
     ' "$SPECS" 2>/dev/null
-  )" || SPECS_IIOT_LIST=""
+  )" || _NODE_IIOT_LIST=""
+  if [[ -n "$_NODE_IIOT_LIST" ]]; then
+    SPECS_IIOT_LIST="$_NODE_IIOT_LIST"
+  fi
 fi
 
 if [[ -z "$SRC_IIOT_IDS" && -z "$SPECS_IIOT_LIST" ]]; then
