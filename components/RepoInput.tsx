@@ -4,6 +4,20 @@ import { useState, useEffect } from 'react';
 import { AUDIT_PROFILES, AuditProfile } from '@/lib/types';
 import { Database, Cpu, Globe, GitBranch } from 'lucide-react';
 
+// Only three profiles are user-selectable. `general` and `cross` are
+// auto-injected by the backend (scripts/reposcope-audit.ts) when any of
+// these three is selected, and their findings are folded into the report
+// without a separate UI affordance.
+const VISIBLE_PROFILE_IDS: readonly AuditProfile[] = [
+  'webapp',
+  'dataops',
+  'iiot',
+] as const;
+
+const VISIBLE_PROFILES = AUDIT_PROFILES.filter((p) =>
+  VISIBLE_PROFILE_IDS.includes(p.id),
+);
+
 interface RepoInputProps {
   onAnalyze: (url: string, token: string, profile: AuditProfile, branch?: string) => void;
   loading?: boolean;
@@ -15,12 +29,12 @@ export default function RepoInput({ onAnalyze, loading }: RepoInputProps) {
   const [selectedProfile, setSelectedProfile] = useState<AuditProfile>('webapp');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState('');
-  
-  // ─── NEW: Branch selection state ───
+
+  // ─── Branch selection state ───
   const [branches, setBranches] = useState<string[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>('');
   const [loadingBranches, setLoadingBranches] = useState(false);
-  // ───────────────────────────────────
+  // ─────────────────────────────
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,25 +45,23 @@ export default function RepoInput({ onAnalyze, loading }: RepoInputProps) {
       return;
     }
 
-    // Basic URL validation
     const githubPattern = /^https?:\/\/(www\.)?github\.com\/([\w-]+)\/([\w.-]+)\/?$/;
     const match = url.trim().match(githubPattern);
-    
+
     if (!match) {
       setError('Invalid GitHub URL. Format: https://github.com/owner/repo');
       return;
     }
 
-    // Pass selected branch (default to first branch or 'main')
     const branch = selectedBranch || branches[0] || 'main';
     onAnalyze(url.trim(), token.trim(), selectedProfile, branch);
   };
 
-  // ─── NEW: Fetch branches when URL changes ───
+  // ─── Fetch branches when URL changes ───
   useEffect(() => {
     const githubPattern = /^https?:\/\/(www\.)?github\.com\/([\w-]+)\/([\w.-]+)\/?$/;
     const match = url.trim().match(githubPattern);
-    
+
     if (!match) {
       setBranches([]);
       setSelectedBranch('');
@@ -64,7 +76,6 @@ export default function RepoInput({ onAnalyze, loading }: RepoInputProps) {
       .then((data: any[]) => {
         const branchNames = data.map((b: any) => b.name);
         setBranches(branchNames);
-        // Auto-select default branch (main/master) or first one
         const defaultBranch = branchNames.find(b => b === 'main' || b === 'master') || branchNames[0];
         setSelectedBranch(defaultBranch || '');
       })
@@ -73,7 +84,7 @@ export default function RepoInput({ onAnalyze, loading }: RepoInputProps) {
       })
       .finally(() => setLoadingBranches(false));
   }, [url]);
-  // ──────────────────────────────────────────
+  // ────────────────────────────────────────
 
   const getProfileIcon = (id: AuditProfile) => {
     switch (id) {
@@ -103,7 +114,7 @@ export default function RepoInput({ onAnalyze, loading }: RepoInputProps) {
         />
       </div>
 
-      {/* ─── NEW: Branch Selector ─── */}
+      {/* Branch Selector */}
       {branches.length > 0 && (
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
@@ -129,15 +140,15 @@ export default function RepoInput({ onAnalyze, loading }: RepoInputProps) {
           <span className="animate-spin">⟳</span> Loading branches...
         </p>
       )}
-      {/* ─────────────────────────── */}
 
-      {/* Profile Selection Grid */}
+      {/* Profile Selection Grid — 3 visible profiles.
+          `general` and `cross` are injected by the backend for every run. */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">
           Audit Profile
         </label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {AUDIT_PROFILES.map((profile) => (
+          {VISIBLE_PROFILES.map((profile) => (
             <button
               key={profile.id}
               type="button"
@@ -175,7 +186,7 @@ export default function RepoInput({ onAnalyze, loading }: RepoInputProps) {
         {showAdvanced ? '▼' : '▶'} Advanced settings (GitHub Token – OPTIONAL for public repos)
       </button>
 
-      {/* Token input (only when advanced is open) */}
+      {/* Token input */}
       {showAdvanced && (
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-300">

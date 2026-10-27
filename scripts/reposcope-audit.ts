@@ -121,6 +121,18 @@ async function main() {
 
   // ── Phase 2: repo-type routing with evidence ─────────────────────
   const route = routeRepo(repo);
+
+  // ── Part 1 auto-injection: hidden profiles ───────────────────────
+  // Whenever at least one domain routes, `general` and `cross` rules
+  // must also fire. `general` is a UI-concept label whose rules already
+  // live under `webapp` in specs.json (each rule declares its own
+  // profile); the general auditor is a placeholder for a future split.
+  // `cross` has its own bucket with pattern_match rules.
+  if (route.profiles.length > 0) {
+    if (!route.profiles.includes("general")) route.profiles.push("general");
+    if (!route.profiles.includes("cross")) route.profiles.push("cross");
+  }
+
   console.log(`[ROUTE] profiles: ${route.profiles.join(", ")}`);
   for (const [profileName, evidence] of Object.entries(route.evidence)) {
     if (evidence.length > 0) {
@@ -137,12 +149,9 @@ async function main() {
     }
   }
 
-  // ── Fix 2: gate rule execution by route.profiles ─────────────────
+  // ── Gate rule execution by route.profiles ────────────────────────
   // Anything not in route.profiles is not evaluated, not printed, and
-  // does not contribute to the score. In this codebase the "rule set"
-  // is a set of audit functions rather than a specs.json bundle, so we
-  // key the auditors by the profile they serve and skip the ones whose
-  // profile is not route-active.
+  // does not contribute to the score.
   const activeProfiles = new Set(route.profiles);
   if (profile && !activeProfiles.has(profile)) {
     console.log(
@@ -158,6 +167,12 @@ async function main() {
 
   // Register each auditor under the profile it serves. Auditors whose
   // profile is NOT in activeProfiles are never invoked.
+  //
+  // `general` and `cross` pass `[]` as baseFindings so `generateFindings`
+  // (the webapp-specific deterministic pass) does NOT run for them; only
+  // Layer 2 (structural_ast) and Layer 3 (semantic_eval) rules from their
+  // YAML manifests fire. Layer 1 (pattern_match / file_exists) has no
+  // YAML dispatcher yet — see docs/roadmap/ARCHITECTURAL-EVALUATION.md.
   const profileAuditors: Record<
     string,
     (t: GitHubTreeItem[], fc: Record<string, string>) => Finding[] | Promise<Finding[]>
@@ -196,6 +211,16 @@ async function main() {
         {}, t, [], [], [], "main", loadRules("iiot"), fc, deterministic,
       );
     },
+    // Placeholder auditors. `general` currently has no bucket in
+    // specs.json — its rules live under `webapp` because each rule in
+    // general.yaml declares `profile: webapp`. When the profile split
+    // lands, this auditor will start producing findings without any
+    // further change. `cross` has a bucket but its rules are
+    // pattern_match; they will fire once runDeterministicChecks exists.
+    general: async (t, fc) =>
+      generateAllFindings({}, t, [], [], [], "main", loadRules("general"), fc, []),
+    cross: async (t, fc) =>
+      generateAllFindings({}, t, [], [], [], "main", loadRules("cross"), fc, []),
   };
 
   const all: Finding[] = [];
@@ -237,6 +262,7 @@ async function main() {
 }
 
 main().catch((err) => { console.error(err); process.exit(1); });
+
 function loadRules(profile: string): any[] {
   const fs = require("fs");
   const path = require("path");
