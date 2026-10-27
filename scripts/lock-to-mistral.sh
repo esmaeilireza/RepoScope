@@ -10,7 +10,13 @@ cd "$ROOT"
 echo "==> Repo root: $ROOT"
 
 TARGET_TAG="reposcope-mistral:latest"
-GGUF_DIR_WIN='D:\Machine learning\Ollama Models\mistral-7b-instruct-v0.2.Q4_K_M'
+# GGUF directory. Override with REPOSCOPE_GGUF_DIR for non-Windows or
+# non-default install locations.
+GGUF_DIR="${REPOSCOPE_GGUF_DIR:-$HOME/.ollama/models/mistral-7b-instruct-v0.2.Q4_K_M}"
+if [[ ! -d "$GGUF_DIR" ]]; then
+  echo "ERROR: GGUF_DIR=$GGUF_DIR not found. Set REPOSCOPE_GGUF_DIR to override." >&2
+  exit 1
+fi
 GGUF_DIR_GITBASH='/d/Machine learning/Ollama Models/mistral-7b-instruct-v0.2.Q4_K_M'
 
 # ============================================================================
@@ -46,7 +52,7 @@ else
   echo "    [WARN] $TARGET_TAG is not registered — attempting to create it"
   if [[ ! -d "$GGUF_DIR_GITBASH" ]]; then
     echo "    ERROR: GGUF dir not found: $GGUF_DIR_GITBASH" >&2
-    echo "           Expected path (Windows): $GGUF_DIR_WIN" >&2
+    echo "           Expected path (Windows): $GGUF_DIR" >&2
     exit 1
   fi
   GGUF_FILE=$(find "$GGUF_DIR_GITBASH" -maxdepth 1 -name "*.gguf" | head -1)

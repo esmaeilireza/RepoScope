@@ -51,7 +51,7 @@ def pytest_configure(config: pytest.Config) -> None:
 # Paths
 # ─────────────────────────────────────────────────────────────────────
 _ENV_ROOT = os.environ.get("REPOSCOPE_ROOT")
-_WINDOWS_ROOT = Path(r"D:\Machine learning\NEXT.JS RepoScope\my-reposcope-app")
+_WINDOWS_ROOT = Path(os.environ.get("REPOSCOPE_ROOT", ".")).resolve()
 _FILE_ROOT = Path(__file__).resolve().parent.parent
 
 if _ENV_ROOT:
@@ -78,7 +78,7 @@ OLLAMA_MODEL_DIR = Path(
         r"D:\Machine learning\Ollama Models\Qwen_Qwen3.5-9B-Q4_K_M",
     )
 )
-PREREQ_DIR = Path(os.environ.get("REPOSCOPE_PREREQ_DIR", r"D:\prerequisite"))
+PREREQ_DIR = Path(os.environ.get("REPOSCOPE_PREREQ_DIR", "/opt/prerequisite"))
 
 # Ollama endpoint + model resolution.
 OLLAMA_HOST = os.environ.get("REPOSCOPE_OLLAMA_HOST", "http://localhost:11434")
