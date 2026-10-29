@@ -165,7 +165,7 @@
 
 ## 10. Candidate rules
 
-- Rule ID: dataops-kleppmann-001
+- Rule ID: dataops-schema-001
   Title: Hardcoded unencrypted connection URIs in configuration files
   Profile: dataops
   Severity tendency: critical
@@ -179,7 +179,7 @@
   Source citation: Martin Kleppmann - Designing Data-Intensive Applications, Chapter 5: Encoding and Evolution, Spirit: Environment parameters must be decoupled from code.
   Verification status: source-backed
 
-- Rule ID: dataops-kleppmann-002
+- Rule ID: dataops-stream-001
   Title: Missing schema definition files in event-driven streaming repositories
   Profile: dataops
   Severity tendency: error
@@ -193,7 +193,7 @@
   Source citation: Martin Kleppmann - Designing Data-Intensive Applications, Chapter 5: Encoding and Evolution, Spirit: IDL schema specifications guarantee interface safety across releases.
   Verification status: source-backed
 
-- Rule ID: dataops-kleppmann-003
+- Rule ID: dataops-migrate-001
   Title: Missing database migration tool configuration
   Profile: dataops
   Severity tendency: warning
@@ -225,7 +225,7 @@
 ## 11. Suggested YAML fragment
 ```yaml
 rules:
-  - id: dataops-kleppmann-001
+  - id: dataops-schema-001
     title: Hardcoded unencrypted connection URIs in configuration files
     severity: critical
     references:
@@ -238,7 +238,7 @@ rules:
       error_when: pattern_present
       message: "Hardcoded connection string containing plaintext password detected in configuration file."
 
-  - id: dataops-kleppmann-002
+  - id: dataops-stream-001
     title: Missing schema definition files in event-driven streaming repositories
     severity: error
     references:
@@ -250,7 +250,7 @@ rules:
       error_when: file_absent
       message: "Explicit schema definition files (.proto, .avsc, .thrift) are missing from event-driven project."
 
-  - id: dataops-kleppmann-003
+  - id: dataops-migrate-001
     title: Missing database migration tool configuration
     severity: warning
     references:

@@ -66,6 +66,60 @@ interface ParsedArgs {
   list: boolean;
 }
 
+// ── preflight normalization ───────────────────────────────────────────
+// The runner's preflight() has drifted between signatures: some versions
+// return a boolean ("deterministic issue confirmed / not confirmed"),
+// others return a structured { score, missing, reasoning } object, and
+// some return null when no deterministic path applies. The calibrator
+// needs a stable { score, missing, reasoning } | null shape so it can
+// either short-circuit the LLM or fall through to it.
+//
+// This adapter collapses every input variant to that shape:
+//   true                    -> synthetic confirmed result (score 0.15)
+//   false | null | undefined -> null (fall through to LLM)
+//   object                  -> normalize each field defensively
+//
+// `false` is treated as "no deterministic decision" rather than "passed",
+// because a passed preflight still has to be scored by the LLM against
+// the rule's evaluation prompt.
+type PreflightLike =
+  | boolean
+  | null
+  | undefined
+  | {
+      score?: number;
+      missing?: string[];
+      reasoning?: string;
+    };
+
+function normalizePreflightResult(value: PreflightLike): {
+  score: number;
+  missing: string[];
+  reasoning: string;
+} | null {
+  if (value === true) {
+    return {
+      score: 0.15,
+      missing: ["deterministic-preflight"],
+      reasoning:
+        "Deterministic preflight confirmed the issue without calling the LLM.",
+    };
+  }
+
+  if (value === false || value === null || value === undefined) {
+    return null;
+  }
+
+  return {
+    score: typeof value.score === "number" ? value.score : 0.15,
+    missing: Array.isArray(value.missing) ? value.missing : ["deterministic-preflight"],
+    reasoning:
+      typeof value.reasoning === "string" && value.reasoning.trim()
+        ? value.reasoning
+        : "Deterministic preflight confirmed the issue without calling the LLM.",
+  };
+}
+
 function parseArgs(argv: string[]): ParsedArgs {
   let model = DEFAULT_MODEL;
   let list = false;
@@ -165,20 +219,23 @@ async function calibrate(model: string): Promise<CalibrationRow[]> {
       // that score so borderline.sql stays inside its expected band even
       // when the semantic prompt is stricter than the fixture warrants.
       //
-      // The `as any` cast is defensive against signature drift between the
-      // calibrator's RuleIndex entry and whatever shape runner.ts accepts.
-      // Once the preflight parameter type is exported and stable, drop it.
+      // The `as any` cast on `rule` remains defensive against signature
+      // drift between the calibrator's RuleIndex entry and whatever shape
+      // runner.ts accepts. The *return* value is normalized below so the
+      // calibrator does not need to care whether preflight() returns a
+      // boolean or an object.
       let score: number;
       let missing: string[];
       let reasoning: string;
 
-      const preflighted = preflight(rule as any, content);
-      if (preflighted !== null) {
-        const rawScore = typeof preflighted.score === "number" ? preflighted.score : 0;
-        score = Number.isFinite(rawScore) ? rawScore : 0;
-        missing = toStringArray(preflighted.missing);
-        reasoning =
-          typeof preflighted.reasoning === "string" ? preflighted.reasoning : "";
+      const pre = normalizePreflightResult(
+        preflight(rule as any, content) as PreflightLike,
+      );
+
+      if (pre !== null) {
+        score = pre.score;
+        missing = pre.missing;
+        reasoning = pre.reasoning;
         console.error(
           `[calibrate-preflight] ${rule.id}/${band}: score ${score.toFixed(2)} (deterministic)`,
         );

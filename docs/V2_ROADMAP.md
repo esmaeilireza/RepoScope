@@ -41,8 +41,9 @@ existing signal->notes map). No new tests required beyond asserting
 changes from `[ROUTE] profiles: iiot` (score 55) to
 `[ROUTE] profiles: iiot, dataops` (score drops, `cross-001` fires).
 
-**Why first:** smallest diff, closes the loudest narrative gap. Patrick
-already saw `iml-demo` route as `iiot` only and was told it's a V2 item.
+**Why first:** smallest diff, closes the loudest narrative gap. A
+reviewer already saw `iml-demo` route as `iiot` only and was told it is
+a V2 item.
 
 ---
 
@@ -143,8 +144,8 @@ the tool is taken seriously outside a demo.
 `route -> filter -> audit -> ground`, no LLM in the loop, no agent
 coordination, no second-pass review.
 
-**Change:** introduce planner/auditor/reviewer agents per Agentic
-GraphRAG:
+**Change:** introduce planner/auditor/reviewer agents per the agentic
+GraphRAG blueprint:
 
 - **Planner** reads the repo tree + router output, proposes an audit
   plan ("run dataops rules 1-22, then iiot 1-10 if `pymodbus` present,
@@ -199,7 +200,7 @@ demo repos.
 Items that come up in conversation but are not on the path:
 
 - **Docker Compose / containerized Neo4j.** Neo4j runs as a local
-  Windows service under `D:\prerequisite\`. Not a portability problem
+  Windows service. Not a portability problem
   for the demo; a portability problem for CI. Deferred until CI actually
   needs Neo4j, which it does not today (only `pnpm kg:seed` /
   `pnpm kg:ground` need it, and neither runs in CI).
@@ -211,5 +212,5 @@ Items that come up in conversation but are not on the path:
 - **Custom rule authoring UI.** Rule files are YAML and hand-edited
   by design. A UI is V3 at the earliest.
 
-If Patrick asks about any of these, the honest answer is "not on the
+If a stakeholder asks about any of these, the honest answer is "not on the
 V2 roadmap because it's not a gap — it's a different product."

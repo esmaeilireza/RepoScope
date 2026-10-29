@@ -1,10 +1,27 @@
 // lib/dataops-audit.ts
 
-import type { GitHubTreeItem } from './types';
+import type {
+  GitHubTreeItem,
+  DataOpsFindingId,
+  DataOpsOrphanFindingId,
+} from './types';
+
+/**
+ * Rule ID emitted by a DataOps check.
+ *
+ *   DataOpsFindingId        → spec-backed; MUST exist in docs/specs/dataops.yaml
+ *   DataOpsOrphanFindingId  → emitted today but NOT in the YAML yet; see the
+ *                             comment block on DataOpsOrphanFindingId in
+ *                             lib/types.ts for resolution requirements.
+ *
+ * No other string shape is allowed. If a new check needs a new ID, add the
+ * YAML rule first, then extend DataOpsFindingId. Do not use `string`.
+ */
+export type DataOpsRuleId = DataOpsFindingId | DataOpsOrphanFindingId;
 
 export interface DataOpsCheckResult {
-  /** Must match a YAML spec id in docs/specs/dataops.yaml */
-  ruleId: string;
+  /** Must match a YAML spec id in docs/specs/dataops.yaml. */
+  ruleId: DataOpsRuleId;
   category:
     | 'data_leak'
     | 'notebook_hygiene'
@@ -56,7 +73,11 @@ export function auditDataOpsRepository(
 ): DataOpsAuditReport {
   const checks: DataOpsCheckResult[] = [];
 
-  // ─── 1. Data leak (dataops-004) ───
+  // ─── 1. Data leak (dataops-004 — QUARANTINED, see lib/types.ts) ───
+  // NOTE: `dataops-004` has no spec rule in docs/specs/dataops.yaml yet.
+  // It is typed as DataOpsOrphanFindingId so this emitter cannot silently
+  // spread. Resolve by adding the rule to dataops.yaml OR removing the
+  // emitter. Do not rename it to a canonical ID without adding the rule.
   const unmanagedDataFiles = treeItems.filter((item) => {
     if (item.type !== 'blob') return false;
     const lowerPath = item.path.toLowerCase();
@@ -108,7 +129,11 @@ export function auditDataOpsRepository(
     });
   }
 
-  // ─── 2. Environment parity (dataops-005) ───
+  // ─── 2. Environment parity (dataops-env-003) ───
+  // CANONICAL PARITY FIX (v3.0.6): was `dataops-atwal-003`.
+  // Overlaps intentionally with the YAML `dataops-env-003` rule — the YAML
+  // version is the declarative spec, this function is the runtime emitter.
+  // Both must use the same ID or the orchestrator's dedup breaks.
   const filePaths = treeItems.map((item) => item.path);
   const hasLooseRequirements = filePaths.includes('requirements.txt');
   const hasLockFile =
@@ -123,7 +148,7 @@ export function auditDataOpsRepository(
 
   if (hasLockFile) {
     checks.push({
-      ruleId: 'dataops-atwal-003',
+      ruleId: 'dataops-env-003',
       category: 'environment_parity',
       status: 'pass',
       title: 'Deterministic Dependency Lockfile Present',
@@ -133,7 +158,7 @@ export function auditDataOpsRepository(
     });
   } else if (hasLooseRequirements || hasPyproject || hasCondaEnv) {
     checks.push({
-      ruleId: 'dataops-atwal-003',
+      ruleId: 'dataops-env-003',
       category: 'environment_parity',
       status: 'warn',
       title: 'Loose Python Dependency Specification',
@@ -146,7 +171,7 @@ export function auditDataOpsRepository(
     });
   } else {
     checks.push({
-      ruleId: 'dataops-atwal-003',
+      ruleId: 'dataops-env-003',
       category: 'environment_parity',
       status: 'warn',
       title: 'No Python Environment Config Detected',
@@ -156,7 +181,9 @@ export function auditDataOpsRepository(
     });
   }
 
-  // ─── 3. Notebook hygiene (dataops-006) ───
+  // ─── 3. Notebook hygiene (dataops-006 — QUARANTINED, see lib/types.ts) ───
+  // NOTE: `dataops-006` also has no spec rule in docs/specs/dataops.yaml yet.
+  // Same resolution path as dataops-004 above.
   const notebookFiles = treeItems.filter((i) => i.path.endsWith('.ipynb'));
 
   if (notebookFiles.length > 0) {
@@ -213,9 +240,9 @@ export function auditDataOpsRepository(
     }
   }
 
-  // ─── 4. Streaming schema IDL (dataops-kleppmann-002) ───
-  //
-  // Aligns with YAML rule dataops-kleppmann-002. The YAML check is a
+  // ─── 4. Streaming schema IDL (dataops-stream-001) ───
+  // CANONICAL PARITY FIX (v3.0.6): was `dataops-kleppmann-002`.
+  // Aligns with YAML rule dataops-stream-001. The YAML check is a
   // file-presence check for Avro/Protobuf/Thrift under schemas/ or events/.
   // It does not attempt semantic backward/forward compatibility analysis —
   // that is noted as a limitation in docs/methodology.md.
@@ -228,7 +255,7 @@ export function auditDataOpsRepository(
   });
 
   checks.push({
-    ruleId: 'dataops-kleppmann-002',
+    ruleId: 'dataops-stream-001',
     category: 'schema_management',
     status: hasSchemaIdl ? 'pass' : 'fail',
     title: hasSchemaIdl
@@ -245,7 +272,8 @@ export function auditDataOpsRepository(
       'Define event schemas with Avro (.avsc) or Protobuf (.proto) in schemas/ and enforce compatibility checks in CI.',
   });
 
-  // ─── 5. Database migration tooling (dataops-kleppmann-003) ───
+  // ─── 5. Database migration tooling (dataops-migrate-001) ───
+  // CANONICAL PARITY FIX (v3.0.6): was `dataops-kleppmann-003`.
   const migrationDirs = ['migrations', 'alembic', 'flyway', 'db/migrate'];
   const hasMigrationTooling = treeItems.some((item) => {
     if (item.type !== 'tree') return false;
@@ -253,7 +281,7 @@ export function auditDataOpsRepository(
   });
 
   checks.push({
-    ruleId: 'dataops-kleppmann-003',
+    ruleId: 'dataops-migrate-001',
     category: 'schema_management',
     status: hasMigrationTooling ? 'pass' : 'warn',
     title: hasMigrationTooling
@@ -267,12 +295,12 @@ export function auditDataOpsRepository(
   });
 
   // ─── 6. Cross-domain ABI conflict (cross-001) — REMOVED ───
-// Hardcoded emission duplicated cross.yaml's cross-001 rule. The YAML
-// rule now owns this evidence check and emits via the cross auditor.
-// Re-adding a dataops-scoped variant would need a distinct ruleId like
-// `dataops-cross-001` in dataops.yaml.
+  // Hardcoded emission duplicated cross.yaml's cross-001 rule. The YAML
+  // rule now owns this evidence check and emits via the cross auditor.
+  // Re-adding a dataops-scoped variant would need a distinct ruleId like
+  // `dataops-cross-001` in dataops.yaml.
 
-// ─── Scoring ───
+  // ─── Scoring ───
   const failures = checks.filter((c) => c.status === 'fail').length;
   const warnings = checks.filter((c) => c.status === 'warn').length;
   const passed = checks.filter((c) => c.status === 'pass').length;

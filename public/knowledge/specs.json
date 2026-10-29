@@ -68,656 +68,398 @@
     "version": "1.0",
     "rules": [
       {
-        "id": "dataops-001",
+        "id": "dataops-dim-ast-001",
         "profile": "dataops",
-        "severity": "error",
-        "status": "draft",
-        "title": "Dependency lockfile missing",
-        "rationale": "Without a lockfile or pinned requirements file, environment drift can break reproducibility and cause silent pipeline failures across environments.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "{poetry.lock,Pipfile.lock,conda-lock.yml,requirements.txt}",
-            "error_when": "file_absent",
-            "message": "No dependency lockfile or requirements file found."
-          }
-        ],
-        "fix": "Generate and commit a lockfile:\n- poetry lock\n- pipenv lock\n- conda-lock -f environment.yml\nOr commit a pinned requirements.txt.\n",
-        "references": [
-          {
-            "book": "Fundamentals of Data Engineering: Plan and Build Robust Data Systems",
-            "concept": "reproducible-data-pipelines"
-          }
-        ],
-        "full_text": "Rule: Dependency lockfile missing\nID: dataops-001\nProfile: dataops\nSeverity: error\nWhy it matters: Without a lockfile or pinned requirements file, environment drift can break reproducibility and cause silent pipeline failures across environments.\n\nHow to fix: Generate and commit a lockfile:\n- poetry lock\n- pipenv lock\n- conda-lock -f environment.yml\nOr commit a pinned requirements.txt.\n\nReferences: Fundamentals of Data Engineering: Plan and Build Robust Data Systems"
-      },
-      {
-        "id": "dataops-sec-001",
-        "profile": "dataops",
-        "severity": "critical",
-        "status": "draft",
-        "title": "Hardcoded secret or credential detected",
-        "rationale": "Committed secrets create credential leakage risk and break environment portability.\n",
-        "checks": [
-          {
-            "type": "pattern_match",
-            "file_glob": "**/*.{py,sql,yaml,yml,sh,json,env,toml,ini}",
-            "pattern": "(?i)(password|passwd|pwd|secret|api_key|apikey|access_token|private_key)\\s*[:=]\\s*[\"'][^\"']{8,}",
-            "must_exist": false,
-            "error_when": "pattern_present",
-            "message": "Hardcoded secret or credential detected. Use environment variables or a secret store."
-          }
-        ],
-        "fix": "Replace literal secrets with environment variables or secret-store references.\nRotate any exposed credentials and purge them from git history if needed.\n",
-        "references": [
-          {
-            "book": "Practical DataOps",
-            "concept": "security-governance"
-          },
-          {
-            "book": "Fundamentals of Data Engineering: Plan and Build Robust Data Systems",
-            "concept": "security-undercurrent"
-          }
-        ],
-        "full_text": "Rule: Hardcoded secret or credential detected\nID: dataops-sec-001\nProfile: dataops\nSeverity: critical\nWhy it matters: Committed secrets create credential leakage risk and break environment portability.\n\nHow to fix: Replace literal secrets with environment variables or secret-store references.\nRotate any exposed credentials and purge them from git history if needed.\n\nReferences: Practical DataOps, Fundamentals of Data Engineering: Plan and Build Robust Data Systems"
-      },
-      {
-        "id": "dataops-sec-002",
-        "profile": "dataops",
-        "severity": "critical",
-        "status": "draft",
-        "title": "Embedded database password in connection URI",
-        "rationale": "Connection strings with inline passwords leak credentials and prevent secure environment promotion.\n",
-        "checks": [
-          {
-            "type": "pattern_match",
-            "file_glob": "**/*.{py,yaml,yml,json,toml,ini}",
-            "pattern": "(?i)(postgres|mysql|snowflake|redshift|bigquery|clickhouse)://[^:@/\\s]+:[^@\\s]+@",
-            "must_exist": false,
-            "error_when": "pattern_present",
-            "message": "Unencrypted database connection string with embedded password detected."
-          }
-        ],
-        "fix": "Use secret injection, environment variables, or a managed connection broker.\nNever embed usernames/passwords directly in connection URIs.\n",
-        "references": [
-          {
-            "book": "Designing Data-Intensive Applications",
-            "concept": "system-reliability-and-security"
-          }
-        ],
-        "full_text": "Rule: Embedded database password in connection URI\nID: dataops-sec-002\nProfile: dataops\nSeverity: critical\nWhy it matters: Connection strings with inline passwords leak credentials and prevent secure environment promotion.\n\nHow to fix: Use secret injection, environment variables, or a managed connection broker.\nNever embed usernames/passwords directly in connection URIs.\n\nReferences: Designing Data-Intensive Applications"
-      },
-      {
-        "id": "dataops-infra-001",
-        "profile": "dataops",
-        "severity": "warning",
-        "status": "draft",
-        "title": "Infrastructure as Code missing",
-        "rationale": "Data platform infrastructure should be version-controlled and reproducible. Manual environment setup creates drift and reduces auditability.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "{terraform/**/*.tf,cloudformation/**/*.yaml,pulumi/**/*.py,k8s/**/*.yaml}",
-            "error_when": "file_absent",
-            "message": "No Infrastructure as Code declaration found."
-          }
-        ],
-        "fix": "Add Terraform, CloudFormation, Pulumi, or Kubernetes manifests for platform provisioning.\n",
-        "references": [
-          {
-            "book": "Fundamentals of Data Engineering: Plan and Build Robust Data Systems",
-            "concept": "data-architecture-undercurrents"
-          }
-        ],
-        "full_text": "Rule: Infrastructure as Code missing\nID: dataops-infra-001\nProfile: dataops\nSeverity: warning\nWhy it matters: Data platform infrastructure should be version-controlled and reproducible. Manual environment setup creates drift and reduces auditability.\n\nHow to fix: Add Terraform, CloudFormation, Pulumi, or Kubernetes manifests for platform provisioning.\n\nReferences: Fundamentals of Data Engineering: Plan and Build Robust Data Systems"
-      },
-      {
-        "id": "dataops-dbt-001",
-        "profile": "dataops",
-        "severity": "critical",
-        "status": "draft",
-        "title": "Hardcoded relation string in dbt model",
-        "rationale": "Hardcoded database/schema/table references bypass dbt lineage and break environment promotion.\n",
-        "checks": [
-          {
-            "type": "pattern_match",
-            "file_glob": "models/**/*.sql",
-            "pattern": "(?i)\\b(from|join)\\s+[`'\"]?[a-z0-9_]+\\.[a-z0-9_]+\\.[a-z0-9_]+[`'\"]?",
-            "must_exist": false,
-            "error_when": "pattern_present",
-            "message": "Hardcoded relation string detected. Use ref() or source()."
-          }
-        ],
-        "fix": "Replace literal relations with {{ ref('model_name') }} or\n{{ source('source_name', 'table_name') }}.\n",
-        "references": [
-          {
-            "book": "Analytics Engineering with SQL and dbt",
-            "concept": "model-referencing"
-          }
-        ],
-        "full_text": "Rule: Hardcoded relation string in dbt model\nID: dataops-dbt-001\nProfile: dataops\nSeverity: critical\nWhy it matters: Hardcoded database/schema/table references bypass dbt lineage and break environment promotion.\n\nHow to fix: Replace literal relations with {{ ref('model_name') }} or\n{{ source('source_name', 'table_name') }}.\n\nReferences: Analytics Engineering with SQL and dbt"
-      },
-      {
-        "id": "dataops-dbt-002",
-        "profile": "dataops",
-        "severity": "critical",
-        "status": "draft",
-        "title": "dbt project manifest missing",
-        "rationale": "A dbt project root manifest is required for reproducible model resolution and project-aware compilation.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "dbt_project.yml",
-            "error_when": "file_absent",
-            "message": "dbt_project.yml is missing from repository root."
-          }
-        ],
-        "fix": "Add dbt_project.yml at the repository root.\n",
-        "references": [
-          {
-            "book": "Analytics Engineering with SQL and dbt",
-            "concept": "dbt-project-structure"
-          }
-        ],
-        "full_text": "Rule: dbt project manifest missing\nID: dataops-dbt-002\nProfile: dataops\nSeverity: critical\nWhy it matters: A dbt project root manifest is required for reproducible model resolution and project-aware compilation.\n\nHow to fix: Add dbt_project.yml at the repository root.\n\nReferences: Analytics Engineering with SQL and dbt"
-      },
-      {
-        "id": "dataops-dbt-003",
-        "profile": "dataops",
-        "severity": "error",
-        "status": "draft",
-        "title": "dbt models directory missing",
-        "rationale": "Analytics engineering repositories using dbt should contain a models directory for transformed data assets.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "models/**/*.sql",
-            "error_when": "file_absent",
-            "message": "models/ directory is missing from dbt project."
-          }
-        ],
-        "fix": "Create a models/ directory and add dbt SQL models.\n",
-        "references": [
-          {
-            "book": "Analytics Engineering with SQL and dbt",
-            "concept": "modular-data-modeling"
-          }
-        ],
-        "full_text": "Rule: dbt models directory missing\nID: dataops-dbt-003\nProfile: dataops\nSeverity: error\nWhy it matters: Analytics engineering repositories using dbt should contain a models directory for transformed data assets.\n\nHow to fix: Create a models/ directory and add dbt SQL models.\n\nReferences: Analytics Engineering with SQL and dbt"
-      },
-      {
-        "id": "dataops-dbt-004",
-        "profile": "dataops",
-        "severity": "warning",
-        "status": "draft",
-        "title": "dbt packages manifest missing",
-        "rationale": "External dbt packages should be declared explicitly to avoid implicit dependency drift.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "packages.yml",
-            "error_when": "file_absent",
-            "message": "packages.yml manifest is missing."
-          }
-        ],
-        "fix": "Add packages.yml if the project consumes external dbt packages.\n",
-        "references": [
-          {
-            "book": "Analytics Engineering with SQL and dbt",
-            "concept": "dbt-packages-and-macros"
-          }
-        ],
-        "full_text": "Rule: dbt packages manifest missing\nID: dataops-dbt-004\nProfile: dataops\nSeverity: warning\nWhy it matters: External dbt packages should be declared explicitly to avoid implicit dependency drift.\n\nHow to fix: Add packages.yml if the project consumes external dbt packages.\n\nReferences: Analytics Engineering with SQL and dbt"
-      },
-      {
-        "id": "dataops-quality-001",
-        "profile": "dataops",
-        "severity": "error",
-        "status": "draft",
-        "title": "Data quality test configuration missing",
-        "rationale": "Repositories lacking automated data quality test configurations risk silent data corruption in production pipelines.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "{models/**/_*.yml,great_expectations.yml,soda.yml,tests/**/*.sql}",
-            "error_when": "file_absent",
-            "message": "No data quality test configuration or assertion framework detected."
-          }
-        ],
-        "fix": "Add dbt tests, Great Expectations configs, Soda checks, or equivalent assertion files.\n",
-        "references": [
-          {
-            "book": "Data Quality Fundamentals: A Practitioner's Guide to Building Trustworthy Data Pipelines",
-            "concept": "automated-quality-gates"
-          },
-          {
-            "book": "Practical DataOps",
-            "concept": "agile-quality-assurance"
-          }
-        ],
-        "full_text": "Rule: Data quality test configuration missing\nID: dataops-quality-001\nProfile: dataops\nSeverity: error\nWhy it matters: Repositories lacking automated data quality test configurations risk silent data corruption in production pipelines.\n\nHow to fix: Add dbt tests, Great Expectations configs, Soda checks, or equivalent assertion files.\n\nReferences: Data Quality Fundamentals: A Practitioner's Guide to Building Trustworthy Data Pipelines, Practical DataOps"
-      },
-      {
-        "id": "dataops-runbook-001",
-        "profile": "dataops",
-        "severity": "warning",
-        "status": "draft",
-        "title": "Version-controlled incident runbook missing",
-        "rationale": "Standardized incident response documentation reduces Time to Resolution and eliminates dependence on tribal knowledge during data outages.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "{RUNBOOK.md,docs/RUNBOOK.md,docs/runbooks/*.md,docs/incidents/*.md}",
-            "error_when": "file_absent",
-            "message": "Incident response runbook missing."
-          }
-        ],
-        "fix": "Add RUNBOOK.md or docs/runbooks/*.md describing detection, triage, escalation,\nand postmortem workflow.\n",
-        "references": [
-          {
-            "book": "Data Quality Fundamentals: A Practitioner's Guide to Building Trustworthy Data Pipelines",
-            "concept": "data-incident-management"
-          }
-        ],
-        "full_text": "Rule: Version-controlled incident runbook missing\nID: dataops-runbook-001\nProfile: dataops\nSeverity: warning\nWhy it matters: Standardized incident response documentation reduces Time to Resolution and eliminates dependence on tribal knowledge during data outages.\n\nHow to fix: Add RUNBOOK.md or docs/runbooks/*.md describing detection, triage, escalation,\nand postmortem workflow.\n\nReferences: Data Quality Fundamentals: A Practitioner's Guide to Building Trustworthy Data Pipelines"
-      },
-      {
-        "id": "dataops-atwal-002",
-        "profile": "dataops",
-        "severity": "error",
-        "status": "draft",
-        "title": "Automated test suite missing",
-        "rationale": "Data software should include version-controlled automated tests to catch regressions before deployment.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "{tests/**,test/**,pytest.ini}",
-            "error_when": "file_absent",
-            "message": "Automated testing directory missing."
-          }
-        ],
-        "fix": "Add a tests/ directory with unit/integration tests and a test runner configuration.\n",
-        "references": [
-          {
-            "book": "Practical DataOps",
-            "concept": "automated-testing-and-ci"
-          }
-        ],
-        "full_text": "Rule: Automated test suite missing\nID: dataops-atwal-002\nProfile: dataops\nSeverity: error\nWhy it matters: Data software should include version-controlled automated tests to catch regressions before deployment.\n\nHow to fix: Add a tests/ directory with unit/integration tests and a test runner configuration.\n\nReferences: Practical DataOps"
-      },
-      {
-        "id": "dataops-fde-001",
-        "profile": "dataops",
-        "severity": "error",
-        "status": "draft",
-        "title": "Pipeline orchestration code missing",
-        "rationale": "Workflows should be declared as code to ensure reproducibility, reviewability, and deterministic execution.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "{dags/**/*.py,orchestration/**/*.py,workflows/**/*.yaml,dagster_app/**/*.py}",
-            "error_when": "file_absent",
-            "message": "Pipeline orchestration code missing."
-          }
-        ],
-        "fix": "Add Airflow DAGs, Dagster assets, Prefect flows, or equivalent orchestration definitions.\n",
-        "references": [
-          {
-            "book": "Fundamentals of Data Engineering: Plan and Build Robust Data Systems",
-            "concept": "pipelines-as-code"
-          }
-        ],
-        "full_text": "Rule: Pipeline orchestration code missing\nID: dataops-fde-001\nProfile: dataops\nSeverity: error\nWhy it matters: Workflows should be declared as code to ensure reproducibility, reviewability, and deterministic execution.\n\nHow to fix: Add Airflow DAGs, Dagster assets, Prefect flows, or equivalent orchestration definitions.\n\nReferences: Fundamentals of Data Engineering: Plan and Build Robust Data Systems"
-      },
-      {
-        "id": "dataops-atwal-003",
-        "profile": "dataops",
-        "severity": "warning",
         "status": "active",
-        "title": "Dependency lockfile missing",
-        "rationale": "Dependency lockfiles prevent environment drift and broken builds caused by unpinned transitive dependencies.\n",
+        "severity": "error",
+        "title": "Fact table uses natural key joins (Kimball violation)",
+        "description": "Detects JOIN clauses in fact models that compare operational natural keys (customer_id, order_id, product_id, sku, email, ssn, tax_id, phone, account_number, invoice_number, user_id, national_id, passport_number) instead of surrogate keys ending in _sk, _key, _surrogate, _dim_key, or _hash.\n",
+        "rationale": "Kimball dimensional modeling requires surrogate keys for stable referential integrity and performant joins. Natural-key joins couple business semantics to physical storage and make refactoring, partitioning, and slowly-changing-dimension handling fragile.\n",
+        "fix": "Replace natural-key joins with surrogate-key joins (customer_sk, order_sk, product_sk).",
+        "references": [
+          {
+            "book": "The Data Warehouse Toolkit",
+            "concept": "surrogate-keys"
+          }
+        ],
+        "checks": [
+          {
+            "type": "structural_ast",
+            "parser": "sqlglot",
+            "file_glob": "models/marts/facts/**/*.sql",
+            "max_checks": 20,
+            "message": "Fact table joins on natural key(s). Use surrogate keys (_sk).",
+            "dialect_hints": [
+              "snowflake",
+              "bigquery",
+              "postgres",
+              "redshift",
+              "databricks"
+            ],
+            "detection_patterns": {
+              "natural_keys": [
+                "^customer_id$",
+                "^order_id$",
+                "^product_id$",
+                "^sku$",
+                "^email$",
+                "^ssn$",
+                "^tax_id$",
+                "^phone$",
+                "^account_number$",
+                "^invoice_number$",
+                "^user_id$",
+                "^national_id$",
+                "^passport_number$"
+              ],
+              "surrogate_suffixes": [
+                "_sk",
+                "_key",
+                "_surrogate",
+                "_dim_key",
+                "_hash"
+              ]
+            },
+            "non_additive_patterns": [
+              "_ratio$",
+              "_rate$",
+              "_pct$",
+              "_percent$",
+              "_avg$",
+              "_average$",
+              "_mean$",
+              "_margin$",
+              "_yield$",
+              "_conversion$"
+            ]
+          }
+        ],
+        "full_text": "Rule: Fact table uses natural key joins (Kimball violation)\nID: dataops-dim-ast-001\nProfile: dataops\nSeverity: error\nWhy it matters: Kimball dimensional modeling requires surrogate keys for stable referential integrity and performant joins. Natural-key joins couple business semantics to physical storage and make refactoring, partitioning, and slowly-changing-dimension handling fragile.\n\nHow to fix: Replace natural-key joins with surrogate-key joins (customer_sk, order_sk, product_sk).\nReferences: The Data Warehouse Toolkit"
+      },
+      {
+        "id": "dataops-dim-sem-001",
+        "profile": "dataops",
+        "status": "active",
+        "severity": "error",
+        "title": "Fact table uses natural key joins (Kimball violation) [Semantic Fallback]",
+        "description": "Evaluates SQL models for subtle Kimball violations that AST analysis cannot definitively confirm, such as conditional joins, dynamic column references, or complex subqueries where join intent requires architectural judgment beyond pattern matching.\n",
+        "rationale": "Complements dataops-dim-ast-001 by covering edge cases where structural parsing alone produces false negatives. Skips automatically when AST has already confirmed the same file.\n",
+        "fix": "Replace natural-key joins with surrogate-key joins (customer_sk, order_sk, product_sk).",
+        "references": [
+          {
+            "book": "The Data Warehouse Toolkit",
+            "concept": "surrogate-keys"
+          }
+        ],
+        "checks": [
+          {
+            "type": "semantic_eval",
+            "file_glob": "models/**/*.sql",
+            "threshold": 0.6,
+            "max_input_chars": 8000,
+            "message": "Semantic Kimball dimensional-model review scored below threshold; fact model may use natural-key joins.",
+            "depends_on_rule_id": "dataops-dim-ast-001",
+            "skip_if_structural_confirmed": true,
+            "preflight": {
+              "enabled": true,
+              "mode": "skip_if_confirmed",
+              "regexes": [
+                "join\\s+\\w+\\s+(?:as\\s+)?\\w*\\s+on\\s+[^;]*\\b(customer_id|order_id|product_id|sku|email|ssn)\\b",
+                "\\bon\\s+.*=\\s+.*\\.(customer_id|order_id|product_id)\\b"
+              ]
+            },
+            "evaluation_prompt": "You are auditing a dbt SQL model for Kimball dimensional modeling violations.\n\nDetermine whether this fact or staging model joins to another table using operational\nnatural keys such as customer_id, order_id, product_id, sku, email, or ssn instead\nof surrogate keys ending in _sk, _key, _surrogate, _dim_key, or _hash.\n\nImportant criteria:\n- A VIOLATION exists when a JOIN ON clause directly compares natural-key columns between tables.\n- A PASSING model uses surrogate keys (e.g., customer_sk = dim_customer.customer_sk).\n- Conditional joins (CASE WHEN), lateral joins, or semi-joins may still violate if they reference natural keys.\n- Subqueries that materialize natural keys before joining downstream ALSO count as violations.\n- If the model is clearly not a fact-like model (pure dimension, pure staging without joins,\n  config/reference lookup), score should be HIGH (>0.85).\n- Name the SPECIFIC offending column(s) and line context in your reasoning field.\n- Do NOT flag dimensions that legitimately use natural keys as their business key unless\n  they are incorrectly joined TO FROM a fact table.\n\nOutput contract:\nReturn ONLY valid JSON with this exact shape:\n{\"passed\": true|false, \"score\": 0.0-1.0, \"missing\": [\"...\"], \"reasoning\": \"...\"}\n\nRules:\n- \"score\" must be a number between 0 and 1 representing compliance level.\n- \"reasoning\" MUST name the concrete violating construct (column name, join alias, subquery).\n- \"missing\" lists specific anti-patterns detected (e.g., [\"natural-key-join-on-customer_id\"]).\n- Do NOT return markdown, prose outside JSON, or explanations beyond the JSON fields.\n"
+          }
+        ],
+        "full_text": "Rule: Fact table uses natural key joins (Kimball violation) [Semantic Fallback]\nID: dataops-dim-sem-001\nProfile: dataops\nSeverity: error\nWhy it matters: Complements dataops-dim-ast-001 by covering edge cases where structural parsing alone produces false negatives. Skips automatically when AST has already confirmed the same file.\n\nHow to fix: Replace natural-key joins with surrogate-key joins (customer_sk, order_sk, product_sk).\nReferences: The Data Warehouse Toolkit"
+      },
+      {
+        "id": "dataops-env-001",
+        "profile": "dataops",
+        "status": "active",
+        "severity": "warning",
+        "title": "Missing environment reproducibility artifacts",
+        "description": "Repository lacks standardized dependency/environment specification files required for reproducible pipeline execution across dev/stage/prod environments.\n",
+        "rationale": "Without pinned environments, pipeline behavior drifts silently between deployments, undermining trust in transformation outputs and breaking SLA guarantees.\n",
+        "fix": "Add requirements.txt, pyproject.toml, poetry.lock, Pipfile.lock, or conda environment.yml.",
+        "references": [
+          {
+            "book": "Practical DataOps",
+            "concept": "environment-reproducibility"
+          },
+          {
+            "book": "Fundamentals of Data Engineering",
+            "concept": "deployment-environments"
+          }
+        ],
         "checks": [
           {
             "type": "file_exists",
-            "path_glob": "{requirements.txt,Pipfile.lock,poetry.lock,conda-lock.yml}",
+            "paths": [
+              "requirements.txt",
+              "pyproject.toml",
+              "poetry.lock",
+              "Pipfile.lock",
+              "environment.yml",
+              "conda-lock.yml"
+            ],
+            "match_mode": "any",
             "error_when": "file_absent",
-            "message": "Dependency lockfile missing."
+            "message": "No recognized Python environment specification file at repository root."
           }
         ],
-        "fix": "Commit a lockfile generated by Poetry, Pipenv, conda-lock, or pinned requirements.txt.\n",
+        "full_text": "Rule: Missing environment reproducibility artifacts\nID: dataops-env-001\nProfile: dataops\nSeverity: warning\nWhy it matters: Without pinned environments, pipeline behavior drifts silently between deployments, undermining trust in transformation outputs and breaking SLA guarantees.\n\nHow to fix: Add requirements.txt, pyproject.toml, poetry.lock, Pipfile.lock, or conda environment.yml.\nReferences: Practical DataOps, Fundamentals of Data Engineering"
+      },
+      {
+        "id": "dataops-env-002",
+        "profile": "dataops",
+        "status": "active",
+        "severity": "info",
+        "title": "No containerized execution definition",
+        "description": "Pipeline does not define Docker/Podman/Singularity image for consistent runtime isolation.\n",
+        "rationale": "Containerization eliminates host-drift issues and enables parity between local development and orchestrated production execution.\n",
+        "fix": "Add Dockerfile or .containerignore at repository root.",
+        "references": [
+          {
+            "book": "Practical DataOps",
+            "concept": "containerization-strategy"
+          }
+        ],
+        "checks": [
+          {
+            "type": "file_exists",
+            "paths": [
+              "Dockerfile",
+              "Containerfile",
+              ".dockerignore",
+              "Singularity.def"
+            ],
+            "match_mode": "any",
+            "error_when": "file_absent",
+            "message": "No container definition file (Dockerfile, Containerfile, Singularity.def) found."
+          }
+        ],
+        "full_text": "Rule: No containerized execution definition\nID: dataops-env-002\nProfile: dataops\nSeverity: info\nWhy it matters: Containerization eliminates host-drift issues and enables parity between local development and orchestrated production execution.\n\nHow to fix: Add Dockerfile or .containerignore at repository root.\nReferences: Practical DataOps"
+      },
+      {
+        "id": "dataops-env-003",
+        "profile": "dataops",
+        "status": "active",
+        "severity": "warning",
+        "title": "No Python environment configuration detected",
+        "description": "Neither PEP 621 metadata nor legacy pip/poetry/conda specifications found.\n",
+        "rationale": "Ambiguous dependency management leads to non-reproducible installs and CI flakiness.\n",
+        "fix": "Standardize on one toolchain and commit its lockfile.",
         "references": [
           {
             "book": "Practical DataOps",
             "concept": "environment-reproducibility"
           }
         ],
-        "full_text": "Rule: Dependency lockfile missing\nID: dataops-atwal-003\nProfile: dataops\nSeverity: warning\nWhy it matters: Dependency lockfiles prevent environment drift and broken builds caused by unpinned transitive dependencies.\n\nHow to fix: Commit a lockfile generated by Poetry, Pipenv, conda-lock, or pinned requirements.txt.\n\nReferences: Practical DataOps"
-      },
-      {
-        "id": "dataops-kleppmann-002",
-        "profile": "dataops",
-        "severity": "error",
-        "status": "active",
-        "title": "Streaming schema IDL missing",
-        "rationale": "Event-driven pipelines need explicit schema definitions to prevent unannounced breaking changes and support schema evolution.\n",
         "checks": [
           {
             "type": "file_exists",
-            "path_glob": "{schemas/**/*.proto,schemas/**/*.avsc,schemas/**/*.thrift,events/**/*.proto}",
+            "paths": [
+              "requirements*.txt",
+              "pyproject.toml",
+              "setup.py",
+              "setup.cfg",
+              "Pipfile*",
+              "poetry.lock",
+              "environment.y*ml",
+              "conda-lock.yml"
+            ],
+            "match_mode": "any",
             "error_when": "file_absent",
-            "message": "Streaming schema IDL definitions missing."
+            "message": "No recognized Python environment spec found."
           }
         ],
-        "fix": "Add Avro, Protobuf, or Thrift schema files for event streams.\n",
+        "full_text": "Rule: No Python environment configuration detected\nID: dataops-env-003\nProfile: dataops\nSeverity: warning\nWhy it matters: Ambiguous dependency management leads to non-reproducible installs and CI flakiness.\n\nHow to fix: Standardize on one toolchain and commit its lockfile.\nReferences: Practical DataOps"
+      },
+      {
+        "id": "dataops-schema-001",
+        "profile": "dataops",
+        "status": "active",
+        "severity": "error",
+        "title": "Backward-incompatible schema change without migration guard",
+        "description": "Detected ALTER TABLE DROP COLUMN, RENAME COLUMN, or TYPE CHANGE without corresponding migration script or compatibility annotation.\n",
+        "rationale": "Unprotected destructive schema changes break downstream consumers instantly, violating backward-compatibility contracts essential for evolving distributed systems.\n",
+        "fix": "Wrap destructive DDL in reversible migrations; annotate with @compat=forward-only if intentional.",
+        "references": [
+          {
+            "book": "Designing Data-Intensive Applications",
+            "concept": "schema-evolution-and-encoding"
+          },
+          {
+            "standard": "Confluent Schema Registry Compatibility Levels",
+            "concept": "backward-forward-transitive-compatibility"
+          }
+        ],
+        "checks": [
+          {
+            "type": "pattern_match",
+            "file_glob": "migrations/**/*.{sql,py}",
+            "pattern": "(?i)ALTER\\s+TABLE\\s+\\w+\\s+(?:DROP\\s+COLUMN|RENAME\\s+COLUMN|ALTER\\s+COLUMN\\s+\\w+\\s+TYPE)",
+            "error_when": "pattern_present",
+            "message": "Destructive schema mutation lacks a compatibility guard."
+          }
+        ],
+        "full_text": "Rule: Backward-incompatible schema change without migration guard\nID: dataops-schema-001\nProfile: dataops\nSeverity: error\nWhy it matters: Unprotected destructive schema changes break downstream consumers instantly, violating backward-compatibility contracts essential for evolving distributed systems.\n\nHow to fix: Wrap destructive DDL in reversible migrations; annotate with @compat=forward-only if intentional.\nReferences: Designing Data-Intensive Applications, Confluent Schema Registry Compatibility Levels"
+      },
+      {
+        "id": "dataops-stream-001",
+        "profile": "dataops",
+        "status": "active",
+        "severity": "error",
+        "title": "Streaming schema IDL missing",
+        "description": "Kafka/Kinesis/PubSub topics referenced but no Avro (.avsc), Protobuf (.proto), or JSON Schema contract files accompany them.\n",
+        "rationale": "Streaming pipelines without explicit schema contracts suffer silent corruption during producer/consumer version skew - the most dangerous failure mode in event-driven architectures.\n",
+        "fix": "Define event schemas with Avro/Protobuf/JSON-Schema under schemas/ and enforce compat in CI.",
         "references": [
           {
             "book": "Designing Data-Intensive Applications",
             "concept": "schema-evolution-and-encoding"
           }
         ],
-        "full_text": "Rule: Streaming schema IDL missing\nID: dataops-kleppmann-002\nProfile: dataops\nSeverity: error\nWhy it matters: Event-driven pipelines need explicit schema definitions to prevent unannounced breaking changes and support schema evolution.\n\nHow to fix: Add Avro, Protobuf, or Thrift schema files for event streams.\n\nReferences: Designing Data-Intensive Applications"
-      },
-      {
-        "id": "dataops-kleppmann-003",
-        "profile": "dataops",
-        "severity": "warning",
-        "status": "active",
-        "title": "Database migration directory missing",
-        "rationale": "Schema evolution should be version-controlled through migration tooling to enable safe, repeatable deployments.\n",
         "checks": [
           {
             "type": "file_exists",
-            "path_glob": "{migrations/**,flyway/**,alembic/**,db/migrate/**}",
+            "paths": [
+              "schemas/**/*.proto",
+              "schemas/**/*.avsc",
+              "schemas/**/*.thrift",
+              "events/**/*.proto"
+            ],
+            "match_mode": "any",
             "error_when": "file_absent",
-            "message": "Database schema migration directory missing."
+            "message": "Streaming schema IDL definitions missing."
           }
         ],
-        "fix": "Add migration scripts using Flyway, Alembic, dbmate, or equivalent tooling.\n",
+        "full_text": "Rule: Streaming schema IDL missing\nID: dataops-stream-001\nProfile: dataops\nSeverity: error\nWhy it matters: Streaming pipelines without explicit schema contracts suffer silent corruption during producer/consumer version skew - the most dangerous failure mode in event-driven architectures.\n\nHow to fix: Define event schemas with Avro/Protobuf/JSON-Schema under schemas/ and enforce compat in CI.\nReferences: Designing Data-Intensive Applications"
+      },
+      {
+        "id": "dataops-migrate-001",
+        "profile": "dataops",
+        "status": "active",
+        "severity": "warning",
+        "title": "Database migration directory missing",
+        "description": "SQL DDL changes appear inline in application code or ad-hoc scripts rather than managed through Alembic/Flyway/Liquibase/dbmate workflow.\n",
+        "rationale": "Hand-applied schema changes are unauditable, unreversible, and prone to drift between environments - directly contradicting the operational reliability principles described in Designing Data-Intensive Applications.\n",
+        "fix": "Adopt Alembic, Flyway, Liquibase, or dbmate; store ALL DDL under migrations/.",
         "references": [
           {
             "book": "Designing Data-Intensive Applications",
             "concept": "schema-evolution"
           }
         ],
-        "full_text": "Rule: Database migration directory missing\nID: dataops-kleppmann-003\nProfile: dataops\nSeverity: warning\nWhy it matters: Schema evolution should be version-controlled through migration tooling to enable safe, repeatable deployments.\n\nHow to fix: Add migration scripts using Flyway, Alembic, dbmate, or equivalent tooling.\n\nReferences: Designing Data-Intensive Applications"
-      },
-      {
-        "id": "dataops-kimball-001",
-        "profile": "dataops",
-        "severity": "error",
-        "status": "draft",
-        "title": "Fact table joined on natural key instead of surrogate key",
-        "rationale": "Dimensional models should join facts to dimensions using surrogate keys to preserve history, stability, and performance.\n",
-        "checks": [
-          {
-            "type": "pattern_match",
-            "file_glob": "models/marts/facts/**/*.sql",
-            "pattern": "(?i)\\bjoin\\b\\s+\\w+\\s+\\bon\\b\\s+[\\w.]+\\.(id|code|natural_key)\\s*=",
-            "must_exist": false,
-            "error_when": "pattern_present",
-            "message": "Fact table model joins on natural operational key. Use surrogate keys (_sk)."
-          }
-        ],
-        "fix": "Replace natural-key joins with surrogate-key joins, for example customer_sk, product_sk.\n",
-        "references": [
-          {
-            "book": "The Data Warehouse Toolkit",
-            "concept": "surrogate-keys"
-          }
-        ],
-        "full_text": "Rule: Fact table joined on natural key instead of surrogate key\nID: dataops-kimball-001\nProfile: dataops\nSeverity: error\nWhy it matters: Dimensional models should join facts to dimensions using surrogate keys to preserve history, stability, and performance.\n\nHow to fix: Replace natural-key joins with surrogate-key joins, for example customer_sk, product_sk.\n\nReferences: The Data Warehouse Toolkit"
-      },
-      {
-        "id": "dataops-kimball-002",
-        "profile": "dataops",
-        "severity": "error",
-        "status": "draft",
-        "title": "SCD Type 2 dimension missing effective date tracking",
-        "rationale": "Slowly Changing Dimension Type 2 models require effective dating and current state indicators to preserve historical accuracy.\n",
-        "checks": [
-          {
-            "type": "pattern_match",
-            "file_glob": "models/marts/dimensions/**/*.sql",
-            "pattern": "(?i)\\b(effective_at|valid_from|dbt_valid_from|dbt_valid_to|is_current)\\b",
-            "must_exist": true,
-            "error_when": "pattern_absent",
-            "message": "SCD Type 2 dimension model lacks required effective date tracking columns."
-          }
-        ],
-        "fix": "Add effective_start, effective_end, dbt_valid_from, dbt_valid_to, or is_current fields.\n",
-        "references": [
-          {
-            "book": "The Data Warehouse Toolkit",
-            "concept": "slowly-changing-dimensions"
-          }
-        ],
-        "full_text": "Rule: SCD Type 2 dimension missing effective date tracking\nID: dataops-kimball-002\nProfile: dataops\nSeverity: error\nWhy it matters: Slowly Changing Dimension Type 2 models require effective dating and current state indicators to preserve historical accuracy.\n\nHow to fix: Add effective_start, effective_end, dbt_valid_from, dbt_valid_to, or is_current fields.\n\nReferences: The Data Warehouse Toolkit"
-      },
-      {
-        "id": "dataops-kimball-003",
-        "profile": "dataops",
-        "severity": "warning",
-        "status": "draft",
-        "title": "Enterprise bus matrix missing",
-        "rationale": "A bus matrix documents conformed dimensions across business processes and prevents fragmented warehouse design.\n",
         "checks": [
           {
             "type": "file_exists",
-            "path_glob": "{docs/bus_matrix.md,docs/architecture/bus_matrix.md,bus_matrix.csv}",
+            "paths": [
+              "migrations/**",
+              "flyway/**",
+              "alembic/**",
+              "db/migrate/**"
+            ],
+            "match_mode": "any",
             "error_when": "file_absent",
-            "message": "Enterprise Bus Matrix missing."
+            "message": "Database schema migration directory missing."
           }
         ],
-        "fix": "Add a bus matrix document mapping business processes to shared dimensions.\n",
-        "references": [
-          {
-            "book": "The Data Warehouse Toolkit",
-            "concept": "bus-matrix"
-          }
-        ],
-        "full_text": "Rule: Enterprise bus matrix missing\nID: dataops-kimball-003\nProfile: dataops\nSeverity: warning\nWhy it matters: A bus matrix documents conformed dimensions across business processes and prevents fragmented warehouse design.\n\nHow to fix: Add a bus matrix document mapping business processes to shared dimensions.\n\nReferences: The Data Warehouse Toolkit"
+        "full_text": "Rule: Database migration directory missing\nID: dataops-migrate-001\nProfile: dataops\nSeverity: warning\nWhy it matters: Hand-applied schema changes are unauditable, unreversible, and prone to drift between environments - directly contradicting the operational reliability principles described in Designing Data-Intensive Applications.\n\nHow to fix: Adopt Alembic, Flyway, Liquibase, or dbmate; store ALL DDL under migrations/.\nReferences: Designing Data-Intensive Applications"
       },
       {
-        "id": "dataops-scale-001",
+        "id": "dataops-obs-001",
         "profile": "dataops",
-        "severity": "critical",
-        "status": "draft",
-        "title": "Data product manifest missing",
-        "rationale": "Domain-oriented data platforms require explicit data product manifests to define ownership, SLAs, contracts, and discoverability.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "{data-product.yml,data-product.yaml}",
-            "error_when": "file_absent",
-            "message": "data-product.yml specification missing."
-          }
-        ],
-        "fix": "Add a data-product.yml manifest describing ownership, SLAs, schema, and consumers.\n",
-        "references": [
-          {
-            "book": "Data Management at Scale",
-            "concept": "data-product-manifest"
-          }
-        ],
-        "full_text": "Rule: Data product manifest missing\nID: dataops-scale-001\nProfile: dataops\nSeverity: critical\nWhy it matters: Domain-oriented data platforms require explicit data product manifests to define ownership, SLAs, contracts, and discoverability.\n\nHow to fix: Add a data-product.yml manifest describing ownership, SLAs, schema, and consumers.\n\nReferences: Data Management at Scale"
-      },
-      {
-        "id": "dataops-scale-003",
-        "profile": "dataops",
-        "severity": "warning",
-        "status": "draft",
-        "title": "Data contract definitions missing",
-        "rationale": "Explicit data contracts reduce breaking changes between producers and consumers in federated data architectures.\n",
-        "checks": [
-          {
-            "type": "file_exists",
-            "path_glob": "{contracts/**,schemas/contracts/**,docs/contracts/**}",
-            "error_when": "file_absent",
-            "message": "Data contracts directory missing."
-          }
-        ],
-        "fix": "Add contract definitions for domain interfaces, including schema, semantics,\nand compatibility rules.\n",
-        "references": [
-          {
-            "book": "Data Management at Scale",
-            "concept": "data-contracts"
-          }
-        ],
-        "full_text": "Rule: Data contract definitions missing\nID: dataops-scale-003\nProfile: dataops\nSeverity: warning\nWhy it matters: Explicit data contracts reduce breaking changes between producers and consumers in federated data architectures.\n\nHow to fix: Add contract definitions for domain interfaces, including schema, semantics,\nand compatibility rules.\n\nReferences: Data Management at Scale"
-      },
-      {
-        "id": "dataops-004",
-        "profile": "dataops",
-        "severity": "error",
         "status": "active",
-        "title": "Unmanaged large or raw data files tracked in Git",
-        "rationale": "Raw tabular and binary datasets (CSV, Parquet, Excel, SQLite, etc.) tracked directly in Git bloat the repository, slow CI/CD, and cannot be reproduced from source. Version-control them with DVC or Git LFS, or move them to a data lake.\n",
-        "checks": [
-          {
-            "type": "pattern_match",
-            "pattern": "\\.(csv|parquet|feather|xlsx|xls|sqlite|db|h5|pkl|npy|npz)$",
-            "must_exist": false,
-            "file_glob": "**/*",
-            "error_when": "pattern_present",
-            "message": "Raw data file tracked in Git without DVC or Git LFS — move to a data lake or version with DVC."
-          }
-        ],
-        "fix": "Track large datasets with DVC (https://dvc.org) or Git LFS, and add raw\ndata directories to .gitignore. Commit only pointers, not blobs.\n",
+        "severity": "warning",
+        "title": "Missing observability instrumentation",
+        "description": "Transformation jobs lack structured logging, metrics emission, or trace propagation needed for incident triage and SLO monitoring.\n",
+        "rationale": "Undetectable failures cascade into corrupted warehouses. Observability is prerequisite to trustworthy automation per DataOps lifecycle principles.\n",
+        "fix": "Integrate OpenTelemetry SDK or platform-native observability hooks in job entrypoints.",
         "references": [
           {
-            "book": "Practical DataOps",
-            "concept": "data-versioning"
+            "book": "Site Reliability Engineering",
+            "concept": "monitoring-and-alerting"
           },
           {
-            "book": "Designing Data-Intensive Applications",
-            "concept": "data-reproducibility"
+            "standard": "OpenTelemetry Specification",
+            "concept": "traces-metrics-logs-correlation"
           }
         ],
-        "full_text": "Rule: Unmanaged large or raw data files tracked in Git\nID: dataops-004\nProfile: dataops\nSeverity: error\nWhy it matters: Raw tabular and binary datasets (CSV, Parquet, Excel, SQLite, etc.) tracked directly in Git bloat the repository, slow CI/CD, and cannot be reproduced from source. Version-control them with DVC or Git LFS, or move them to a data lake.\n\nHow to fix: Track large datasets with DVC (https://dvc.org) or Git LFS, and add raw\ndata directories to .gitignore. Commit only pointers, not blobs.\n\nReferences: Practical DataOps, Designing Data-Intensive Applications"
-      },
-      {
-        "id": "dataops-006",
-        "profile": "dataops",
-        "severity": "warning",
-        "status": "active",
-        "title": "Jupyter notebook hygiene issues detected",
-        "rationale": "Committed notebooks with heavy outputs and out-of-order execution counts bloat repositories and obscure intent. Notebooks should be cleaned before commit using nbstripout or nbconvert.\n",
         "checks": [
           {
             "type": "pattern_match",
-            "pattern": "\"outputs\"\\s*:\\s*\\[[^\\]]{1000,}",
-            "must_exist": false,
-            "file_glob": "**/*.ipynb",
-            "error_when": "pattern_present",
-            "message": "Notebook contains heavy outputs — clear before commit with nbstripout."
+            "file_glob": "**/*.{py,ts,js,scala,java}",
+            "pattern": "(?i)(opentelemetry|prometheus_client|statsd|structlog|logging\\.getLogger|logger\\.info|tracer\\.start_span)",
+            "error_when": "pattern_absent",
+            "message": "Job files contain no recognized observability primitives."
           }
         ],
-        "fix": "Add nbstripout to pre-commit hooks, or run\n`jupyter nbconvert --clear-output --inplace *.ipynb` before commit.\n",
-        "references": [
-          {
-            "book": "Practical DataOps",
-            "concept": "notebook-hygiene"
-          }
-        ],
-        "full_text": "Rule: Jupyter notebook hygiene issues detected\nID: dataops-006\nProfile: dataops\nSeverity: warning\nWhy it matters: Committed notebooks with heavy outputs and out-of-order execution counts bloat repositories and obscure intent. Notebooks should be cleaned before commit using nbstripout or nbconvert.\n\nHow to fix: Add nbstripout to pre-commit hooks, or run\n`jupyter nbconvert --clear-output --inplace *.ipynb` before commit.\n\nReferences: Practical DataOps"
+        "full_text": "Rule: Missing observability instrumentation\nID: dataops-obs-001\nProfile: dataops\nSeverity: warning\nWhy it matters: Undetectable failures cascade into corrupted warehouses. Observability is prerequisite to trustworthy automation per DataOps lifecycle principles.\n\nHow to fix: Integrate OpenTelemetry SDK or platform-native observability hooks in job entrypoints.\nReferences: Site Reliability Engineering, OpenTelemetry Specification"
       },
       {
-        "id": "dataops-runbook-sem-001",
+        "id": "dataops-test-001",
         "profile": "dataops",
+        "status": "active",
         "severity": "error",
-        "title": "Runbook lacks actionable triage structure",
-        "rationale": "A runbook must contain detection criteria, triage commands, escalation path, and postmortem template. Mere existence of the file is not enough.\n",
-        "checks": [
-          {
-            "type": "semantic_eval",
-            "file_glob": "{RUNBOOK.md,docs/RUNBOOK.md,docs/runbooks/*.md}",
-            "error_when": "semantic_score_below_threshold",
-            "threshold": 0.7,
-            "evaluation_prompt": "Evaluate this runbook against 5 criteria. A criterion is MET only if the\ndocument contains specific, actionable content — generic advice does not\ncount.\n\n1. Detection criteria: named alerts (e.g., \"DataPipelineStale\") or\n   specific metric thresholds. \"Check the logs\" does NOT count.\n2. Triage steps: numbered shell commands. \"Look at the UI\" does NOT count.\n3. Escalation path: named roles with contact methods and time SLAs.\n   \"Page the on-call\" does NOT count.\n4. Postmortem template: a section list (timeline, root cause, impact,\n   action items). \"Write a summary\" does NOT count.\n5. Runbook-specific commands: actual commands for THIS service. Generic\n   advice does NOT count.\n\nScore bands (mechanical — do not deviate):\n\nBEFORE scoring, count section headings in the document.\nA \"section heading\" is a line beginning with `## ` or `### `.\nA lone `# Title` line does NOT count.\n\nIf ZERO section headings exist (## or ###), the score MUST be ≤ 0.20\n— regardless of how sensible the prose is. A prose-only document is\nnot a runbook; it is a placeholder.\n\nIf headings exist, use this table:\n- 0.21–0.30: headings exist for ≤ 2 criteria only\n- 0.31–0.50: headings exist for ≥ 3 criteria, content generic\n- 0.51–0.75: some sections specific, 1–2 criteria still generic\n- 0.76–0.85: all criteria specific, one minor gap\n- 0.86–1.00: all criteria specific and complete\n\nRespond with valid JSON only:\n{\"score\": number, \"missing\": [criterion names from the list above], \"reasoning\": string}.\nThe missing array must contain ONLY the criterion names. Never include\n\"score\", \"missing\", or \"reasoning\" as items in the missing array.\n",
-            "message": "Runbook lacks actionable triage structure"
-          }
-        ],
-        "fix": "Add explicit escalation contacts with phone/on-call rotation.\nAdd numbered triage commands (not prose).\nInclude postmortem template section with timeline, root cause, action items.\n",
+        "title": "Automated test suite missing",
+        "description": "dbt models, Airflow DAG tasks, or notebook cells contain executable transformations without accompanying unit/integration tests.\n",
+        "rationale": "Regression-free iteration demands verification at every abstraction layer. Untested transforms become unverifiable liabilities post-deployment.\n",
+        "fix": "Write dbt tests, pytest assertions, Great Expectations suites, or nbmake notebooks.",
         "references": [
           {
-            "book": "Site Reliability Engineering: How Google Runs Production Systems",
-            "concept": "on-call-and-incident-management"
+            "book": "Fundamentals of Data Engineering",
+            "concept": "testing-data-pipelines"
+          },
+          {
+            "standard": "dbt Testing Framework",
+            "concept": "singular-generic-tests"
           }
         ],
-        "full_text": "Rule: Runbook lacks actionable triage structure\nID: dataops-runbook-sem-001\nProfile: dataops\nSeverity: error\nWhy it matters: A runbook must contain detection criteria, triage commands, escalation path, and postmortem template. Mere existence of the file is not enough.\n\nHow to fix: Add explicit escalation contacts with phone/on-call rotation.\nAdd numbered triage commands (not prose).\nInclude postmortem template section with timeline, root cause, action items.\n\nReferences: Site Reliability Engineering: How Google Runs Production Systems"
-      },
-      {
-        "id": "dataops-data-product-sem-001",
-        "profile": "dataops",
-        "severity": "critical",
-        "title": "Data product manifest lacks governance essentials",
-        "rationale": "A data product manifest must declare ownership, SLAs, schema version, and consumers. An empty or minimal manifest violates data mesh principles.\n",
         "checks": [
           {
-            "type": "semantic_eval",
-            "file_glob": "{data-product.yml,data-product.yaml,docs/data-product*.md}",
-            "error_when": "semantic_score_below_threshold",
-            "threshold": 0.7,
-            "evaluation_prompt": "You are a data mesh architect reviewing a data product manifest.\n\nEvaluate each of the 5 criteria as PASS or FAIL. Do NOT use holistic\njudgement — determine each criterion independently.\n\nCriterion 1 — Owner:\n  PASS if the manifest declares a named owning team OR a named\n       individual. A team name alone (e.g., team: data-platform)\n       counts as PASS. Contact information (email, Slack channel,\n       on-call rotation) is preferred but not required for PASS.\n  FAIL if the manifest has no owner section, or if owner is a\n       placeholder like TBD, team-x, or unknown.\n\nCriterion 2 — SLA:\n  PASS if the manifest declares freshness, latency, or availability\n       targets.\n  FAIL if the manifest has no SLA section.\n\nCriterion 3 — Schema version:\n  PASS if the manifest declares a schema version number, a schema\n       registry link, or a versioned schema URL.\n  FAIL if the manifest has no schema_version field.\n\nCriterion 4 — Consumers:\n  PASS if the manifest lists at least 3 named downstream consumers.\n  FAIL if the manifest lists fewer than 3 consumers. A consumers\n       list with 0, 1, or 2 entries = FAIL.\n\nCriterion 5 — Quality gates:\n  PASS if the manifest declares quality checks, DQ metrics, or a\n       link to a quality framework.\n  FAIL if the manifest has no quality section.\n\n── REASONING FORMAT (mandatory) ────────────────────────────────\n\nThe reasoning field MUST be a SINGLE-LINE string containing exactly\n5 numbered verdicts separated by the pipe character. Use this exact\nshape, with no line breaks and no wrapping quotation marks:\n\n  1. owner: PASS or FAIL — short reason | 2. sla: PASS or FAIL — short reason | 3. schema_version: PASS or FAIL — short reason | 4. consumers: PASS or FAIL — short reason | 5. quality: PASS or FAIL — short reason\n\nTwo absolute rules for the reasoning string value:\n  - NO literal newline characters. Everything on one line.\n  - NO double-quote characters anywhere inside the reasoning value.\n    To refer to a field name or value, write it bare without quotes.\n\nA response whose reasoning does not fit on one line, or that\ncontains a double-quote character inside the reasoning string,\nis a hard failure and will be rejected.\n\n── SCORING AND MISSING[] (mechanical) ──────────────────────────\n\nAFTER writing the 5 verdicts in reasoning:\n  1. Count how many verdicts are PASS (call it N_pass).\n  2. N_fail equals 5 minus N_pass.\n  3. The missing array MUST contain exactly N_fail entries, one per\n     FAIL verdict. No more, no fewer.\n  4. The score MUST be the midpoint value for N_pass from this table:\n\n       - 5 PASS: score 0.92\n       - 4 PASS: score 0.72\n       - 3 PASS: score 0.52\n       - 2 PASS: score 0.32\n       - 1 PASS: score 0.10\n       - 0 PASS: score 0.05\n\nCONSISTENCY CHECK: before emitting, verify that the length of the\nmissing array equals N_fail, and score equals the midpoint for\nN_pass. If both are not true, redo the analysis.\n\nRespond with valid JSON only. The JSON object has exactly three keys:\nscore (number), missing (array of strings), reasoning (single-line string).\n",
-            "message": "Data product manifest lacks governance essentials"
+            "type": "file_exists",
+            "paths": [
+              "tests/**",
+              "test/**",
+              "*_test.py",
+              "test_*.py",
+              "*.spec.ts"
+            ],
+            "match_mode": "any",
+            "error_when": "file_absent",
+            "message": "Automated testing directory missing."
           }
         ],
-        "fix": "Add owner contact, SLA targets, schema version, 3+ consumers, and quality gates.\n",
+        "full_text": "Rule: Automated test suite missing\nID: dataops-test-001\nProfile: dataops\nSeverity: error\nWhy it matters: Regression-free iteration demands verification at every abstraction layer. Untested transforms become unverifiable liabilities post-deployment.\n\nHow to fix: Write dbt tests, pytest assertions, Great Expectations suites, or nbmake notebooks.\nReferences: Fundamentals of Data Engineering, dbt Testing Framework"
+      },
+      {
+        "id": "dataops-doc-001",
+        "profile": "dataops",
+        "status": "active",
+        "severity": "info",
+        "title": "Missing model/column documentation",
+        "description": "dbt manifest or catalog exposes undocumented relations/columns exceeding 20% threshold.\n",
+        "rationale": "Self-describing datasets reduce tribal knowledge risk and accelerate consumer onboarding.\n",
+        "fix": "Populate yml docs blocks or add COMMENT clauses to DDL statements.",
         "references": [
           {
             "book": "Data Management at Scale",
-            "concept": "data-product-manifest"
+            "concept": "metadata-as-product-contract"
           }
         ],
-        "full_text": "Rule: Data product manifest lacks governance essentials\nID: dataops-data-product-sem-001\nProfile: dataops\nSeverity: critical\nWhy it matters: A data product manifest must declare ownership, SLAs, schema version, and consumers. An empty or minimal manifest violates data mesh principles.\n\nHow to fix: Add owner contact, SLA targets, schema version, 3+ consumers, and quality gates.\n\nReferences: Data Management at Scale"
-      },
-      {
-        "id": "dataops-kimball-sem-001",
-        "profile": "dataops",
-        "severity": "error",
-        "title": "Fact table uses natural key joins (Kimball violation)",
-        "rationale": "Kimball methodology requires fact tables to join dimensions via surrogate keys, not natural keys. Natural key joins break history tracking and performance.\n",
         "checks": [
           {
             "type": "semantic_eval",
-            "file_glob": "models/marts/facts/**/*.sql",
-            "error_when": "semantic_score_below_threshold",
-            "threshold": 0.6,
-            "evaluation_prompt": "Evaluate this dbt fact-table model against the Kimball dimensional-modeling\ncriteria. A \"surrogate key\" is a column whose name ends in _sk\n(customer_sk, product_sk, order_sk, date_sk). A \"natural key\" is a\nbusiness identifier (customer_id, order_id, product_id, email, SSN).\nAn _sk column is NOT a natural key, even when it contains a business\nword like \"customer\" — the _sk suffix is definitionally a surrogate key.\n\nScore 0.0–1.0 based on these four criteria:\n1. Surrogate key joins: every JOIN ON clause references a column ending in _sk\n   on BOTH sides.\n2. No natural key joins: no JOIN ON clause references customer_id, order_id,\n   product_id, email, or similar business identifiers.\n3. Grain declared: a comment or docstring states the grain (e.g.,\n   \"Grain: one row per order line item\").\n4. Additive facts: all measures are additive (quantity, amount, unit_price).\n   A ratio such as amount/quantity (avg_price) is a defect.\n\nScore bands — read top to bottom, take the first that applies:\n- 0.00–0.20 if ANY JOIN uses a non-_sk column\n- 0.30–0.50 if joins are all _sk but grain is undeclared\n- 0.60–0.70 if joins and grain are correct but one minor defect remains\n- 0.85–1.00 only when all four criteria are satisfied\n\nRespond with valid JSON only:\n{\"score\": number, \"missing\": [criterion names from the list above], \"reasoning\": string}.\nThe missing array must contain ONLY the criterion names. Never include\n\"score\", \"missing\", or \"reasoning\" as items in the missing array.\n",
-            "message": "Fact table uses natural key joins (Kimball violation)"
+            "file_glob": "models/schema.yml",
+            "threshold": 0.75,
+            "max_input_chars": 6000,
+            "message": "dbt schema documentation scored below threshold (>20% undocumented).",
+            "evaluation_prompt": "Analyze this dbt schema.yml for documentation completeness.\n\nCount total models/columns defined vs those having description/name fields populated.\nFlag if >20% remain undocumented. In reasoning, cite specific missing elements.\n\nReturn JSON: {\"passed\": bool, \"score\": float, \"missing\": [...], \"reasoning\": \"...\"}"
           }
         ],
-        "fix": "Replace natural-key joins with surrogate-key joins (customer_sk, product_sk).\n",
-        "references": [
-          {
-            "book": "The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling",
-            "concept": "surrogate-keys"
-          }
-        ],
-        "full_text": "Rule: Fact table uses natural key joins (Kimball violation)\nID: dataops-kimball-sem-001\nProfile: dataops\nSeverity: error\nWhy it matters: Kimball methodology requires fact tables to join dimensions via surrogate keys, not natural keys. Natural key joins break history tracking and performance.\n\nHow to fix: Replace natural-key joins with surrogate-key joins (customer_sk, product_sk).\n\nReferences: The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling"
-      },
-      {
-        "id": "dataops-kimball-ast-001",
-        "profile": "dataops",
-        "severity": "error",
-        "title": "Fact table uses natural key joins (Kimball violation)",
-        "rationale": "Kimball methodology requires fact tables to join dimensions via surrogate keys, not natural operational keys. Natural-key joins break history tracking, introduce implicit dependency on operational systems, and prevent conformed-dimension reuse across marts. This rule uses sqlglot AST analysis to detect the violation directly rather than relying on a regex heuristic.\n",
-        "checks": [
-          {
-            "type": "structural_ast",
-            "parser": "sql",
-            "file_glob": "models/marts/facts/**/*.sql",
-            "message": "Fact table joins on natural key — use surrogate keys (_sk)."
-          }
-        ],
-        "fix": "Replace natural-key joins with surrogate-key joins. For example, replace\n`LEFT JOIN dim_customers c ON o.customer_id = c.customer_id`\nwith\n`LEFT JOIN dim_customers c ON o.customer_sk = c.customer_sk`.\n",
-        "references": [
-          {
-            "book": "The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling",
-            "concept": "surrogate-keys"
-          }
-        ],
-        "full_text": "Rule: Fact table uses natural key joins (Kimball violation)\nID: dataops-kimball-ast-001\nProfile: dataops\nSeverity: error\nWhy it matters: Kimball methodology requires fact tables to join dimensions via surrogate keys, not natural operational keys. Natural-key joins break history tracking, introduce implicit dependency on operational systems, and prevent conformed-dimension reuse across marts. This rule uses sqlglot AST analysis to detect the violation directly rather than relying on a regex heuristic.\n\nHow to fix: Replace natural-key joins with surrogate-key joins. For example, replace\n`LEFT JOIN dim_customers c ON o.customer_id = c.customer_id`\nwith\n`LEFT JOIN dim_customers c ON o.customer_sk = c.customer_sk`.\n\nReferences: The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling"
+        "full_text": "Rule: Missing model/column documentation\nID: dataops-doc-001\nProfile: dataops\nSeverity: info\nWhy it matters: Self-describing datasets reduce tribal knowledge risk and accelerate consumer onboarding.\n\nHow to fix: Populate yml docs blocks or add COMMENT clauses to DDL statements.\nReferences: Data Management at Scale"
       }
     ]
   },
@@ -1191,7 +933,6 @@
           {
             "type": "semantic_eval",
             "file_glob": "{next.config.*,**/security-headers.*,**/csp*.{ts,js,json}}",
-            "error_when": "semantic_score_below_threshold",
             "threshold": 0.7,
             "evaluation_prompt": "You are a web security expert reviewing a Content Security Policy configuration.\n\nEvaluate each of the 5 criteria as PASS or FAIL. Do NOT use holistic\njudgement — determine each criterion independently.\n\nCriterion 1 — default-src:\n  PASS if default-src is set to 'self', 'none', or an explicit origin\n       list that does not include the wildcard asterisk.\n  FAIL if default-src is absent, set to the wildcard asterisk, or\n       includes unsafe-inline.\n  NOTE: the wildcard asterisk is not an explicit origin. default-src\n        set to the wildcard asterisk = FAIL.\n\nCriterion 2 — script-src hardening:\n  PASS if script-src is present AND does NOT contain unsafe-inline\n       or unsafe-eval.\n  FAIL if script-src contains unsafe-inline or unsafe-eval.\n  NOTE: a present script-src with 'self' AND unsafe-inline is FAIL —\n        unsafe-inline defeats the directive regardless of what else\n        is present.\n\nCriterion 3 — style-src hardening:\n  PASS if style-src uses nonces or hashes.\n  FAIL if style-src relies on unsafe-inline.\n\nCriterion 4 — object-src:\n  PASS if object-src is set to 'none' exactly.\n  FAIL if object-src is absent or set to anything other than 'none'.\n  NOTE: absence is not protection. An absent object-src means\n        object/embed elements can load from any origin. = FAIL.\n\nCriterion 5 — frame-ancestors:\n  PASS if frame-ancestors is present and set to 'none' or an\n       explicit origin list.\n  FAIL if frame-ancestors is absent.\n  NOTE: absence is not protection. An absent frame-ancestors means\n        the page is clickjackable. = FAIL.\n\n── REASONING FORMAT (mandatory) ────────────────────────────────\n\nThe reasoning field MUST be a SINGLE-LINE string containing exactly\n5 numbered verdicts separated by the pipe character. Use this exact\nshape, with no line breaks and no wrapping quotation marks:\n\n  1. default-src: PASS or FAIL — short reason | 2. script-src: PASS or FAIL — short reason | 3. style-src: PASS or FAIL — short reason | 4. object-src: PASS or FAIL — short reason | 5. frame-ancestors: PASS or FAIL — short reason\n\nTwo absolute rules for the reasoning string value:\n  - NO literal newline characters. Everything on one line.\n  - NO double-quote characters anywhere inside the reasoning value.\n    To refer to a directive or token, write it bare (unsafe-inline,\n    not with quotes around it). To refer to a value like self or\n    none, write it bare too.\n\nA response whose reasoning does not fit on one line, or that\ncontains a double-quote character inside the reasoning string,\nis a hard failure and will be rejected.\n\n── SCORING AND MISSING[] (mechanical) ──────────────────────────\n\nAFTER writing the 5 verdicts in reasoning:\n  1. Count how many verdicts are PASS (call it N_pass).\n  2. N_fail equals 5 minus N_pass.\n  3. The missing array MUST contain exactly N_fail entries, one per\n     FAIL verdict. No more, no fewer.\n  4. The score MUST be the midpoint value for N_pass from this table:\n\n       - 5 PASS: score 0.92\n       - 4 PASS: score 0.72\n       - 3 PASS: score 0.52\n       - 2 PASS: score 0.32\n       - 1 PASS: score 0.10\n       - 0 PASS: score 0.05\n\nCONSISTENCY CHECK: before emitting, verify that the length of the\nmissing array equals N_fail, and score equals the midpoint for\nN_pass. If both are not true, redo the analysis.\n\nRespond with valid JSON only. The JSON object has exactly three keys:\nscore (number), missing (array of strings), reasoning (single-line string).\n",
             "message": "Content Security Policy is misconfigured"
@@ -1527,7 +1268,6 @@
           {
             "type": "semantic_eval",
             "file_glob": "{docs/safety/**,LOCKOUT*.md,SAFETY.md,docs/loto/**}",
-            "error_when": "semantic_score_below_threshold",
             "threshold": 0.8,
             "evaluation_prompt": "You are an ICS safety engineer reviewing Lockout/Tagout (LOTO) documentation.\n\nEvaluate each of the 5 criteria as PASS or FAIL. Do NOT use holistic\njudgement — determine each criterion independently.\n\nCriterion 1 — Isolation points:\n  PASS if the document names specific valves, breakers, or switches\n       by ID, tag number, or exact physical location (e.g., \"BRK-12\n       at Panel A bay 3\").\n  FAIL if isolation points are described generically (\"the main\n       breaker\", \"the steam valve\") without ID, tag, or exact\n       location. Absence of any isolation point section = FAIL.\n\nCriterion 2 — Verification steps:\n  PASS if the document gives numbered, ordered steps to confirm\n       zero-energy state (voltage test, pressure gauge read, try-start\n       procedure).\n  FAIL if verification is described in prose (\"verify no voltage\")\n       without numbered steps or specific instruments. Absence of\n       a verification section = FAIL.\n\nCriterion 3 — Authorized personnel:\n  PASS if the document names specific roles or certifications that\n       are required to perform LOTO (e.g., \"NFPA 70E qualified\n       electrical worker\", \"Shift Electrician cert EE-2xxx\").\n  FAIL if authorization is described generically (\"only qualified\n       people\") without naming roles or certifications. Absence of\n       an authorization section = FAIL.\n\nCriterion 4 — Removal procedure:\n  PASS if the document gives an ordered sequence to safely restore\n       energy (inspection, tool removal, per-point lock removal,\n       notification).\n  FAIL if removal is described in prose without ordered steps.\n       Absence of a removal section = FAIL.\n\nCriterion 5 — Emergency procedure:\n  PASS if the document has a section describing what to do if LOTO\n       fails or unexpected re-energization occurs (911 call, do\n       not re-enter, notify safety manager, preserve tags for\n       investigation).\n  FAIL if there is no emergency section, or if it only repeats\n       generic \"call for help\" advice. Absence = FAIL.\n\n── REASONING FORMAT (mandatory) ────────────────────────────────\n\nThe reasoning field MUST be a SINGLE-LINE string containing exactly\n5 numbered verdicts separated by the pipe character. Use this exact\nshape, with no line breaks and no wrapping quotation marks:\n\n  1. isolation: PASS or FAIL — short reason | 2. verification: PASS or FAIL — short reason | 3. authorized: PASS or FAIL — short reason | 4. removal: PASS or FAIL — short reason | 5. emergency: PASS or FAIL — short reason\n\nTwo absolute rules for the reasoning string value:\n  - NO literal newline characters. Everything on one line.\n  - NO double-quote characters anywhere inside the reasoning value.\n    To refer to a directive or token, write it bare without quotes.\n\nA response whose reasoning does not fit on one line, or that\ncontains a double-quote character inside the reasoning string,\nis a hard failure and will be rejected.\n\n── SCORING AND MISSING[] (mechanical) ──────────────────────────\n\nAFTER writing the 5 verdicts in reasoning:\n  1. Count how many verdicts are PASS (call it N_pass).\n  2. N_fail equals 5 minus N_pass.\n  3. The missing array MUST contain exactly N_fail entries, one per\n     FAIL verdict. No more, no fewer.\n  4. The score MUST be the midpoint value for N_pass from this table:\n\n       - 5 PASS: score 0.92\n       - 4 PASS: score 0.72\n       - 3 PASS: score 0.52\n       - 2 PASS: score 0.32\n       - 1 PASS: score 0.10\n       - 0 PASS: score 0.05\n\nCONSISTENCY CHECK: before emitting, verify that the length of the\nmissing array equals N_fail, and score equals the midpoint for\nN_pass. If both are not true, redo the analysis.\n\nRespond with valid JSON only. The JSON object has exactly three keys:\nscore (number), missing (array of strings), reasoning (single-line string).\n",
             "message": "LOTO documentation lacks safety-critical elements"
@@ -1540,11 +1280,11 @@
             "concept": "physical-security-and-maintenance-windows"
           },
           {
-            "standard": "NFPA 70E Article 120",
+            "standard": "NFPA 70A Article 120",
             "concept": "lockout-tagout procedure"
           }
         ],
-        "full_text": "Rule: LOTO documentation lacks safety-critical elements\nID: iiot-loto-sem-001\nProfile: iiot\nSeverity: critical\nWhy it matters: Lockout/Tagout procedures must specify isolation points, verification steps, and authorized personnel. Missing elements create physical safety risk.\n\nHow to fix: Add specific isolation points, zero-energy verification steps, authorized roles, removal and emergency procedures.\n\nReferences: Industrial Network Security, NFPA 70E Article 120"
+        "full_text": "Rule: LOTO documentation lacks safety-critical elements\nID: iiot-loto-sem-001\nProfile: iiot\nSeverity: critical\nWhy it matters: Lockout/Tagout procedures must specify isolation points, verification steps, and authorized personnel. Missing elements create physical safety risk.\n\nHow to fix: Add specific isolation points, zero-energy verification steps, authorized roles, removal and emergency procedures.\n\nReferences: Industrial Network Security, NFPA 70A Article 120"
       }
     ]
   }

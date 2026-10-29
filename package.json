@@ -36,7 +36,9 @@
     "neo4j:schema": "scripts\\neo4j.bat schema",
     "semantic:calibrate": "tsx scripts/semantic-calibrate.ts",
     "semantic:clear-cache": "tsx scripts/semantic-reset-cache.ts",
-    "semantic:debug": "tsx scripts/semantic-debug.ts"
+    "semantic:debug": "tsx scripts/semantic-debug.ts",
+    "check:spec-parity": "jest --runInBand --testPathPattern contract/spec-parity",
+    "check:spec-parity:cli": "tsx scripts/check-spec-parity.ts --repo __tests__/broken-dbt --profile dataops"
   },
   "dependencies": {
     "@cyclonedx/cyclonedx-library": "^10.2.0",
@@ -81,6 +83,7 @@
     },
     "testPathIgnorePatterns": [
       "/node_modules/",
+      "/tests/fixtures/",
       "/__tests__/fixtures/"
     ]
   },

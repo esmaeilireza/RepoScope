@@ -80,6 +80,53 @@ export type KnowledgeProfile =
 
 export type Profile = KnowledgeProfile;
 
+// ─── Canonical DataOps finding IDs ───────────────────────────────────────
+/**
+ * Canonical DataOps rule IDs.
+ *
+ * Contract: every entry here MUST have a corresponding `id:` in
+ * docs/specs/dataops.yaml with `status: active`. Conversely, every `id:` in
+ * docs/specs/dataops.yaml whose `profile: dataops` MUST appear in this union.
+ * The parity test in Week 1 (npm test) enforces this both directions.
+ *
+ * Do NOT add an ID here without first adding the YAML rule. Do NOT rename an
+ * ID here without a coordinated YAML + TypeScript + specs.json update.
+ */
+export type DataOpsFindingId =
+  | "dataops-dim-ast-001"
+  | "dataops-dim-sem-001"
+  | "dataops-env-001"
+  | "dataops-env-002"
+  | "dataops-env-003"
+  | "dataops-schema-001"
+  | "dataops-stream-001"
+  | "dataops-migrate-001"
+  | "dataops-obs-001"
+  | "dataops-test-001"
+  | "dataops-doc-001";
+
+/**
+ * ⚠️  ORPHAN EMITTERS — QUARANTINE TYPE, NOT A PERMANENT HOME.
+ *
+ * These rule IDs are still emitted by lib/dataops-audit.ts but have no
+ * corresponding `id:` in docs/specs/dataops.yaml. They violate the
+ * YAML↔TS parity contract called out in the Week-1 constraint.
+ *
+ * Resolution required before v3.1 (pick one per ID):
+ *   - dataops-004 (category: data_leak)
+ *       → add a `dataops-data-leak-001` rule to dataops.yaml, OR
+ *       → remove the emitter from lib/dataops-audit.ts, OR
+ *       → fold into a cross-profile rule in docs/specs/cross.yaml.
+ *   - dataops-006 (category: notebook_hygiene)
+ *       → add a `dataops-notebook-001` rule to dataops.yaml, OR
+ *       → remove the emitter from lib/dataops-audit.ts.
+ *
+ * Surfaced as a distinct union (rather than inline string literals on the
+ * emitter) so TypeScript rejects any *new* ungrounded DataOps IDs while the
+ * two known debt items stay visible in a single grep-able location.
+ */
+export type DataOpsOrphanFindingId = "dataops-004" | "dataops-006";
+
 // ─── Rule schema ─────────────────────────────────────────────────────────
 export type RuleCheckType =
   | "pattern_match"

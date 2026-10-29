@@ -29,19 +29,19 @@ _Generated from `docs/specs/dataops.yaml` — do not edit by hand._
 - [ ] **`dataops-runbook-001`** — No data incident runbook found  
   _info · profile: dataops_
 
-- [ ] **`dataops-atwal-002`** — No automated test suite found  
+- [ ] **`dataops-env-002`** — No automated test suite found  
   _error · profile: dataops_
 
 - [ ] **`dataops-fde-001`** — Pipeline orchestration not defined as code  
   _error · profile: dataops_
 
-- [ ] **`dataops-atwal-003`** — Missing dependency lockfile  
+- [ ] **`dataops-env-003`** — Missing dependency lockfile  
   _warning · profile: dataops_
 
-- [ ] **`dataops-kleppmann-002`** — No schema IDL for streaming events  
+- [ ] **`dataops-stream-001`** — No schema IDL for streaming events  
   _error · profile: dataops_
 
-- [ ] **`dataops-kleppmann-003`** — No database migration tooling detected  
+- [ ] **`dataops-migrate-001`** — No database migration tooling detected  
   _warning · profile: dataops_
 
 - [ ] **`dataops-kimball-001`** — Fact model joins on natural key instead of surrogate key  

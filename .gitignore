@@ -117,6 +117,7 @@ build-artifacts/
 # ============================================================================
 __pycache__/
 *.py[cod]
+*.pyc
 *$py.class
 *.so
 .Python
@@ -182,6 +183,8 @@ _l3_test/
 _l3_*.txt
 _cross_test/
 _cross_*.txt
+_day4_test/
+_day4_*.txt
 
 # ============================================================================
 # RepoScope misc
@@ -202,3 +205,46 @@ requirements.lock
 reposcope-context.txt
 _ci_local.txt
 _health_gate_local.txt
+_post_*.txt
+
+# ============================================================================
+# Generated demo repos and local workspaces
+#
+# If you later want to publish curated demo repositories, remove `demo-repos/`
+# from this file and commit only the intended demo fixtures.
+# ============================================================================
+demo-repos/
+_external/
+graphify-out/
+_backup/
+
+# ============================================================================
+# Temporary audit outputs
+# ============================================================================
+_run*.txt
+_jaffle_audit.txt
+_audit.json
+_tsc_errors.txt
+
+# ============================================================================
+# Machine-specific local launcher
+#
+# This file contains machine-specific local paths and should not be committed.
+# For portability, ignoring it is the safer immediate choice.
+# ============================================================================
+scripts/neo4j.bat
+# RepoScope debug artifacts (never commit)
+_*.txt
+_*.err
+_*.json
+!docs/**/_*.json
+!__tests__/**/_*.json
+package.json.bak.*
+*.bak.*
+
+# Tool directories
+.opencode/
+.specify/
+
+# Windows-side helpers (do not distribute)
+scripts/neo4j.bat

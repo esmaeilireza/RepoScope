@@ -2,19 +2,19 @@ version: "1.0"
 
 claims:
   - id: claim-dataops-schema-001
-    description: "Rule dataops-kleppmann-002 (schema IDL enforcement) is present in the DataOps profile."
+    description: "Rule dataops-stream-001 (schema IDL enforcement) is present in the DataOps profile."
     implementation: docs/specs/dataops.yaml
     verification:
       type: yaml_rule_present
       rule_ids:
-        - dataops-kleppmann-002
+        - dataops-stream-001
 
   - id: claim-dataops-migrations-001
-    description: "Rule dataops-kleppmann-003 checks for migration tooling patterns."
+    description: "Rule dataops-migrate-001 checks for migration tooling patterns."
     implementation: docs/specs/dataops.yaml
     verification:
       type: rule_checks_pattern
-      rule_id: dataops-kleppmann-003
+      rule_id: dataops-migrate-001
       patterns:
         - migrations
         - alembic

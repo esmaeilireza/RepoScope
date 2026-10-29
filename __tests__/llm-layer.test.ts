@@ -3,6 +3,7 @@ import * as adaptersModule from "@/lib/llm/adapters";
 import * as providersModule from "@/lib/llm/providers";
 import * as clientModule from "@/lib/llm/client";
 import * as citationGateModule from "@/lib/knowledge/citation-gate";
+import { normalizeSemanticResult } from "@/lib/semantic/runner";
 
 type AnyFn = (...args: any[]) => any;
 
@@ -549,5 +550,63 @@ describe("citation gate (Day 18)", () => {
     );
 
     expect(r.text).toContain("[source unverified]");
+  });
+});
+
+// Guard contract for the semantic fallback layer.
+// These tests pin the reconcile order in normalizeSemanticResult() so that a
+// future refactor cannot reintroduce the false-positive fixture that shipped
+// from the dbt surrogate-key model:
+//
+//   {"passed": false, "score": 0.82, "missing": [],
+//    "reasoning": "The join in this model uses surrogate keys (customer_sk)."}
+//
+// Every one of the three tests corresponds to one row of the reconcile table
+// documented above normalizeSemanticResult().
+describe("semantic normalization (Days 8/9)", () => {
+  it("suppresses semantic finding when passed=true even if score is low", () => {
+    const result = normalizeSemanticResult(
+      {
+        passed: true,
+        score: 0.2,
+        missing: [],
+        reasoning: "Uses surrogate keys.",
+      },
+      0.6,
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.score).toBe(1);
+  });
+
+  it("suppresses semantic finding when passed=false but missing is empty", () => {
+    const result = normalizeSemanticResult(
+      {
+        passed: false,
+        score: 0.1,
+        missing: [],
+        reasoning: "Possible issue.",
+      },
+      0.6,
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.score).toBe(1);
+  });
+
+  it("emits semantic finding only when passed=false and missing is concrete", () => {
+    const result = normalizeSemanticResult(
+      {
+        passed: false,
+        score: 0.2,
+        missing: ["natural-key-join-on-customer_id"],
+        reasoning: "JOIN ON customer_id = dim_customer.customer_id",
+      },
+      0.6,
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.score).toBeLessThan(0.6);
+    expect(result.missing).toEqual(["natural-key-join-on-customer_id"]);
   });
 });

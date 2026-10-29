@@ -98,7 +98,6 @@ rules:
     checks:
       - type: "semantic_eval"
         file_glob: "{next.config.*,**/security-headers.*,**/csp*.{ts,js,json}}"
-        error_when: "semantic_score_below_threshold"
         threshold: 0.7
         evaluation_prompt: |
           You are a web security expert reviewing a Content Security Policy configuration.

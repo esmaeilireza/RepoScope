@@ -164,7 +164,7 @@ Title: Practical Dataops
 
 ## 10. Candidate rules
 
-- Rule ID: dataops-atwal-001
+- Rule ID: dataops-env-001
   Title: Hardcoded plaintext credentials in pipeline code
   Profile: dataops
   Severity tendency: critical
@@ -178,7 +178,7 @@ Title: Practical Dataops
   Source citation: Harvinder Atwal - Practical DataOps, Chapter 7: DevOps for DataOps, Spirit: Credentials must never appear in version control code.
   Verification status: source-backed
 
-- Rule ID: dataops-atwal-002
+- Rule ID: dataops-env-002
   Title: Missing automated test directory or test execution
   Profile: dataops
   Severity tendency: error
@@ -192,7 +192,7 @@ Title: Practical Dataops
   Source citation: Harvinder Atwal - Practical DataOps, Chapter 7: DevOps for DataOps, Spirit: Automated testing guarantees pipeline safety and rapid feedback loops.
   Verification status: source-backed
 
-- Rule ID: dataops-atwal-003
+- Rule ID: dataops-env-003
   Title: Missing dependency lockfile for reproducible builds
   Profile: dataops
   Severity tendency: warning
@@ -224,7 +224,7 @@ Title: Practical Dataops
 ## 11. Suggested YAML fragment
 ```yaml
 rules:
-  - id: dataops-atwal-001
+  - id: dataops-env-001
     title: Hardcoded plaintext credentials in pipeline code
     severity: critical
     references:
@@ -237,7 +237,7 @@ rules:
       error_when: pattern_present
       message: "Hardcoded plaintext credentials detected in repository source file."
 
-  - id: dataops-atwal-002
+  - id: dataops-env-002
     title: Missing automated test directory or test execution
     severity: error
     references:
@@ -249,7 +249,7 @@ rules:
       error_when: file_absent
       message: "Automated test directory is missing from repository."
 
-  - id: dataops-atwal-003
+  - id: dataops-env-003
     title: Missing dependency lockfile for reproducible builds
     severity: warning
     references:

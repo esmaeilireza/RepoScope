@@ -277,7 +277,6 @@ rules:
     checks:
       - type: "semantic_eval"
         file_glob: "{docs/safety/**,LOCKOUT*.md,SAFETY.md,docs/loto/**}"
-        error_when: "semantic_score_below_threshold"
         threshold: 0.8
         evaluation_prompt: |
           You are an ICS safety engineer reviewing Lockout/Tagout (LOTO) documentation.
@@ -369,6 +368,5 @@ rules:
     references:
       - book: "Industrial Network Security"
         concept: "physical-security-and-maintenance-windows"
-      - standard: "NFPA 70E Article 120"
+      - standard: "NFPA 70A Article 120"
         concept: "lockout-tagout procedure"
-
