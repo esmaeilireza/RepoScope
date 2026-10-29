@@ -1,0 +1,273 @@
+// __tests__/contract/spec-parity.test.ts
+//
+// Contract test:
+// Every finding emitted by the RepoScope CLI must reference a rule ID that
+// exists in public/knowledge/specs.json, and active findings must not come
+// from draft/spec-only rules.
+//
+// This version avoids fragile imports from a non-existent src/audit layer.
+// It runs the real CLI in --json mode and validates the emitted findings.
+
+import fs from "node:fs";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+
+interface Finding {
+  readonly ruleId: string;
+  readonly file?: string;
+  readonly severity?: string;
+  readonly title?: string;
+  readonly detail?: string;
+}
+
+interface SpecRule {
+  readonly id: string;
+  readonly status?: string;
+}
+
+interface SpecBundle {
+  readonly rules?: readonly SpecRule[];
+}
+
+type Specs = Readonly<Record<string, SpecBundle>>;
+
+interface KnownIds {
+  readonly all: ReadonlySet<string>;
+  readonly active: ReadonlySet<string>;
+}
+
+interface Fixture {
+  readonly name: string;
+  readonly repoPath: string;
+  readonly profile: string;
+  readonly expectFindings: boolean;
+  readonly forbidRuleIds?: readonly string[];
+}
+
+const repoRoot = path.resolve(__dirname, "..", "..");
+const specsPath = path.join(repoRoot, "public", "knowledge", "specs.json");
+
+const fixtures: readonly Fixture[] = [
+  {
+    name: "broken-dbt",
+    repoPath: "__tests__/broken-dbt",
+    profile: "dataops",
+    expectFindings: true,
+  },
+  {
+    name: "fixed-dbt",
+    repoPath: "__tests__/fixed-dbt",
+    profile: "dataops",
+    expectFindings: false,
+    // The negative fixture must not trigger the natural-key AST rule.
+    // If this fails, your semantic fallback or AST layer has a false positive.
+    forbidRuleIds: ["dataops-dim-ast-001"],
+  },
+];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readJsonFile<T>(filePath: string): T {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Missing required JSON file: ${filePath}`);
+  }
+
+  const raw = fs.readFileSync(filePath, "utf-8");
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to parse JSON file ${filePath}: ${message}`);
+  }
+}
+
+function loadSpecs(): Specs {
+  return readJsonFile<Specs>(specsPath);
+}
+
+function collectKnownIds(specs: Specs): KnownIds {
+  const all = new Set<string>();
+  const active = new Set<string>();
+
+  for (const bundle of Object.values(specs)) {
+    const rules = bundle.rules ?? [];
+
+    for (const rule of rules) {
+      if (!rule.id) continue;
+
+      all.add(rule.id);
+
+      // Treat missing status as active for backward compatibility.
+      // Draft and spec-only rules must never emit findings.
+      const status = rule.status ?? "active";
+      if (status === "active" || status === "implemented") {
+        active.add(rule.id);
+      }
+    }
+  }
+
+  return { all, active };
+}
+
+function parseCliFindings(stdout: string, stderr: string): Finding[] {
+  const trimmed = stdout.trim();
+
+  if (!trimmed) {
+    throw new Error(
+      "RepoScope CLI produced no JSON stdout.\n" +
+        `stderr preview:\n${stderr.slice(0, 1000)}`,
+    );
+  }
+
+  let payload: unknown;
+
+  try {
+    payload = JSON.parse(trimmed);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `RepoScope CLI stdout was not valid JSON: ${message}\n` +
+        `stdout preview:\n${trimmed.slice(0, 1000)}`,
+    );
+  }
+
+  if (Array.isArray(payload)) {
+    return payload as Finding[];
+  }
+
+  if (isRecord(payload)) {
+    const findings = payload.findings;
+
+    if (Array.isArray(findings)) {
+      return findings as Finding[];
+    }
+  }
+
+  throw new Error(
+    "RepoScope CLI JSON did not contain a findings array.\n" +
+      `payload preview:\n${JSON.stringify(payload).slice(0, 1000)}`,
+  );
+}
+
+function runCliJson(repoPath: string, profile: string): Finding[] {
+  const args = [
+    "--no-install",
+    "tsx",
+    "scripts/reposcope-audit.ts",
+    "--repo",
+    repoPath,
+    "--profile",
+    profile,
+    "--json",
+  ];
+
+  const result = spawnSync("npx", args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+    shell: process.platform === "win32",
+    maxBuffer: 20 * 1024 * 1024,
+  });
+
+  if (result.error) {
+    throw new Error(`Failed to execute RepoScope CLI: ${result.error.message}`);
+  }
+
+  const stdout = result.stdout ?? "";
+  const stderr = result.stderr ?? "";
+
+  const findings = parseCliFindings(stdout, stderr);
+
+  // If the CLI exited non-zero but still produced valid JSON, allow it only
+  // when findings were produced. A zero-finding non-zero exit is suspicious.
+  if (result.status !== 0 && findings.length === 0) {
+    throw new Error(
+      `RepoScope CLI exited with code ${result.status} and produced no findings.\n` +
+        `stderr preview:\n${stderr.slice(0, 1000)}`,
+    );
+  }
+
+  return findings;
+}
+
+function formatFinding(finding: Finding): string {
+  const file = finding.file ? ` file=${finding.file}` : "";
+  const severity = finding.severity ? ` severity=${finding.severity}` : "";
+  return `${finding.ruleId}${severity}${file}`;
+}
+
+describe("spec parity contract", () => {
+  const specs = loadSpecs();
+  const known = collectKnownIds(specs);
+
+  it("specs.json contains at least one known rule", () => {
+    expect(known.all.size).toBeGreaterThan(0);
+  });
+
+  it("specs.json contains at least one active rule", () => {
+    expect(known.active.size).toBeGreaterThan(0);
+  });
+
+  for (const fixture of fixtures) {
+    it(`${fixture.name} emits only known active rule IDs`, () => {
+      const findings = runCliJson(fixture.repoPath, fixture.profile);
+
+      if (fixture.expectFindings) {
+        expect(findings.length).toBeGreaterThan(0);
+      }
+
+      const unknown = findings.filter(
+        (finding) => !known.all.has(finding.ruleId),
+      );
+
+      if (unknown.length > 0) {
+        const detail = unknown
+          .map((finding) => `  - ${formatFinding(finding)}`)
+          .join("\n");
+
+        throw new Error(
+          `Orchestrator/CLI emitted findings with rule IDs absent from specs.json:\n${detail}\n` +
+            "Fix: add the missing rules to docs/specs/*.yaml, rebuild specs.json, " +
+            "or disable the legacy hardcoded emitters.",
+        );
+      }
+
+      const nonActive = findings.filter(
+        (finding) => known.all.has(finding.ruleId) && !known.active.has(finding.ruleId),
+      );
+
+      if (nonActive.length > 0) {
+        const detail = nonActive
+          .map((finding) => `  - ${formatFinding(finding)}`)
+          .join("\n");
+
+        throw new Error(
+          `CLI emitted findings for draft/spec-only rules:\n${detail}\n` +
+            "Fix: filter status === 'active' before emitting, or promote the rule " +
+            "in docs/specs/*.yaml and rebuild/reseed.",
+        );
+      }
+
+      if (fixture.forbidRuleIds && fixture.forbidRuleIds.length > 0) {
+        const forbidden = new Set(fixture.forbidRuleIds);
+        const violations = findings.filter((finding) =>
+          forbidden.has(finding.ruleId),
+        );
+
+        if (violations.length > 0) {
+          const detail = violations
+            .map((finding) => `  - ${formatFinding(finding)}`)
+            .join("\n");
+
+          throw new Error(
+            `Fixture ${fixture.name} emitted forbidden rule IDs:\n${detail}\n` +
+              "Fix: this is a false positive. Repair the AST/semantic layer so " +
+              "clean fixtures do not emit these findings.",
+          );
+        }
+      }
+    });
+  }
+});
