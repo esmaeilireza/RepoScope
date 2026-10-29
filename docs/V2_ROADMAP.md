@@ -214,3 +214,8 @@ Items that come up in conversation but are not on the path:
 
 If a stakeholder asks about any of these, the honest answer is "not on the
 V2 roadmap because it's not a gap — it's a different product."
+## Tag index
+
+- `week-1-gate-pass`: Week 1 gate first went green (pre-regression).
+- `week-1-closure`: Week 1 gate re-verified after the rule-ID parity regression was fixed. This is the canonical Week 1 reference.
+- `week-4-yml-layer1-live`: Week 4 YAML layer went live (pre-regression cleanup).
