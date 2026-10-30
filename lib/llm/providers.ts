@@ -97,12 +97,17 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
     id: "openrouter", name: "OpenRouter (free models)",
     baseUrl: "https://openrouter.ai/api/v1",
     apiFormat: "openai-compatible",
+    // Verify availability of these model IDs against OpenRouter's model page
+    // before relying on them: https://openrouter.ai/models
     defaultModel: "meta-llama/llama-3.1-8b-instruct:free",
     models: ["meta-llama/llama-3.1-8b-instruct:free", "openrouter/auto"],
     envVar: "OPENROUTER_API_KEY",
     docsUrl: "https://openrouter.ai/docs",
     requiresKey: true,
-    extraHeaders: { "X-Title": "RepoScope" },
+    extraHeaders: {
+      "HTTP-Referer": "https://github.com/esmaeilireza/RepoScope",
+      "X-Title": "RepoScope",
+    },
   },
   fireworks: {
     id: "fireworks", name: "Fireworks AI",

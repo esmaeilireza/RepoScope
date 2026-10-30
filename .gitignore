@@ -251,3 +251,4 @@ scripts/neo4j.bat
 reposcope.config.json
 readme_hardening.log
 *.bak-*
+scripts/neo4j.bat
