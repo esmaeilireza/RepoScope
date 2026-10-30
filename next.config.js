@@ -1,27 +1,28 @@
+// next.config.js
 /** @type {import('next').NextConfig} */
-const cspHeader = `
-    default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline';
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data:;
-    font-src 'self';
-    object-src 'none';
-    base-uri 'self';
-    form-action 'self';
-    frame-ancestors 'none';
-    upgrade-insecure-requests;
-`;
-
 const nextConfig = {
   async headers() {
     return [
       {
-        source: '/(.*)',
+        source: "/:path*",
         headers: [
           {
-            key: 'Content-Security-Policy',
-            value: cspHeader.replace(/\n/g, ''),
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' https://static.cloudflareinsights.com", // Only if needed, otherwise remove
+              "style-src 'self' 'unsafe-inline'", // Temporarily allow inline styles for Tailwind dev, move to nonce/hash for prod
+              "img-src 'self' data: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https://api.github.com",
+              "object-src 'none'",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'"
+            ].join("; "),
           },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
         ],
       },
     ];

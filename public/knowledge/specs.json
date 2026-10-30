@@ -289,10 +289,6 @@
           {
             "book": "Designing Data-Intensive Applications",
             "concept": "schema-evolution-and-encoding"
-          },
-          {
-            "standard": "Confluent Schema Registry Compatibility Levels",
-            "concept": "backward-forward-transitive-compatibility"
           }
         ],
         "checks": [
@@ -304,7 +300,7 @@
             "message": "Destructive schema mutation lacks a compatibility guard."
           }
         ],
-        "full_text": "Rule: Backward-incompatible schema change without migration guard\nID: dataops-schema-001\nProfile: dataops\nSeverity: error\nWhy it matters: Unprotected destructive schema changes break downstream consumers instantly, violating backward-compatibility contracts essential for evolving distributed systems.\n\nHow to fix: Wrap destructive DDL in reversible migrations; annotate with @compat=forward-only if intentional.\nReferences: Designing Data-Intensive Applications, Confluent Schema Registry Compatibility Levels"
+        "full_text": "Rule: Backward-incompatible schema change without migration guard\nID: dataops-schema-001\nProfile: dataops\nSeverity: error\nWhy it matters: Unprotected destructive schema changes break downstream consumers instantly, violating backward-compatibility contracts essential for evolving distributed systems.\n\nHow to fix: Wrap destructive DDL in reversible migrations; annotate with @compat=forward-only if intentional.\nReferences: Designing Data-Intensive Applications"
       },
       {
         "id": "dataops-stream-001",
@@ -381,10 +377,6 @@
           {
             "book": "Site Reliability Engineering",
             "concept": "monitoring-and-alerting"
-          },
-          {
-            "standard": "OpenTelemetry Specification",
-            "concept": "traces-metrics-logs-correlation"
           }
         ],
         "checks": [
@@ -396,7 +388,7 @@
             "message": "Job files contain no recognized observability primitives."
           }
         ],
-        "full_text": "Rule: Missing observability instrumentation\nID: dataops-obs-001\nProfile: dataops\nSeverity: warning\nWhy it matters: Undetectable failures cascade into corrupted warehouses. Observability is prerequisite to trustworthy automation per DataOps lifecycle principles.\n\nHow to fix: Integrate OpenTelemetry SDK or platform-native observability hooks in job entrypoints.\nReferences: Site Reliability Engineering, OpenTelemetry Specification"
+        "full_text": "Rule: Missing observability instrumentation\nID: dataops-obs-001\nProfile: dataops\nSeverity: warning\nWhy it matters: Undetectable failures cascade into corrupted warehouses. Observability is prerequisite to trustworthy automation per DataOps lifecycle principles.\n\nHow to fix: Integrate OpenTelemetry SDK or platform-native observability hooks in job entrypoints.\nReferences: Site Reliability Engineering"
       },
       {
         "id": "dataops-test-001",
@@ -411,10 +403,6 @@
           {
             "book": "Fundamentals of Data Engineering",
             "concept": "testing-data-pipelines"
-          },
-          {
-            "standard": "dbt Testing Framework",
-            "concept": "singular-generic-tests"
           }
         ],
         "checks": [
@@ -432,7 +420,7 @@
             "message": "Automated testing directory missing."
           }
         ],
-        "full_text": "Rule: Automated test suite missing\nID: dataops-test-001\nProfile: dataops\nSeverity: error\nWhy it matters: Regression-free iteration demands verification at every abstraction layer. Untested transforms become unverifiable liabilities post-deployment.\n\nHow to fix: Write dbt tests, pytest assertions, Great Expectations suites, or nbmake notebooks.\nReferences: Fundamentals of Data Engineering, dbt Testing Framework"
+        "full_text": "Rule: Automated test suite missing\nID: dataops-test-001\nProfile: dataops\nSeverity: error\nWhy it matters: Regression-free iteration demands verification at every abstraction layer. Untested transforms become unverifiable liabilities post-deployment.\n\nHow to fix: Write dbt tests, pytest assertions, Great Expectations suites, or nbmake notebooks.\nReferences: Fundamentals of Data Engineering"
       },
       {
         "id": "dataops-doc-001",
@@ -468,6 +456,7 @@
     "rules": [
       {
         "id": "general-api-001",
+        "status": "active",
         "profile": "webapp",
         "severity": "warning",
         "title": "API route without input validation",
@@ -497,6 +486,7 @@
       },
       {
         "id": "general-cicd-001",
+        "status": "active",
         "profile": "webapp",
         "severity": "warning",
         "title": "Missing CI/CD pipeline",
@@ -524,6 +514,7 @@
       },
       {
         "id": "general-config-001",
+        "status": "active",
         "profile": "webapp",
         "severity": "warning",
         "title": "Missing .env.example",
@@ -553,6 +544,7 @@
       },
       {
         "id": "general-deps-001",
+        "status": "active",
         "profile": "webapp",
         "severity": "warning",
         "title": "Unpinned dependency versions",
@@ -576,6 +568,7 @@
       },
       {
         "id": "general-docs-001",
+        "status": "active",
         "profile": "webapp",
         "severity": "info",
         "title": "Missing README",
@@ -599,6 +592,7 @@
       },
       {
         "id": "general-docs-002",
+        "status": "active",
         "profile": "webapp",
         "severity": "info",
         "title": "Missing LICENSE",
@@ -622,6 +616,7 @@
       },
       {
         "id": "general-docs-003",
+        "status": "active",
         "profile": "webapp",
         "severity": "info",
         "title": "Missing CONTRIBUTING guide",
@@ -645,6 +640,7 @@
       },
       {
         "id": "general-docs-004",
+        "status": "active",
         "profile": "webapp",
         "severity": "info",
         "title": "Missing CHANGELOG",
@@ -668,6 +664,7 @@
       },
       {
         "id": "general-legal-001",
+        "status": "active",
         "profile": "webapp",
         "severity": "warning",
         "title": "Missing SECURITY.md",
@@ -691,6 +688,7 @@
       },
       {
         "id": "general-legal-002",
+        "status": "active",
         "profile": "webapp",
         "severity": "warning",
         "title": "Missing privacy policy or data handling doc",
@@ -716,6 +714,7 @@
       },
       {
         "id": "general-links-001",
+        "status": "active",
         "profile": "webapp",
         "severity": "info",
         "title": "Documentation link integrity",
@@ -741,6 +740,7 @@
       },
       {
         "id": "general-maint-001",
+        "status": "active",
         "profile": "webapp",
         "severity": "warning",
         "title": "Missing dependency-update automation",
@@ -764,6 +764,7 @@
       },
       {
         "id": "general-quality-001",
+        "status": "active",
         "profile": "webapp",
         "severity": "warning",
         "title": "Missing linter configuration",
@@ -787,6 +788,7 @@
       },
       {
         "id": "general-security-001",
+        "status": "active",
         "profile": "webapp",
         "severity": "critical",
         "title": "Potential hardcoded secret",
@@ -812,6 +814,7 @@
       },
       {
         "id": "webapp-hw-001",
+        "status": "draft",
         "profile": "webapp",
         "severity": "info",
         "title": "Hardware paths referenced in documentation",
@@ -867,6 +870,7 @@
       },
       {
         "id": "webapp-001",
+        "status": "active",
         "profile": "webapp",
         "severity": "critical",
         "title": "No rate limiting on API routes",
@@ -896,6 +900,7 @@
       },
       {
         "id": "webapp-002",
+        "status": "active",
         "profile": "webapp",
         "severity": "error",
         "title": "Missing Content Security Policy",
@@ -925,6 +930,7 @@
       },
       {
         "id": "webapp-csp-sem-001",
+        "status": "draft",
         "profile": "webapp",
         "severity": "error",
         "title": "Content Security Policy is misconfigured",
@@ -1001,7 +1007,7 @@
       {
         "id": "iiot-002",
         "profile": "iiot",
-        "status": "implemented",
+        "status": "active",
         "severity": "error",
         "title": "Hardcoded PLC IP address detected",
         "rationale": "Hardcoded private IP addresses couple code to a single physical network segment and expose internal topology in version control. IEC 62443 requires network-segment isolation and configuration externalisation.\n",
@@ -1063,7 +1069,7 @@
       {
         "id": "iiot-004",
         "profile": "iiot",
-        "status": "implemented",
+        "status": "active",
         "severity": "critical",
         "title": "LOTO / safety-procedure documentation missing",
         "rationale": "Repositories controlling physical machinery must ship lockout–tagout documentation alongside the code so maintenance teams can safely de-energise equipment before any software change is applied.\n",
@@ -1093,7 +1099,7 @@
       {
         "id": "iiot-005",
         "profile": "iiot",
-        "status": "implemented",
+        "status": "active",
         "severity": "error",
         "title": "Network topology / zone diagram missing",
         "rationale": "IEC 62443 zone-and-conduit models require an up-to-date topology diagram so that security assessments and incident response can correctly scope the industrial network.\n",
@@ -1123,7 +1129,7 @@
       {
         "id": "iiot-006",
         "profile": "iiot",
-        "status": "implemented",
+        "status": "active",
         "severity": "warning",
         "title": "PLC/SCADA source changes not tracked in CHANGELOG",
         "rationale": "Changes to ladder logic, structured text, or SCADA screens must be traceable to a ticket and a deployment window to satisfy change-management requirements in regulated industries.\n",
@@ -1153,7 +1159,7 @@
       {
         "id": "iiot-007",
         "profile": "iiot",
-        "status": "implemented",
+        "status": "active",
         "severity": "error",
         "title": "Hardcoded serial port or Modbus TCP port",
         "rationale": "Hardcoded COM ports and :502 addresses prevent multi-environment deployments and leak hardware topology into version control.\n",
@@ -1179,7 +1185,7 @@
       {
         "id": "iiot-008",
         "profile": "iiot",
-        "status": "implemented",
+        "status": "active",
         "severity": "warning",
         "title": "No Modbus / fieldbus mock infrastructure",
         "rationale": "Tests that require live hardware are not runnable in CI. A mock or simulator layer decouples logic tests from physical device availability.\n",
@@ -1205,7 +1211,7 @@
       {
         "id": "iiot-009",
         "profile": "iiot",
-        "status": "implemented",
+        "status": "active",
         "severity": "warning",
         "title": "Protocol client timeout not set",
         "rationale": "Without explicit timeouts, a stalled PLC or network partition causes the application to block indefinitely, preventing watchdog recovery.\n",
@@ -1230,7 +1236,7 @@
       },
       {
         "id": "iiot-hw-001",
-        "status": "spec-only",
+        "status": "active",
         "profile": "iiot",
         "severity": "warning",
         "title": "Hardware-in-the-loop test harness absent",
@@ -1260,6 +1266,7 @@
       },
       {
         "id": "iiot-loto-sem-001",
+        "status": "draft",
         "profile": "iiot",
         "severity": "critical",
         "title": "LOTO documentation lacks safety-critical elements",
@@ -1280,11 +1287,11 @@
             "concept": "physical-security-and-maintenance-windows"
           },
           {
-            "standard": "NFPA 70A Article 120",
+            "standard": "NFPA 70E",
             "concept": "lockout-tagout procedure"
           }
         ],
-        "full_text": "Rule: LOTO documentation lacks safety-critical elements\nID: iiot-loto-sem-001\nProfile: iiot\nSeverity: critical\nWhy it matters: Lockout/Tagout procedures must specify isolation points, verification steps, and authorized personnel. Missing elements create physical safety risk.\n\nHow to fix: Add specific isolation points, zero-energy verification steps, authorized roles, removal and emergency procedures.\n\nReferences: Industrial Network Security, NFPA 70A Article 120"
+        "full_text": "Rule: LOTO documentation lacks safety-critical elements\nID: iiot-loto-sem-001\nProfile: iiot\nSeverity: critical\nWhy it matters: Lockout/Tagout procedures must specify isolation points, verification steps, and authorized personnel. Missing elements create physical safety risk.\n\nHow to fix: Add specific isolation points, zero-energy verification steps, authorized roles, removal and emergency procedures.\n\nReferences: Industrial Network Security, NFPA 70E"
       }
     ]
   }

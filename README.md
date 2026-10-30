@@ -484,20 +484,15 @@ The health score is computed from findings using severity weights that are defin
 
 ## 🕸️ Knowledge Graph Visualization
 
-An interactive, browser-based visualization of the full knowledge graph — concepts, books, and rule-to-concept mappings — is rendered below.
-
 <p align="center">
-  <img src="graphify-out/graph-preview.png" alt="RepoScope Knowledge Graph Preview" width="100%" style="max-width:1100px;border-radius:12px;" />
-</p>
-
-<p align="center">
-  <a href="graphify-out/graph.html">
-    <strong>🔗 Open the interactive knowledge graph →</strong>
+  <a href="https://reposcope-ochre.vercel.app/graphify-out/graph.html">
+    <img src="docs/graph-preview.png" alt="RepoScope Knowledge Graph preview" width="100%" style="max-width: 900px;" />
   </a>
 </p>
 
-**Note on rendering:** GitHub strips `<iframe>` from README files, so the static preview image above is what visitors see on GitHub. In local previews (`pnpm dev`, VS Code, or a static HTML host) the interactive [`graphify-out/graph.html`](graphify-out/graph.html) renders live in an iframe. If `graph-preview.png` is missing, capture a screenshot of the HTML file with browser DevTools or `npx puppeteer` and save it next to the HTML file.
-
+<p align="center">
+  🔗 <a href="https://reposcope-ochre.vercel.app/graphify-out/graph.html"><strong>Open the interactive knowledge graph →</strong></a>
+</p>
 ---
 
 ## 🤝 Contributing

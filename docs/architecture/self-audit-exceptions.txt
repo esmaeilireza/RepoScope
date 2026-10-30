@@ -1,0 +1,1 @@
+# Accepted self-audit debt (e.g., webapp-csp-sem-001 until CSP is tightened).

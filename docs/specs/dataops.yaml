@@ -372,8 +372,6 @@ rules:
     references:
       - book: "Designing Data-Intensive Applications"
         concept: "schema-evolution-and-encoding"
-      - standard: "Confluent Schema Registry Compatibility Levels"
-        concept: "backward-forward-transitive-compatibility"
     checks:
       # Migrated from `scope:` + `patterns:` (list) + `exclude_if_contains:` to
       # the engine-recognized `file_glob:` + `pattern:` (string) + `error_when:`.
@@ -468,8 +466,6 @@ rules:
     references:
       - book: "Site Reliability Engineering"
         concept: "monitoring-and-alerting"
-      - standard: "OpenTelemetry Specification"
-        concept: "traces-metrics-logs-correlation"
     checks:
       # Migrated from `scope:` + `patterns:` (list) + `min_matches_per_file:` to
       # the engine-recognized `file_glob:` + `pattern:` (string) + `error_when:`.
@@ -497,8 +493,6 @@ rules:
     references:
       - book: "Fundamentals of Data Engineering"
         concept: "testing-data-pipelines"
-      - standard: "dbt Testing Framework"
-        concept: "singular-generic-tests"
     checks:
       # Migrated from draft `path_glob:` brace-expansion to the engine-recognized
       # `file_exists` + `paths` + `match_mode: any` shape. The native intent

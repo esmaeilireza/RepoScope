@@ -1,0 +1,2 @@
+# Legacy DataOps emitters not yet in docs/specs/*.yaml.
+# Remove an ID only after migrating the TS emitter or adding the YAML rule.

@@ -42,6 +42,7 @@ rules:
   # ──────────────────────────────────────────────────────────────
   # Active: emitted by lib/audit.ts via the `webapp-001` rule ID.
   - id: webapp-001
+    status: active
     profile: webapp
     severity: critical
     title: "No rate limiting on API routes"
@@ -67,6 +68,7 @@ rules:
 
   # Active: emitted by lib/audit.ts via the `webapp-002` rule ID.
   - id: webapp-002
+    status: active
     profile: webapp
     severity: error
     title: "Missing Content Security Policy"
@@ -89,6 +91,7 @@ rules:
       - book: "Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation"
         concept: "deployment-pipeline"
   - id: "webapp-csp-sem-001"
+    status: draft
     profile: "webapp"
     severity: "error"
     title: "Content Security Policy is misconfigured"

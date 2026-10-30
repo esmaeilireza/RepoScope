@@ -12,12 +12,12 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "jest --passWithNoTests",
+    "test": "NODE_OPTIONS='--no-warnings=DeprecationWarning' jest --passWithNoTests",
     "sbom": "node scripts/generate-sbom.mjs",
     "reposcope": "tsx scripts/reposcope-audit.ts",
     "audit:self": "tsx scripts/reposcope-audit.ts --repo . --strict",
     "audit:sec": "pnpm audit --registry=https://registry.npmjs.org/ --audit-level=high",
-    "audit:all": "pnpm audit --registry=https://registry.npmjs.org/ --audit-level=high && node scripts/generate-sbom.mjs && eslint . && next build",
+    "audit:all": "pnpm audit --registry=https://registry.npmjs.org/ --audit-level=high && python scripts/readme_status.py --check && node scripts/generate-sbom.mjs && eslint . && next build",
     "prebuild": "node -e \"process.exit(0)\"",
     "build:knowledge": "python scripts/build_knowledge.py",
     "kg:extract": "python scripts/kg/extract.py",
@@ -37,8 +37,10 @@
     "semantic:calibrate": "tsx scripts/semantic-calibrate.ts",
     "semantic:clear-cache": "tsx scripts/semantic-reset-cache.ts",
     "semantic:debug": "tsx scripts/semantic-debug.ts",
-    "check:spec-parity": "jest --runInBand --testPathPattern contract/spec-parity",
-    "check:spec-parity:cli": "tsx scripts/check-spec-parity.ts --repo __tests__/broken-dbt --profile dataops"
+    "check:spec-parity": "NODE_OPTIONS='--no-warnings=DeprecationWarning' jest --runInBand --testPathPattern contract/spec-parity",
+    "check:spec-parity:cli": "tsx scripts/check-spec-parity.ts --repo __tests__/broken-dbt --profile dataops",
+    "readme:status": "python scripts/readme_status.py",
+    "readme:check": "python scripts/readme_status.py --check"
   },
   "dependencies": {
     "@cyclonedx/cyclonedx-library": "^10.2.0",

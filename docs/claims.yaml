@@ -22,18 +22,18 @@ claims:
         - db/migrate
 
   - id: claim-dataops-rules-001
-    description: "The DataOps profile contains at least 20 rules."
+    description: "The DataOps profile contains at least 11 rules."
     implementation: docs/specs/dataops.yaml
     verification:
       type: yaml_rule_count_min
-      min_count: 20
+      min_count: 11
 
   - id: claim-total-rule-count-001
-    description: "Total YAML rules across all non-underscore profiles equals 58."
+    description: "Total YAML rules across all non-underscore profiles equals 43."
     implementation: docs/specs/
     verification:
       type: total_yaml_rule_count
-      expected_count: 58
+      expected_count: 43
 
   - id: claim-checklists-001
     description: "All five domain checklist markdown files exist under docs/checklists/."

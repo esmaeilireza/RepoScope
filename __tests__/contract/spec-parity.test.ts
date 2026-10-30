@@ -5,8 +5,10 @@
 // exists in public/knowledge/specs.json, and active findings must not come
 // from draft/spec-only rules.
 //
-// This version avoids fragile imports from a non-existent src/audit layer.
-// It runs the real CLI in --json mode and validates the emitted findings.
+// Fixed-dbt is a NEGATIVE CONTROL: it must not emit specific false-positive
+// rule IDs (currently dataops-dim-ast-001), but it is NOT required to produce
+// zero findings. Missing-docs, missing-tests, and storage-hygiene rules may
+// legitimately fire on it. The parity loop still applies to whatever it emits.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -40,8 +42,6 @@ interface Fixture {
   readonly name: string;
   readonly repoPath: string;
   readonly profile: string;
-  readonly expectFindings: boolean;
-  readonly forbidRuleIds?: readonly string[];
 }
 
 const repoRoot = path.resolve(__dirname, "..", "..");
@@ -52,18 +52,31 @@ const fixtures: readonly Fixture[] = [
     name: "broken-dbt",
     repoPath: "__tests__/broken-dbt",
     profile: "dataops",
-    expectFindings: true,
   },
   {
     name: "fixed-dbt",
     repoPath: "__tests__/fixed-dbt",
     profile: "dataops",
-    expectFindings: false,
-    // The negative fixture must not trigger the natural-key AST rule.
-    // If this fails, your semantic fallback or AST layer has a false positive.
-    forbidRuleIds: ["dataops-dim-ast-001"],
   },
 ];
+
+// Positive contracts: these fixtures MUST emit at least one finding.
+// Entries listed here that are not present in `fixtures` above are skipped;
+// register the fixture before adding it to this set.
+const MUST_EMIT_FINDINGS: ReadonlySet<string> = new Set<string>([
+  "broken-dbt",
+  "broken-webapp",
+  "broken-iiot",
+]);
+
+// Negative controls: per-rule prohibitions. These fixtures MAY still emit
+// other findings — this is not a "zero findings" gate.
+const MUST_NOT_EMIT: ReadonlyMap<string, readonly string[]> = new Map<
+  string,
+  readonly string[]
+>([
+  ["fixed-dbt", ["dataops-dim-ast-001"]],
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -198,6 +211,16 @@ function formatFinding(finding: Finding): string {
   return `${finding.ruleId}${severity}${file}`;
 }
 
+function getFixture(name: string): Fixture {
+  const fixture = fixtures.find((f) => f.name === name);
+  if (!fixture) {
+    throw new Error(
+      `Contract references fixture "${name}" but it is not registered in the fixtures array.`,
+    );
+  }
+  return fixture;
+}
+
 describe("spec parity contract", () => {
   const specs = loadSpecs();
   const known = collectKnownIds(specs);
@@ -210,13 +233,61 @@ describe("spec parity contract", () => {
     expect(known.active.size).toBeGreaterThan(0);
   });
 
+  // Positive contracts: broken-dbt (and any future registered fixture in the
+  // MUST_EMIT set) must produce at least one finding.
+  for (const fixtureName of MUST_EMIT_FINDINGS) {
+    // Skip contract entries for fixtures that have not been registered yet.
+    if (!fixtures.some((f) => f.name === fixtureName)) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[spec-parity] MUST_EMIT_FINDINGS lists "${fixtureName}", but no fixture is registered. ` +
+          "Register the fixture to activate this contract.",
+      );
+      continue;
+    }
+
+    it(`${fixtureName} MUST emit at least one finding`, () => {
+      const fixture = getFixture(fixtureName);
+      const findings = runCliJson(fixture.repoPath, fixture.profile);
+      expect(findings.length).toBeGreaterThan(0);
+    });
+  }
+
+  // Negative controls: per-rule prohibitions, NOT a zero-findings gate.
+  for (const [fixtureName, forbiddenIds] of MUST_NOT_EMIT) {
+    it(`${fixtureName} MUST NOT emit forbidden rule IDs`, () => {
+      const fixture = getFixture(fixtureName);
+      const findings = runCliJson(fixture.repoPath, fixture.profile);
+
+      for (const forbiddenId of forbiddenIds) {
+        const violations = findings.filter((f) => f.ruleId === forbiddenId);
+
+        if (violations.length > 0) {
+          const detail = violations
+            .map((finding) => `  - ${formatFinding(finding)}`)
+            .join("\n");
+
+          throw new Error(
+            `Fixture "${fixtureName}" emitted forbidden rule "${forbiddenId}":\n${detail}\n` +
+              "Fix: this is a false positive in the AST/semantic layer. " +
+              "Clean fixtures must not trigger this rule.",
+          );
+        }
+      }
+
+      // Deliberately no assertion that findings.length === 0.
+      // fixed-dbt is a negative control for the AST rule only. Other rules
+      // (missing docs, missing tests, storage hygiene, etc.) may legitimately
+      // fire on this fixture without representing a regression.
+    });
+  }
+
+  // Parity / grounding: applied to every registered fixture. Even when
+  // fixed-dbt emits "acceptable" findings, they must still be grounded in
+  // specs.json and be active.
   for (const fixture of fixtures) {
     it(`${fixture.name} emits only known active rule IDs`, () => {
       const findings = runCliJson(fixture.repoPath, fixture.profile);
-
-      if (fixture.expectFindings) {
-        expect(findings.length).toBeGreaterThan(0);
-      }
 
       const unknown = findings.filter(
         (finding) => !known.all.has(finding.ruleId),
@@ -235,7 +306,8 @@ describe("spec parity contract", () => {
       }
 
       const nonActive = findings.filter(
-        (finding) => known.all.has(finding.ruleId) && !known.active.has(finding.ruleId),
+        (finding) =>
+          known.all.has(finding.ruleId) && !known.active.has(finding.ruleId),
       );
 
       if (nonActive.length > 0) {
@@ -248,25 +320,6 @@ describe("spec parity contract", () => {
             "Fix: filter status === 'active' before emitting, or promote the rule " +
             "in docs/specs/*.yaml and rebuild/reseed.",
         );
-      }
-
-      if (fixture.forbidRuleIds && fixture.forbidRuleIds.length > 0) {
-        const forbidden = new Set(fixture.forbidRuleIds);
-        const violations = findings.filter((finding) =>
-          forbidden.has(finding.ruleId),
-        );
-
-        if (violations.length > 0) {
-          const detail = violations
-            .map((finding) => `  - ${formatFinding(finding)}`)
-            .join("\n");
-
-          throw new Error(
-            `Fixture ${fixture.name} emitted forbidden rule IDs:\n${detail}\n` +
-              "Fix: this is a false positive. Repair the AST/semantic layer so " +
-              "clean fixtures do not emit these findings.",
-          );
-        }
       }
     });
   }

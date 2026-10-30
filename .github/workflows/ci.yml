@@ -49,9 +49,11 @@ jobs:
       - name: Unit tests (jest)
         run: pnpm test
 
+      - name: Build knowledge specs
+        run: python scripts/build_knowledge.py
+
       - name: Drift check — specs.json matches docs/specs/*.yaml
         run: |
-          python scripts/build_knowledge.py
           python - <<'PY'
           import json, subprocess, sys
           new = json.load(open("public/knowledge/specs.json", encoding="utf-8"))
@@ -69,11 +71,17 @@ jobs:
           print("OK: specs.json is in sync with YAML sources.")
           PY
 
+      - name: Verify README status block
+        run: pnpm readme:check
+
       - name: Health gate (reposcope-check.sh --strict)
         run: bash reposcope-check.sh . --strict
 
-      - name: Claims verifier (scripts/verify_claims.py)
+      - name: Verify public claims
         run: python scripts/verify_claims.py
+
+      - name: Verify knowledge registry
+        run: pnpm verify:registry
 
       - name: Dependency audit — blocks on unfixed high/critical
         run: |

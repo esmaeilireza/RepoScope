@@ -214,6 +214,30 @@ Items that come up in conversation but are not on the path:
 
 If a stakeholder asks about any of these, the honest answer is "not on the
 V2 roadmap because it's not a gap — it's a different product."
+
+---
+
+## Known classification gaps
+
+### Semantic-rule classification gap
+
+Semantic rules (`*-sem-*`) — currently `iiot-loto-sem-001` and
+`webapp-csp-sem-001` — are executed at runtime by
+`lib/semantic/runner.ts` from YAML source. The `scripts/triage_unknown_rules.py`
+heuristic classifies rules by grepping for a quoted rule ID literal in
+`lib/**/*.ts`. Semantic rules have no such literal, so they are marked
+`draft` even though they are dispatched. This under-claims rather than
+over-claims, which is the safe direction, but it is imprecise.
+
+Reconcile in a dedicated pass:
+- Either extend `triage_unknown_rules.py` to also scan `lib/semantic/`
+  for YAML-sourced rule IDs, and decide what evidence counts as
+  "implemented" for a runtime-dispatched rule.
+- Or add an explicit `dispatch: semantic` field to the YAML schema so
+  classification can branch on dispatch type instead of grepping.
+
+---
+
 ## Tag index
 
 - `week-1-gate-pass`: Week 1 gate first went green (pre-regression).

@@ -7,6 +7,7 @@ required_fields:
   - id          # e.g. iiot-001, dataops-002, webapp-001, cross-001 — MUST match the ID emitted by lib/*-audit.ts
   - profile     # iiot | dataops | webapp | cross
   - severity    # critical | error | warning | info
+  - status      # active | draft — canonical values only; aliases normalized, see status_values
   - title
   - rationale   # WHY this matters, written from the domain's perspective (OT, data, or web)
   - checks      # list of checks (see check_types)
@@ -14,8 +15,18 @@ required_fields:
   - references  # list of {book | standard, concept} — MUST cite real sources only
 
 optional_fields:
-  - status
   - file_hint   # typical file where the pattern lives
+
+# Canonical statuses plus the closed alias map enforced by scripts/readme_status.py.
+# Keep this block byte-for-byte aligned with STATUS_ALIASES in that file.
+# "unknown" is a report bucket produced by readme_status.py, not a valid input value.
+status_values:
+  canonical: [active, draft]
+  accepted_aliases:
+    implemented: active
+    spec-only: draft
+    planned: draft
+    wip: draft
 
 check_types:
   - pattern_match   # fields: pattern, must_exist, file_glob, error_when, message

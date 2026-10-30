@@ -4,6 +4,7 @@ profile: webapp
 
 rules:
   - id: general-api-001
+    status: active
     profile: webapp
     severity: warning
     title: "API route without input validation"
@@ -26,6 +27,7 @@ rules:
         concept: "injection"
 
   - id: general-cicd-001
+    status: active
     profile: webapp
     severity: warning
     title: "Missing CI/CD pipeline"
@@ -46,6 +48,7 @@ rules:
         concept: "continuous-integration"
 
   - id: general-config-001
+    status: active
     profile: webapp
     severity: warning
     title: "Missing .env.example"
@@ -68,6 +71,7 @@ rules:
         concept: "configuration-management"
 
   - id: general-deps-001
+    status: active
     profile: webapp
     severity: warning
     title: "Unpinned dependency versions"
@@ -86,6 +90,7 @@ rules:
         concept: "reproducible-builds"
 
   - id: general-docs-001
+    status: active
     profile: webapp
     severity: info
     title: "Missing README"
@@ -104,6 +109,7 @@ rules:
         concept: "documentation"
 
   - id: general-docs-002
+    status: active
     profile: webapp
     severity: info
     title: "Missing LICENSE"
@@ -122,6 +128,7 @@ rules:
         concept: "open-source-hygiene"
 
   - id: general-docs-003
+    status: active
     profile: webapp
     severity: info
     title: "Missing CONTRIBUTING guide"
@@ -140,6 +147,7 @@ rules:
         concept: "collaboration"
 
   - id: general-docs-004
+    status: active
     profile: webapp
     severity: info
     title: "Missing CHANGELOG"
@@ -158,6 +166,7 @@ rules:
         concept: "release-notes"
 
   - id: general-legal-001
+    status: active
     profile: webapp
     severity: warning
     title: "Missing SECURITY.md"
@@ -176,6 +185,7 @@ rules:
         concept: "responsible-disclosure"
 
   - id: general-legal-002
+    status: active
     profile: webapp
     severity: warning
     title: "Missing privacy policy or data handling doc"
@@ -196,6 +206,7 @@ rules:
         concept: "compliance"
 
   - id: general-links-001
+    status: active
     profile: webapp
     severity: info
     title: "Documentation link integrity"
@@ -215,6 +226,7 @@ rules:
         concept: "documentation"
 
   - id: general-maint-001
+    status: active
     profile: webapp
     severity: warning
     title: "Missing dependency-update automation"
@@ -233,6 +245,7 @@ rules:
         concept: "dependency-management"
 
   - id: general-quality-001
+    status: active
     profile: webapp
     severity: warning
     title: "Missing linter configuration"
@@ -251,6 +264,7 @@ rules:
         concept: "code-quality"
 
   - id: general-security-001
+    status: active
     profile: webapp
     severity: critical
     title: "Potential hardcoded secret"
@@ -276,6 +290,7 @@ rules:
   # hardware paths. It is an informational signal reminding authors to
   # document hardware requirements alongside code that expects them.
   - id: webapp-hw-001
+    status: draft
     profile: webapp
     severity: info
     title: "Hardware paths referenced in documentation"

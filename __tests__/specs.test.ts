@@ -248,3 +248,27 @@ describe("spec manifests", () => {
     }
   });
 });
+import rawSpecs from "@/public/knowledge/specs.json";
+
+describe("specs.json status integrity", () => {
+  const VALID = new Set<"active" | "draft">(["active", "draft"]);
+
+  type Rule = { id: string; status?: string };
+  type Bundle = { rules?: Rule[] };
+
+  it("every rule has a canonical status (active | draft)", () => {
+    const offenders: string[] = [];
+
+    for (const [profile, bundle] of Object.entries(
+      rawSpecs as unknown as Record<string, Bundle>,
+    )) {
+      for (const rule of bundle.rules ?? []) {
+        if (!rule.status || !VALID.has(rule.status as "active" | "draft")) {
+          offenders.push(`${profile}/${rule.id} → ${rule.status ?? "<missing>"}`);
+        }
+      }
+    }
+
+    expect(offenders).toEqual([]);
+  });
+});

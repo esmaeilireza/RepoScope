@@ -249,3 +249,5 @@ package.json.bak.*
 # Windows-side helpers (do not distribute)
 scripts/neo4j.bat
 reposcope.config.json
+readme_hardening.log
+*.bak-*

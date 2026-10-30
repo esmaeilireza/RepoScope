@@ -44,7 +44,7 @@ rules:
 
   - id: iiot-002
     profile: iiot
-    status: implemented
+    status: active
     severity: error
     title: "Hardcoded PLC IP address detected"
     rationale: >
@@ -100,7 +100,7 @@ rules:
 
   - id: iiot-004
     profile: iiot
-    status: implemented
+    status: active
     severity: critical
     title: "LOTO / safety-procedure documentation missing"
     rationale: >
@@ -125,7 +125,7 @@ rules:
 
   - id: iiot-005
     profile: iiot
-    status: implemented
+    status: active
     severity: error
     title: "Network topology / zone diagram missing"
     rationale: >
@@ -153,7 +153,7 @@ rules:
 
   - id: iiot-006
     profile: iiot
-    status: implemented
+    status: active
     severity: warning
     title: "PLC/SCADA source changes not tracked in CHANGELOG"
     rationale: >
@@ -178,7 +178,7 @@ rules:
 
   - id: iiot-007
     profile: iiot
-    status: implemented
+    status: active
     severity: error
     title: "Hardcoded serial port or Modbus TCP port"
     rationale: >
@@ -200,7 +200,7 @@ rules:
 
   - id: iiot-008
     profile: iiot
-    status: implemented
+    status: active
     severity: warning
     title: "No Modbus / fieldbus mock infrastructure"
     rationale: >
@@ -222,7 +222,7 @@ rules:
 
   - id: iiot-009
     profile: iiot
-    status: implemented
+    status: active
     severity: warning
     title: "Protocol client timeout not set"
     rationale: >
@@ -244,7 +244,7 @@ rules:
         concept: "Chapter 5 – Resilience and watchdog patterns"
 
   - id: iiot-hw-001
-    status: spec-only
+    status: active
     profile: iiot
     severity: warning
     title: "Hardware-in-the-loop test harness absent"
@@ -268,6 +268,7 @@ rules:
       - standard: "IEC 61508-6 Annex B"
         concept: "hardware-in-the-loop validation"
   - id: "iiot-loto-sem-001"
+    status: draft
     profile: "iiot"
     severity: "critical"
     title: "LOTO documentation lacks safety-critical elements"
@@ -368,5 +369,5 @@ rules:
     references:
       - book: "Industrial Network Security"
         concept: "physical-security-and-maintenance-windows"
-      - standard: "NFPA 70A Article 120"
+      - standard: "NFPA 70E"
         concept: "lockout-tagout procedure"
