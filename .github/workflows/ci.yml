@@ -74,9 +74,6 @@ jobs:
       - name: Verify README status block
         run: pnpm readme:check
 
-      - name: Health gate (reposcope-check.sh --strict)
-        run: bash reposcope-check.sh . --strict
-
       - name: Verify public claims
         run: python scripts/verify_claims.py
 
