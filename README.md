@@ -45,6 +45,7 @@ Generated from `public/knowledge/specs.json`. Do not edit this block by hand.
 | WebApp | 2 | 3 | 0 | 5 |
 | Cross-Domain | 2 | 0 | 0 | 2 |
 | **Total** | **37** | **6** | **0** | **43** |
+
 <!-- README_STATUS_END -->
 
 All 37 active rules are enforced by contract tests in `__tests__/contract/` (violation → negative-control parity). The 6 draft rules are published in `docs/specs/` but not yet wired to checks; they are tracked in [`docs/V2_ROADMAP.md`](docs/V2_ROADMAP.md).
